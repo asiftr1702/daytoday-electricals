@@ -10,7 +10,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map, startWith, catchError, distinctUntilChanged } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
 import { CATEGORIES, getCategoryById } from '../../core/config/categories.config';
-import { SheetsService } from '../../core/services/sheets.service';
+import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
 import { Product } from '../../core/models/product.model';
 import { ProductCardComponent } from '../../shared/product-card/product-card';
 
@@ -28,7 +28,7 @@ interface ProductsState {
   styleUrl: './products.css',
 })
 export class ProductsComponent {
-  private readonly sheetsService = inject(SheetsService);
+  private readonly firebaseAdmin = inject(FirebaseAdminService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -65,7 +65,7 @@ export class ProductsComponent {
       if (isOffers) {
         // Load all categories in parallel, merge into one flat list
         return forkJoin(
-          CATEGORIES.map(cat => this.sheetsService.getProducts(cat.id)),
+          CATEGORIES.map(cat => this.firebaseAdmin.getProductsByCategory(cat.id)),
         ).pipe(
           map(results => ({
             products: results.flat(),
@@ -79,7 +79,7 @@ export class ProductsComponent {
         );
       }
 
-      return this.sheetsService.getProducts(categoryId).pipe(
+      return this.firebaseAdmin.getProductsByCategory(categoryId).pipe(
         map(products => ({ products, loading: false, error: null }) as ProductsState),
         startWith({ products: [], loading: true, error: null } as ProductsState),
         catchError(() =>

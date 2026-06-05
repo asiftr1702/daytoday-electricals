@@ -27,7 +27,7 @@ export class ProductAdminService {
 
   // ⚠️ REPLACE THIS with your Google Apps Script deployment URL
   private readonly GOOGLE_APPS_SCRIPT_URL =
-    'https://script.googleapis.com/macros/d/{DEPLOYMENT_ID}/usercallable';
+    'https://script.googleapis.com/macros/d/AKfycbyF7teRRe-KhE-IaBsRtcMEsN3Lza0IttlfY5Lljc8JKdd9ioL0SB1SXSNtXP9MLQ2J3g/usercallable';
 
   /**
    * Submit a new product to Google Sheets
@@ -41,7 +41,11 @@ export class ProductAdminService {
       product: this.formatProductForSheet(product),
     };
 
-    return this.http.post(this.GOOGLE_APPS_SCRIPT_URL, payload);
+    // Use FormData to bypass CORS preflight
+    const formData = new FormData();
+    formData.append('payload', JSON.stringify(payload));
+
+    return this.http.post(this.GOOGLE_APPS_SCRIPT_URL, formData);
   }
 
   /**

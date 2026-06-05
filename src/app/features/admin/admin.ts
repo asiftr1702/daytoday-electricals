@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ProductAdminService } from '../../core/services/product-admin.service';
+import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
 import { CATEGORIES } from '../../core/config/categories.config';
 import { Product } from '../../core/models/product.model';
 import './admin.css';
@@ -15,7 +15,7 @@ import './admin.css';
 })
 export class AdminComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
-  private readonly adminService = inject(ProductAdminService);
+  private readonly firebaseAdmin = inject(FirebaseAdminService);
 
   categories = CATEGORIES;
   selectedCategory: (typeof CATEGORIES)[0] | null = null;
@@ -72,8 +72,8 @@ export class AdminComponent implements OnInit {
 
     const product: Product = this.productForm.value;
 
-    this.adminService.submitProduct(product, this.selectedCategory.sheetName).subscribe({
-      next: () => {
+    this.firebaseAdmin.submitProduct(product, this.selectedCategory.id).subscribe({
+      next: (docId) => {
         this.successMessage = `✅ Product "${product.name}" added successfully!`;
         this.productForm.reset({ unit: 'Piece', available: true });
         this.isLoading = false;
@@ -81,7 +81,7 @@ export class AdminComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error submitting product:', err);
-        this.errorMessage = `❌ Error: ${err?.error?.error || err?.message || 'Failed to add product'}`;
+        this.errorMessage = `❌ Error: ${err?.message || 'Failed to add product'}`;
         this.isLoading = false;
       },
     });
@@ -94,3 +94,4 @@ export class AdminComponent implements OnInit {
     this.errorMessage = '';
   }
 }
+

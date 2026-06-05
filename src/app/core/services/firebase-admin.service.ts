@@ -1,0 +1,97 @@
+import { Injectable, inject } from '@angular/core';
+import {
+  Firestore,
+  collection,
+  addDoc,
+  updateDoc,
+  doc,
+  getDocs,
+  query,
+  where,
+  Timestamp,
+} from '@angular/fire/firestore';
+import { Observable, from } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { Product } from '../models/product.model';
+
+/**
+ * Firebase Admin Service
+ * 
+ * Stores product data in Firestore (Firebase's NoSQL database)
+ * No CORS issues, real-time updates, scales automatically
+ */
+
+@Injectable({
+  providedIn: 'root',
+})
+export class FirebaseAdminService {
+  private readonly firestore = inject(Firestore);
+
+  // Collection name in Firestore
+  private readonly PRODUCTS_COLLECTION = 'products';
+
+  /**
+   * Submit a new product to Firestore
+   */
+  submitProduct(product: Product, category: string): Observable<string> {
+    const productsCollection = collection(this.firestore, this.PRODUCTS_COLLECTION);
+
+    const productData = {
+      ...product,
+      category,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    };
+
+    return from(addDoc(productsCollection, productData)).pipe(
+      map((docRef) => docRef.id)
+    );
+  }
+
+  /**
+   * Update an existing product
+   */
+  updateProduct(productId: string, product: Product): Observable<void> {
+    const productDoc = doc(this.firestore, this.PRODUCTS_COLLECTION, productId);
+
+    const productData = {
+      ...product,
+      updatedAt: Timestamp.now(),
+    };
+
+    return from(updateDoc(productDoc, productData));
+  }
+
+  /**
+   * Get all products for a category
+   */
+  getProductsByCategory(category: string): Observable<Product[]> {
+    const productsCollection = collection(this.firestore, this.PRODUCTS_COLLECTION);
+    const q = query(productsCollection, where('category', '==', category));
+
+    return from(getDocs(q)).pipe(
+      map((querySnapshot) =>
+        querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        } as unknown as Product))
+      )
+    );
+  }
+
+  /**
+   * Get all products
+   */
+  getAllProducts(): Observable<Product[]> {
+    const productsCollection = collection(this.firestore, this.PRODUCTS_COLLECTION);
+
+    return from(getDocs(productsCollection)).pipe(
+      map((querySnapshot) =>
+        querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        } as unknown as Product))
+      )
+    );
+  }
+}

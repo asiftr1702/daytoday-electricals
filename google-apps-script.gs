@@ -45,7 +45,20 @@ const HEADERS = [
  */
 function doPost(e) {
   try {
-    const payload = JSON.parse(e.postData.contents);
+    let payload;
+
+    // Handle FormData (from FormData submission - no preflight)
+    if (e.parameter && e.parameter.payload) {
+      payload = JSON.parse(e.parameter.payload);
+    } 
+    // Handle JSON (fallback)
+    else if (e.postData && e.postData.contents) {
+      payload = JSON.parse(e.postData.contents);
+    }
+
+    if (!payload || !payload.action) {
+      return createResponse('error', 'Invalid payload');
+    }
 
     if (payload.action === 'addProduct') {
       return addProduct(payload.sheetName, payload.product);
@@ -58,6 +71,17 @@ function doPost(e) {
     Logger.log('Error: ' + err);
     return createResponse('error', err.toString());
   }
+}
+
+/**
+ * Handle CORS preflight requests
+ */
+function doOptions(e) {
+  const output = ContentService.createTextOutput();
+  output.setHeader('Access-Control-Allow-Origin', '*');
+  output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  return output;
 }
 
 /**
@@ -116,15 +140,20 @@ function getSheet(sheetName) {
 }
 
 /**
- * Helper function to create a response object
+ * Helper function to create a response object with CORS headers
  */
 function createResponse(status, message) {
-  return ContentService.createTextOutput(
+  const output = ContentService.createTextOutput(
     JSON.stringify({
       status,
       message,
     })
-  ).setMimeType(ContentService.MimeType.JSON);
+  );
+  output.setMimeType(ContentService.MimeType.JSON);
+  output.setHeader('Access-Control-Allow-Origin', '*');
+  output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  return output;
 }
 
 /**
