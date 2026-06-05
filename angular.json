@@ -39,6 +39,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/daytoday-electricals/",
               "budgets": [
                 {
                   "type": "initial",
