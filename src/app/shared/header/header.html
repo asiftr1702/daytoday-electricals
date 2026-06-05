@@ -18,6 +18,7 @@
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
       <a routerLink="/products" routerLinkActive="active">Products</a>
       <a routerLink="/contact" routerLinkActive="active">Contact Us</a>
+      <a routerLink="/admin" routerLinkActive="active" class="admin-link" title="Admin panel for adding products">📦 Admin</a>
     </nav>
 
     <a routerLink="/products" class="btn btn-primary nav-cta" aria-label="Browse all products">
@@ -48,6 +49,9 @@
       </a>
       <a routerLink="/contact" routerLinkActive="active" (click)="closeMenu()">
         <span aria-hidden="true">📍</span> Contact Us
+      </a>
+      <a routerLink="/admin" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
+        <span aria-hidden="true">📦</span> Admin
       </a>
     </nav>
   }

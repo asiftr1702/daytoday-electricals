@@ -17,7 +17,13 @@ export const routes: Routes = [
     title: 'Contact Us — DayToDay Electricals',
   },
   {
+    path: 'admin',
+    loadComponent: () => import('./features/admin/admin').then(m => m.AdminComponent),
+    title: 'Admin — Add Products',
+  },
+  {
     path: '**',
     redirectTo: '',
   },
 ];
+

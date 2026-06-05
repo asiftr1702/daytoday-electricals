@@ -1,0 +1,192 @@
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>📦 Product Admin</h1>
+    <p>Add new products to Google Sheets</p>
+  </div>
+
+  <!-- Category Selection -->
+  <div class="category-section">
+    <h2>Select Category</h2>
+    <div class="category-grid">
+      @for (category of categories; track category.id) {
+        <button
+          class="category-btn"
+          [class.active]="selectedCategory?.id === category.id"
+          (click)="onCategorySelect(category)"
+          [style.background-color]="selectedCategory?.id === category.id ? category.color : '#f5f5f5'"
+        >
+          <span class="category-icon">{{ category.icon }}</span>
+          <span class="category-name">{{ category.name }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Product Form -->
+  @if (selectedCategory) {
+    <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="product-form">
+      <h2>Add Product to {{ selectedCategory.name }}</h2>
+
+      <!-- Messages -->
+      @if (successMessage) {
+        <div class="alert alert-success">{{ successMessage }}</div>
+      }
+      @if (errorMessage) {
+        <div class="alert alert-error">{{ errorMessage }}</div>
+      }
+
+      <!-- Basic Info -->
+      <fieldset>
+        <legend>📋 Basic Information</legend>
+
+        <div class="form-group">
+          <label for="sku">SKU <span class="required">*</span></label>
+          <input
+            id="sku"
+            type="text"
+            formControlName="sku"
+            placeholder="e.g., FAN-001"
+            required
+          />
+          @if (productForm.get('sku')?.invalid && productForm.get('sku')?.touched) {
+            <span class="error">SKU is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="name">Product Name <span class="required">*</span></label>
+          <input id="name" type="text" formControlName="name" placeholder="e.g., Havells Ceiling Fan 1200mm" required />
+          @if (productForm.get('name')?.invalid && productForm.get('name')?.touched) {
+            <span class="error">Product name is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description <span class="required">*</span></label>
+          <textarea
+            id="description"
+            formControlName="description"
+            placeholder="e.g., 3-blade ceiling fan, 70W, high speed"
+            rows="3"
+            required
+          ></textarea>
+          @if (productForm.get('description')?.invalid && productForm.get('description')?.touched) {
+            <span class="error">Description is required</span>
+          }
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="brand">Brand</label>
+            <input id="brand" type="text" formControlName="brand" placeholder="e.g., Havells" />
+          </div>
+
+          <div class="form-group">
+            <label for="subcategory">Subcategory</label>
+            <select id="subcategory" formControlName="subcategory">
+              @for (sub of subcategories; track sub) {
+                <option [value]="sub">{{ sub }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Pricing & Stock -->
+      <fieldset>
+        <legend>💰 Pricing & Stock</legend>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="costPrice">Cost Price <span class="required">*</span></label>
+            <input
+              id="costPrice"
+              type="number"
+              formControlName="costPrice"
+              placeholder="0"
+              min="0"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="price">Selling Price <span class="required">*</span></label>
+            <input
+              id="price"
+              type="number"
+              formControlName="price"
+              placeholder="0"
+              min="0"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="discountedPrice">Discounted Price</label>
+            <input id="discountedPrice" type="number" formControlName="discountedPrice" placeholder="0" min="0" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="stockQty">Stock Quantity <span class="required">*</span></label>
+            <input id="stockQty" type="number" formControlName="stockQty" placeholder="0" min="0" required />
+          </div>
+
+          <div class="form-group">
+            <label for="unit">Unit <span class="required">*</span></label>
+            <select id="unit" formControlName="unit" required>
+              <option value="Piece">Piece</option>
+              <option value="Roll">Roll</option>
+              <option value="Meter">Meter</option>
+              <option value="Pack">Pack</option>
+              <option value="Box">Box</option>
+              <option value="Dozen">Dozen</option>
+            </select>
+          </div>
+
+          <div class="form-group checkbox">
+            <label for="available">
+              <input id="available" type="checkbox" formControlName="available" />
+              <span>Available</span>
+            </label>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Additional Info -->
+      <fieldset>
+        <legend>📝 Additional Information</legend>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="purchaseDate">Purchase Date</label>
+            <input id="purchaseDate" type="date" formControlName="purchaseDate" />
+          </div>
+
+          <div class="form-group">
+            <label for="location">Location / Rack</label>
+            <input id="location" type="text" formControlName="location" placeholder="e.g., Rack-A, Shelf-1" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="remarks">Remarks</label>
+          <textarea id="remarks" formControlName="remarks" placeholder="Any additional notes..." rows="2"></textarea>
+        </div>
+      </fieldset>
+
+      <!-- Buttons -->
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="isLoading || productForm.invalid">
+          @if (isLoading) {
+            <span>⏳ Submitting...</span>
+          } @else {
+            <span>➕ Add Product</span>
+          }
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="resetForm()">Reset</button>
+      </div>
+    </form>
+  }
+</div>

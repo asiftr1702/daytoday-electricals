@@ -90,6 +90,18 @@
   font-weight: 600;
 }
 
+.nav-desktop a.admin-link {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  margin-left: 0.75rem;
+}
+
+.nav-desktop a.admin-link:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #66388a 100%);
+  color: white;
+}
+
 .nav-cta {
   display: none;
   margin-left: 0.75rem;
@@ -156,6 +168,13 @@
 .nav-mobile a.active {
   background: rgba(255, 214, 0, 0.18);
   color: var(--color-text);
+}
+
+.nav-mobile a.admin-link {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  margin-top: 0.5rem;
 }
 
 /* ──── Desktop breakpoint ──── */
