@@ -28,11 +28,13 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Clear npm cache and credentials
-        run: npm cache clean --force
+      - name: Create clean .npmrc
+        run: |
+          echo "registry=https://registry.npmjs.org/" > ~/.npmrc
+          echo "strict-ssl=false" >> ~/.npmrc
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --verbose
 
       - name: Build project
         run: npm run build -- --configuration production
