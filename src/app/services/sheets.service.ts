@@ -11,15 +11,37 @@ export class SheetsService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Fetch data from public Google Sheet
-   * Returns data as array of objects
+   * Fetch data from a specific sheet tab
+   * @param sheetName - Name of the sheet tab (e.g., 'Products', 'Categories', 'ShopProfile')
    */
-  getSheetData(): Observable<any[]> {
-    const url = `https://docs.google.com/spreadsheets/d/${this.sheetId}/gviz/tq?tqx=out:csv`;
+  getSheetData(sheetName: string = ''): Observable<any[]> {
+    const sheetParam = sheetName ? `&sheet=${sheetName}` : '';
+    const url = `https://docs.google.com/spreadsheets/d/${this.sheetId}/gviz/tq?tqx=out:csv${sheetParam}`;
     
     return this.http.get(url, { responseType: 'text' }).pipe(
       map(data => this.parseCSV(data))
     );
+  }
+
+  /**
+   * Fetch products from 'Products' sheet
+   */
+  getProducts(): Observable<any[]> {
+    return this.getSheetData('Products');
+  }
+
+  /**
+   * Fetch categories from 'Categories' sheet
+   */
+  getCategories(): Observable<any[]> {
+    return this.getSheetData('Categories');
+  }
+
+  /**
+   * Fetch shop profile from 'ShopProfile' sheet
+   */
+  getShopProfile(): Observable<any[]> {
+    return this.getSheetData('ShopProfile');
   }
 
   /**
