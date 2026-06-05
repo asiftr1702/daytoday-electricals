@@ -33,7 +33,7 @@ jobs:
           echo "strict-ssl=false" >> ~/.npmrc
 
       - name: Install dependencies
-        run: npm install --verbose
+        run: npm install --legacy-peer-deps --verbose
 
       - name: Build project
         run: npm run build -- --configuration production
