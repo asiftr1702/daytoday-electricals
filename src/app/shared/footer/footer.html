@@ -1,0 +1,66 @@
+<footer class="footer" role="contentinfo">
+  <div class="footer-main">
+    <div class="container footer-grid">
+
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <span aria-hidden="true">⚡</span>
+          <div>
+            <span class="footer-logo-name">DayToDay</span>
+            <span class="footer-logo-sub">Electricals</span>
+          </div>
+        </div>
+        <p class="footer-tagline">
+          Your trusted neighbourhood electrical shop. All small electricals &amp; electronics under one roof.
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <h3>Quick Links</h3>
+        <ul>
+          <li><a routerLink="/">Home</a></li>
+          <li><a routerLink="/products">Products</a></li>
+          <li><a routerLink="/contact">Contact Us</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-categories">
+        <h3>Categories</h3>
+        <ul>
+          <li><a routerLink="/products" [queryParams]="{ category: 'fans' }">Fans</a></li>
+          <li><a routerLink="/products" [queryParams]="{ category: 'lights' }">Lights</a></li>
+          <li><a routerLink="/products" [queryParams]="{ category: 'wires' }">Wires &amp; Cables</a></li>
+          <li><a routerLink="/products" [queryParams]="{ category: 'modular' }">Modular Accessories</a></li>
+          <li><a routerLink="/products" [queryParams]="{ category: 'kids-science' }">Kids Science</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-contact">
+        <h3>Visit Us</h3>
+        <address>
+          <p>
+            <span aria-label="Address">📍</span>
+            Your Shop Address,<br>City, State – PIN
+          </p>
+          <p>
+            <a href="tel:+910000000000" aria-label="Call us">
+              📞 +91 00000 00000
+            </a>
+          </p>
+          <p>
+            <span aria-label="Business hours">🕐</span>
+            Mon–Sat: 9 AM – 8 PM
+          </p>
+        </address>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="container">
+      <p>© {{ currentYear }} DayToDay Electricals. All rights reserved.</p>
+      <p class="footer-note">Browse online · Buy in-store</p>
+    </div>
+  </div>
+</footer>

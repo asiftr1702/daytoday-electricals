@@ -1,0 +1,216 @@
+<!-- ─── HERO ─────────────────────────────────────────────────────────── -->
+<section class="hero" aria-labelledby="hero-heading">
+  <div class="container hero-content">
+    <div class="hero-text">
+      <p class="hero-eyebrow">Welcome to</p>
+      <h1 id="hero-heading">
+        DayToDay<br />
+        <span class="hero-highlight">Electricals</span>
+      </h1>
+      <p class="hero-sub">
+        Your one-stop neighbourhood shop for fans, lights, wires, modular accessories,
+        mixers, drill bits, DC motors, kids science kits &amp; much more.
+      </p>
+      <div class="hero-actions">
+        <a routerLink="/products" class="btn btn-white">
+          Browse Products
+        </a>
+        <a routerLink="/contact" class="btn btn-ghost">
+          Find Us &rarr;
+        </a>
+      </div>
+    </div>
+    <div class="hero-badge" aria-hidden="true">
+      <span class="hero-icon">⚡</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HIGHLIGHTS BAR ───────────────────────────────────────────────── -->
+<div class="highlights-bar" role="region" aria-label="Shop highlights">
+  <div class="highlights-scroll">
+    <div class="highlight-item">
+      <span aria-hidden="true">🛒</span>
+      <span>1000+ Products</span>
+    </div>
+    <div class="highlight-item">
+      <span aria-hidden="true">🏷️</span>
+      <span>Best Prices</span>
+    </div>
+    <div class="highlight-item">
+      <span aria-hidden="true">✅</span>
+      <span>Trusted Brands</span>
+    </div>
+    <div class="highlight-item">
+      <span aria-hidden="true">🔧</span>
+      <span>Expert Advice</span>
+    </div>
+    <div class="highlight-item">
+      <span aria-hidden="true">🚀</span>
+      <span>Quick Service</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CATEGORIES ───────────────────────────────────────────────────── -->
+<section class="section categories-section" aria-labelledby="categories-heading">
+  <div class="container">
+    <div class="section-header">
+      <h2 id="categories-heading">Shop by Category</h2>
+      <p>Explore our wide range of electrical &amp; electronics products</p>
+    </div>
+
+    <div class="categories-grid">
+      @for (cat of categories; track cat.id) {
+        <a
+          class="cat-card"
+          [routerLink]="['/products']"
+          [queryParams]="{ category: cat.id }"
+          [style.--cat-color]="cat.color"
+          [attr.aria-label]="cat.name + ' — ' + cat.description"
+        >
+          <div class="cat-header">
+            <div class="cat-icon-wrap" aria-hidden="true">
+              <span class="cat-icon">{{ cat.icon }}</span>
+            </div>
+            <div class="cat-title-row">
+              <h3 class="cat-name">{{ cat.name }}</h3>
+              <span class="cat-arrow" aria-hidden="true">➜</span>
+            </div>
+          </div>
+
+          <div class="cat-body">
+            <p class="cat-desc">{{ cat.description }}</p>
+            <div class="cat-types" aria-label="Types available">
+              @for (sub of cat.subcategories.slice(0, 4); track sub) {
+                <span class="cat-type-tag">{{ sub }}</span>
+              }
+              @if (cat.subcategories.length > 4) {
+                <span class="cat-type-more">+{{ cat.subcategories.length - 4 }} more</span>
+              }
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+
+    <div class="categories-cta">
+      <a routerLink="/products" class="btn btn-primary">View All Products</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── OFFERS BANNER ────────────────────────────────────────────────── -->
+<section class="section offers-section" aria-labelledby="offers-heading">
+  <div class="container">
+    <div class="offers-banner">
+      <div class="offers-badge" aria-hidden="true">🏷️</div>
+      <div class="offers-text">
+        <h2 id="offers-heading">Clearance Sale — Old Stock, New Prices</h2>
+        <p>
+          We regularly clear older inventory at heavily discounted prices.
+          Look out for the <strong>% OFF</strong> tag on product cards — genuine savings
+          on trusted brands like Havells, Philips, Wipro &amp; more.
+        </p>
+        <a routerLink="/products" [queryParams]="{ offers: 'true' }" class="btn btn-offer-cta">
+          <span aria-hidden="true">🔍</span> Browse Discounted Products
+        </a>
+      </div>
+      <div class="offers-highlights" aria-hidden="true">
+        <div class="offer-highlight-item">
+          <span class="offer-hl-pct">Up to 30%</span>
+          <span class="offer-hl-label">OFF on Fans</span>
+        </div>
+        <div class="offer-highlight-item">
+          <span class="offer-hl-pct">Up to 25%</span>
+          <span class="offer-hl-label">OFF on Lights</span>
+        </div>
+        <div class="offer-highlight-item">
+          <span class="offer-hl-pct">Up to 20%</span>
+          <span class="offer-hl-label">OFF on Wires</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── WHY VISIT US ─────────────────────────────────────────────────── -->
+<section class="section why-section" aria-labelledby="why-heading">
+  <div class="container">
+    <div class="section-header">
+      <h2 id="why-heading">Why Choose Us?</h2>
+      <p>Reasons our customers keep coming back</p>
+    </div>
+
+    <div class="why-grid">
+      <div class="why-card">
+        <span class="why-icon" aria-hidden="true">🏪</span>
+        <h3>Walk-in Store</h3>
+        <p>See and feel the products before you buy. Our staff is always ready to help.</p>
+      </div>
+      <div class="why-card">
+        <span class="why-icon" aria-hidden="true">✅</span>
+        <h3>Quality Assured</h3>
+        <p>We stock only reputed brands — Havells, Legrand, Philips, Finolex &amp; more.</p>
+      </div>
+      <div class="why-card">
+        <span class="why-icon" aria-hidden="true">💰</span>
+        <h3>Best Prices</h3>
+        <p>Competitive pricing with no hidden costs. Get the best value every time.</p>
+      </div>
+      <div class="why-card">
+        <span class="why-icon" aria-hidden="true">🔬</span>
+        <h3>Kids Science Items</h3>
+        <p>Special section for educational science kits, DC motors &amp; hobby electronics.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── VISIT US CTA ──────────────────────────────────────────────────── -->
+<section class="section visit-section" aria-labelledby="visit-heading">
+  <div class="container visit-content">
+    <div class="visit-text">
+      <h2 id="visit-heading">Ready to Shop?</h2>
+      <p>
+        Browse products online and visit our store to purchase.
+        Our friendly staff will guide you to exactly what you need.
+      </p>
+      <div class="visit-actions">
+        <a routerLink="/contact" class="btn btn-white">Get Directions</a>
+        <a
+          href="https://wa.me/910000000000?text=Hi%2C%20I%20have%20an%20enquiry%20about%20your%20products"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-whatsapp"
+          aria-label="Chat with us on WhatsApp (opens in new tab)"
+        >
+          <span aria-hidden="true">💬</span> WhatsApp Us
+        </a>
+      </div>
+    </div>
+    <div class="visit-details" aria-label="Shop location details">
+      <div class="visit-info-item">
+        <span aria-hidden="true">📍</span>
+        <div>
+          <strong>Address</strong>
+          <span>Your Shop Address, City</span>
+        </div>
+      </div>
+      <div class="visit-info-item">
+        <span aria-hidden="true">🕐</span>
+        <div>
+          <strong>Hours</strong>
+          <span>Mon – Sat: 9 AM – 8 PM</span>
+        </div>
+      </div>
+      <div class="visit-info-item">
+        <span aria-hidden="true">📞</span>
+        <div>
+          <strong>Phone</strong>
+          <a href="tel:+910000000000">+91 00000 00000</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

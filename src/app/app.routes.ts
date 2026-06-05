@@ -1,3 +1,23 @@
 import { Routes } from '@angular/router';
 
-export const routes: Routes = [];
+export const routes: Routes = [
+  {
+    path: '',
+    loadComponent: () => import('./features/home/home').then(m => m.HomeComponent),
+    title: 'DayToDay Electricals — Your Local Electrical Shop',
+  },
+  {
+    path: 'products',
+    loadComponent: () => import('./features/products/products').then(m => m.ProductsComponent),
+    title: 'Products — DayToDay Electricals',
+  },
+  {
+    path: 'contact',
+    loadComponent: () => import('./features/contact/contact').then(m => m.ContactComponent),
+    title: 'Contact Us — DayToDay Electricals',
+  },
+  {
+    path: '**',
+    redirectTo: '',
+  },
+];

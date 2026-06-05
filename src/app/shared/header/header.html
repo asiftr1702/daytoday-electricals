@@ -1,0 +1,54 @@
+<div class="notice-bar" role="note">
+  <div class="container">
+    <span>📍 Visit our store to purchase. Online ordering not available.</span>
+  </div>
+</div>
+
+<header class="header" role="banner">
+  <div class="container header-inner">
+    <a routerLink="/" class="logo" aria-label="DayToDay Electricals - Go to homepage" (click)="closeMenu()">
+      <span class="logo-bolt" aria-hidden="true">⚡</span>
+      <div class="logo-text">
+        <span class="logo-name">DayToDay</span>
+        <span class="logo-sub">Electricals</span>
+      </div>
+    </a>
+
+    <nav class="nav-desktop" aria-label="Main navigation">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+      <a routerLink="/products" routerLinkActive="active">Products</a>
+      <a routerLink="/contact" routerLinkActive="active">Contact Us</a>
+    </nav>
+
+    <a routerLink="/products" class="btn btn-primary nav-cta" aria-label="Browse all products">
+      Browse Products
+    </a>
+
+    <button
+      class="hamburger"
+      type="button"
+      [attr.aria-expanded]="menuOpen()"
+      aria-controls="mobile-menu"
+      aria-label="Toggle navigation menu"
+      (click)="toggleMenu()"
+    >
+      <span class="bar" [class.open]="menuOpen()"></span>
+      <span class="bar" [class.open]="menuOpen()"></span>
+      <span class="bar" [class.open]="menuOpen()"></span>
+    </button>
+  </div>
+
+  @if (menuOpen()) {
+    <nav id="mobile-menu" class="nav-mobile" aria-label="Mobile navigation">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">
+        <span aria-hidden="true">🏠</span> Home
+      </a>
+      <a routerLink="/products" routerLinkActive="active" (click)="closeMenu()">
+        <span aria-hidden="true">📦</span> Products
+      </a>
+      <a routerLink="/contact" routerLinkActive="active" (click)="closeMenu()">
+        <span aria-hidden="true">📍</span> Contact Us
+      </a>
+    </nav>
+  }
+</header>

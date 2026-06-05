@@ -1,0 +1,160 @@
+<!-- ─── PAGE HEADER ──────────────────────────────────────────────────── -->
+<section class="page-hero" aria-labelledby="products-heading">
+  <div class="container">
+    <h1 id="products-heading">Our Products</h1>
+    <p>Browse all available items. Visit our store to purchase.</p>
+  </div>
+</section>
+
+<!-- ─── CATEGORY TABS ────────────────────────────────────────────────── -->
+<nav class="category-tabs-wrapper" aria-label="Product categories">
+  <div class="category-tabs-scroll">
+    @for (cat of categories; track cat.id) {
+      <button
+        type="button"
+        class="cat-tab"
+        [class.active]="selectedCategoryId() === cat.id"
+        [attr.aria-current]="selectedCategoryId() === cat.id ? 'page' : null"
+        (click)="selectCategory(cat.id)"
+      >
+        <span aria-hidden="true">{{ cat.icon }}</span>
+        <span>{{ cat.name }}</span>
+      </button>
+    }
+  </div>
+</nav>
+
+<!-- ─── SUBCATEGORY CHIPS ─────────────────────────────────────────────── -->
+@if (!loading() && availableSubcategories().length > 1) {
+  <div class="subcategory-bar" role="group" aria-label="Filter by subcategory">
+    <div class="subcategory-scroll">
+      <button
+        type="button"
+        class="sub-chip"
+        [class.active]="selectedSubcategory() === 'all'"
+        (click)="selectSubcategory('all')"
+      >
+        All {{ selectedCategory().name }}
+      </button>
+      @for (sub of availableSubcategories(); track sub) {
+        <button
+          type="button"
+          class="sub-chip"
+          [class.active]="selectedSubcategory() === sub"
+          (click)="selectSubcategory(sub)"
+        >
+          {{ sub }}
+        </button>
+      }
+    </div>
+  </div>
+}
+
+<!-- ─── PRODUCTS AREA ────────────────────────────────────────────────── -->
+<main class="container products-main" id="products-area">
+
+  <!-- Offers filter banner -->
+  @if (offersOnly()) {
+    <div class="offers-filter-bar" role="status">
+      <span class="offers-filter-icon" aria-hidden="true">🏷️</span>
+      <span class="offers-filter-text">
+        Showing <strong>discounted products only</strong> across all categories
+      </span>
+      <button
+        type="button"
+        class="offers-filter-clear"
+        (click)="clearOffersFilter()"
+        aria-label="Clear offers filter"
+      >
+        ✕ Show all
+      </button>
+    </div>
+  }
+
+  <!-- Search bar -->
+  <div class="search-bar" role="search">
+    <span class="search-icon" aria-hidden="true">🔍</span>
+    <input
+      type="search"
+      class="search-input"
+      [placeholder]="offersOnly() ? 'Search discounted products…' : 'Search in ' + selectedCategory().name + '…'"
+      [value]="searchQuery()"
+      (input)="searchQuery.set($any($event.target).value)"
+      aria-label="Search products"
+    />
+    @if (searchQuery()) {
+      <button
+        type="button"
+        class="search-clear"
+        (click)="clearSearch()"
+        aria-label="Clear search"
+      >✕</button>
+    }
+  </div>
+
+  <!-- Result count -->
+  @if (!loading() && !error()) {
+    <p class="result-count" aria-live="polite">
+      @if (offersOnly()) {
+        {{ filteredProducts().length }} discounted item{{ filteredProducts().length !== 1 ? 's' : '' }} found
+      } @else if (searchQuery()) {
+        {{ filteredProducts().length }} result{{ filteredProducts().length !== 1 ? 's' : '' }}
+        for "<strong>{{ searchQuery() }}</strong>"
+        in {{ selectedCategory().name }}
+      } @else {
+        {{ filteredProducts().length }} item{{ filteredProducts().length !== 1 ? 's' : '' }}
+        in {{ selectedCategory().name }}
+      }
+    </p>
+  }
+
+  <!-- Loading skeletons -->
+  @if (loading()) {
+    <div class="products-grid" aria-busy="true" aria-label="Loading products">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <div class="skeleton-card" aria-hidden="true">
+          <div class="skeleton-image"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line long"></div>
+            <div class="skeleton-line medium"></div>
+          </div>
+          <div class="skeleton-footer"></div>
+        </div>
+      }
+    </div>
+  } @else if (error()) {
+    <!-- Error state -->
+    <div class="state-box" role="alert">
+      <span class="state-icon" aria-hidden="true">⚠️</span>
+      <h2>Could not load products</h2>
+      <p>{{ error() }}</p>
+      <button type="button" class="btn btn-primary" (click)="selectCategory(selectedCategoryId())">
+        Retry
+      </button>
+    </div>
+  } @else if (filteredProducts().length === 0) {
+    <!-- Empty state -->
+    <div class="state-box">
+      @if (searchQuery()) {
+        <span class="state-icon" aria-hidden="true">🔍</span>
+        <h2>No results found</h2>
+        <p>No products match "<strong>{{ searchQuery() }}</strong>". Try a different keyword.</p>
+        <button type="button" class="btn btn-outline" (click)="clearSearch()">
+          Clear Search
+        </button>
+      } @else {
+        <span class="state-icon" aria-hidden="true">📦</span>
+        <h2>No products listed yet</h2>
+        <p>{{ selectedCategory().name }} inventory is being updated. Check back soon or visit our store.</p>
+      }
+    </div>
+  } @else {
+    <!-- Products grid -->
+    <div class="products-grid">
+      @for (product of filteredProducts(); track product.name + (product.brand ?? '') + (product.subcategory ?? '')) {
+        <app-product-card [product]="product" />
+      }
+    </div>
+  }
+</main>
