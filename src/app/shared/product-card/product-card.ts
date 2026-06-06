@@ -35,6 +35,19 @@ export class ProductCardComponent {
     return '₹\u202f' + p.toLocaleString('en-IN');
   });
 
+  readonly costVisible = signal(false);
+
+  readonly costPriceDisplay = computed(() => {
+    const p = this.product().costPrice;
+    if (!p) return null;
+    return '₹\u202f' + p.toLocaleString('en-IN');
+  });
+
+  toggleCost(event: Event): void {
+    event.stopPropagation();
+    this.costVisible.update(v => !v);
+  }
+
   readonly lightboxOpen = signal(false);
   private readonly dialogRef = viewChild<ElementRef<HTMLDialogElement>>('lightboxDialog');
   private readonly platformId = inject(PLATFORM_ID);

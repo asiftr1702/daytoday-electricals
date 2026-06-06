@@ -75,7 +75,26 @@
     } @else {
       <div class="price price-request">Price on request</div>
     }
+    @if (costPriceDisplay()) {
+      <button
+        type="button"
+        class="cost-toggle"
+        (click)="toggleCost($event)"
+        [attr.aria-label]="costVisible() ? 'Hide cost price' : 'Show cost price'"
+        [attr.aria-pressed]="costVisible()"
+      >
+        <span class="cost-eye">{{ costVisible() ? '🙈' : '👁️' }}</span>
+      </button>
+    }
   </div>
+
+  @if (costVisible() && costPriceDisplay()) {
+    <div class="cost-reveal" role="status">
+      <span class="cost-label">Cost</span>
+      <span class="cost-value">{{ costPriceDisplay() }}</span>
+      <span class="cost-unit">/ {{ product().unit }}</span>
+    </div>
+  }
 
   <!-- ── CTA bar ── -->
   <div class="card-cta" aria-label="Visit store to buy {{ product().name }}">

@@ -226,6 +226,93 @@
   white-space: nowrap;
 }
 
+/* ─── COST PRICE REVEAL ─────────────────────────────────────────────────── */
+.cost-toggle {
+  margin-left: auto;
+  background: none;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 99px;
+  cursor: pointer;
+  padding: 0.15rem 0.5rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.cost-toggle:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #111111;
+}
+
+.cost-toggle[aria-pressed="true"] {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.cost-eye {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.cost-reveal {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  padding: 0.35rem 1rem 0.45rem;
+  background: #fffbeb;
+  border-top: 1px dashed #f59e0b;
+  animation: cost-in 0.18s ease;
+}
+
+@keyframes cost-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cost-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cost-value {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.cost-unit {
+  font-size: 0.65rem;
+  color: #b45309;
+}
+
+@media (max-width: 479px) {
+  .cost-reveal {
+    padding: 0.25rem 0.6rem 0.3rem;
+  }
+
+  .cost-value {
+    font-size: 0.75rem;
+  }
+
+  .cost-label,
+  .cost-unit {
+    font-size: 0.58rem;
+  }
+}
+
 /* ─── CTA BAR ────────────────────────────────────────────────────────────── */
 .card-cta {
   display: flex;
