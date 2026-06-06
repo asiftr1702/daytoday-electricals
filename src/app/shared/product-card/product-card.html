@@ -7,17 +7,17 @@
   <!-- ── Image / Placeholder ── -->
   <div
     class="card-image"
-    [class.clickable]="!!product().imageUrl"
+    [class.clickable]="!!effectiveImageUrl()"
     (click)="openLightbox()"
-    [attr.role]="product().imageUrl ? 'button' : null"
-    [attr.tabindex]="product().imageUrl ? '0' : null"
-    [attr.aria-label]="product().imageUrl ? 'View ' + product().name + ' image' : null"
+    [attr.role]="effectiveImageUrl() ? 'button' : null"
+    [attr.tabindex]="effectiveImageUrl() ? '0' : null"
+    [attr.aria-label]="effectiveImageUrl() ? 'View ' + product().name + ' image' : null"
     (keydown.enter)="openLightbox()"
     (keydown.space)="$event.preventDefault(); openLightbox()"
   >
-    @if (product().imageUrl) {
+    @if (effectiveImageUrl()) {
       <img
-        [src]="product().imageUrl"
+        [src]="effectiveImageUrl()"
         [alt]="product().name"
         class="product-img"
         loading="lazy"
@@ -26,6 +26,12 @@
       <div class="card-img-placeholder" aria-hidden="true">
         <span class="placeholder-icon">📦</span>
       </div>
+      <button
+        type="button"
+        class="add-img-btn"
+        (click)="openLinkDialog($event)"
+        aria-label="Add product image"
+      >📎 Add image</button>
     }
     <!-- Offer tag overlaid on image -->
     @if (isOffer()) {
@@ -120,12 +126,43 @@
       aria-label="Close image"
     >✕</button>
     <img
-      [src]="product().imageUrl"
+      [src]="effectiveImageUrl()"
       [alt]="product().name"
       class="lightbox-img"
     />
     <p class="lightbox-caption">
       @if (product().brand) {<strong>{{ product().brand }}</strong> · }{{ product().name }}
     </p>
+  </div>
+</dialog>
+
+<!-- ── Drive link dialog ── -->
+<dialog
+  #linkDialog
+  class="link-dialog"
+  (cancel)="closeLinkDialog()"
+>
+  <div class="link-dialog-content">
+    <h3 class="link-dialog-title">🖼️ Add Product Image</h3>
+    <p class="link-dialog-hint">
+      Paste any image URL — from Google Drive, WhatsApp, or anywhere else.
+    </p>
+    <input
+      type="url"
+      class="link-dialog-input"
+      placeholder="https://example.com/image.jpg"
+      [value]="linkInput()"
+      (input)="linkInput.set($any($event.target).value)"
+      (keydown.enter)="saveDriveLink()"
+    />
+    @if (linkError()) {
+      <p class="link-dialog-error">{{ linkError() }}</p>
+    }
+    <div class="link-dialog-actions">
+      <button type="button" class="link-btn-save" (click)="saveDriveLink()" [disabled]="linkSaving()">
+        {{ linkSaving() ? 'Saving…' : 'Save Image' }}
+      </button>
+      <button type="button" class="link-btn-cancel" (click)="closeLinkDialog()">Cancel</button>
+    </div>
   </div>
 </dialog>

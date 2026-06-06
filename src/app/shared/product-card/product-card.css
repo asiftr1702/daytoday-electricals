@@ -432,6 +432,129 @@
     font-size: 0.75rem;
   }
 }
+/* ─── ADD IMAGE BUTTON (placeholder overlay) ─────────────────────────────── */
+.add-img-btn {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: none;
+  border-radius: 99px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+  z-index: 2;
+}
+
+.add-img-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* ─── DRIVE LINK DIALOG ──────────────────────────────────────────────────── */
+.link-dialog {
+  border: none;
+  background: transparent;
+  padding: 0;
+  max-width: min(92vw, 420px);
+  width: 100%;
+  outline: none;
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+}
+
+.link-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.link-dialog-content {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+  animation: lb-in 0.18s ease;
+}
+
+.link-dialog-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+}
+
+.link-dialog-hint {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.link-dialog-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.link-dialog-input:focus {
+  border-color: #4285f4;
+}
+
+.link-dialog-error {
+  font-size: 0.75rem;
+  color: #dc2626;
+  margin: 0;
+}
+
+.link-dialog-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.link-btn-save {
+  padding: 0.45rem 1.1rem;
+  background: #4285f4;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.link-btn-save:hover:not(:disabled) { background: #2b6de0; }
+.link-btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.link-btn-cancel {
+  padding: 0.45rem 1rem;
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.link-btn-cancel:hover { background: #e5e7eb; }
+
 /* ─── LIGHTBOX ───────────────────────────────────────────────────────────── */
 .lightbox-dialog {
   border: none;

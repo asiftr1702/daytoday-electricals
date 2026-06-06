@@ -11,7 +11,7 @@ import {
   Timestamp,
 } from '@angular/fire/firestore';
 import { Observable, from } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 import { Product } from '../models/product.model';
 
 /**
@@ -29,6 +29,23 @@ export class FirebaseAdminService {
 
   // Collection name in Firestore
   private readonly PRODUCTS_COLLECTION = 'products';
+
+  /**
+   * Update only the imageUrl of a product, looked up by SKU.
+   */
+  updateImageUrl(sku: string, imageUrl: string): Observable<void> {
+    const q = query(
+      collection(this.firestore, this.PRODUCTS_COLLECTION),
+      where('sku', '==', sku)
+    );
+    return from(getDocs(q)).pipe(
+      switchMap((snap) => {
+        if (snap.empty) throw new Error(`Product SKU ${sku} not found in Firestore`);
+        const docRef = doc(this.firestore, this.PRODUCTS_COLLECTION, snap.docs[0].id);
+        return from(updateDoc(docRef, { imageUrl, updatedAt: Timestamp.now() }));
+      })
+    );
+  }
 
   /**
    * Submit a new product to Firestore

@@ -1,4 +1,5 @@
 export interface Product {
+  id?: string;        // Firestore document ID (populated on read)
   sku?: string;
   name: string;
   subcategory?: string;
