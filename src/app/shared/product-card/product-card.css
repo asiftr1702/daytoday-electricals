@@ -10,6 +10,10 @@
   transition: box-shadow 0.22s ease, transform 0.22s ease;
 }
 
+.product-card {
+  cursor: pointer;
+}
+
 .product-card:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   transform: translateY(-4px);
@@ -140,8 +144,8 @@
 }
 
 .product-name {
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.92rem;
+  font-weight: 600;
   color: #111111;
   line-height: 1.4;
   display: -webkit-box;
@@ -166,12 +170,10 @@
 /* ─── CARD FOOTER ─────────────────────────────────────────────────────────── */
 .card-footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.625rem 1rem 0.75rem;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.7rem 1rem 0.6rem;
   border-top: 1px solid #F0F0F0;
-  flex-wrap: nowrap;
   margin-top: auto;
 }
 
@@ -224,32 +226,125 @@
   white-space: nowrap;
 }
 
-/* ─── VISIT STORE CHIP ────────────────────────────────────────────────────── */
-.visit-chip {
-  display: inline-flex;
+/* ─── CTA BAR ────────────────────────────────────────────────────────────── */
+.card-cta {
+  display: flex;
   align-items: center;
-  gap: 0.3rem;
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: #111111;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1rem;
   background: var(--color-primary);
-  border: 2px solid var(--color-primary);
-  padding: 0.35rem 0.8rem;
-  border-radius: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #111111;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   transition: background 0.18s ease;
+  flex-shrink: 0;
 }
 
-.product-card:hover .visit-chip {
+.product-card:hover .card-cta {
   background: var(--color-primary-dark);
+}
+
+.cta-arrow {
+  font-size: 0.9rem;
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.product-card:hover .cta-arrow {
+  transform: translateX(4px);
 }
 
 /* ─── IMAGE CLICK AFFORDANCE ─────────────────────────────────────────────── */
 .card-image.clickable {
   cursor: zoom-in;
 }
+/* ─── MOBILE COMPACT ─────────────────────────────────────────────────────────── */
+@media (max-width: 479px) {
+  .product-card {
+    border-radius: 10px;
+  }
 
+  .card-image {
+    height: 85px;
+  }
+
+  .product-img {
+    padding: 0.4rem;
+  }
+
+  .placeholder-icon {
+    font-size: 1.75rem;
+  }
+
+  .offer-tag,
+  .stock-badge {
+    font-size: 0.55rem;
+    padding: 0.1rem 0.35rem;
+    top: 0.3rem;
+    gap: 0.15rem;
+  }
+
+  .offer-tag { left: 0.3rem; }
+  .stock-badge { right: 0.3rem; }
+
+  .stock-dot {
+    width: 4px;
+    height: 4px;
+  }
+
+  .card-body {
+    padding: 0.5rem 0.6rem 0.3rem;
+    gap: 0.2rem;
+  }
+
+  .brand-tag {
+    font-size: 0.58rem;
+    padding: 0.06rem 0.35rem;
+    letter-spacing: 0.02em;
+  }
+
+  .product-name {
+    font-size: 0.75rem;
+    line-height: 1.3;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    margin-top: 0;
+  }
+
+  .product-desc {
+    display: none;
+  }
+
+  .card-footer {
+    padding: 0.35rem 0.6rem;
+  }
+
+  .price-value,
+  .price-offer {
+    font-size: 0.8rem;
+  }
+
+  .price-mrp {
+    font-size: 0.62rem;
+  }
+
+  .price-unit {
+    font-size: 0.58rem;
+  }
+
+  .card-cta {
+    padding: 0.38rem 0.6rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.02em;
+  }
+
+  .cta-arrow {
+    font-size: 0.75rem;
+  }
+}
 /* ─── LIGHTBOX ───────────────────────────────────────────────────────────── */
 .lightbox-dialog {
   border: none;

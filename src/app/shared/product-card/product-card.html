@@ -75,9 +75,12 @@
     } @else {
       <div class="price price-request">Price on request</div>
     }
-    <div class="visit-chip" aria-label="Visit store to buy">
-      <span aria-hidden="true">🏪</span> Visit Store
-    </div>
+  </div>
+
+  <!-- ── CTA bar ── -->
+  <div class="card-cta" aria-label="Visit store to buy {{ product().name }}">
+    <span>Visit Store</span>
+    <span class="cta-arrow" aria-hidden="true">→</span>
   </div>
 
 </article>
