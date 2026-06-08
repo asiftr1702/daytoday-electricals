@@ -32,19 +32,27 @@
       @if (imageUploading()) {
         <span class="add-img-btn add-img-uploading" aria-live="polite">⏳ Saving…</span>
       } @else {
-        <label
-          class="add-img-btn"
-          (click)="$event.stopPropagation()"
-          aria-label="Add product image"
-        >
-          📷 Add image
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            class="card-img-file-input"
-            (change)="onImageFileSelected($event)"
-          />
-        </label>
+        <div class="add-img-options" (click)="$event.stopPropagation()">
+          <label class="add-img-btn" aria-label="Take photo">
+            📷
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              class="card-img-file-input"
+              (change)="onImageFileSelected($event)"
+            />
+          </label>
+          <label class="add-img-btn" aria-label="Choose from gallery">
+            🖼️
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="card-img-file-input"
+              (change)="onImageFileSelected($event)"
+            />
+          </label>
+        </div>
       }
       @if (imageUploadError()) {
         <p class="card-img-error" role="alert">{{ imageUploadError() }}</p>

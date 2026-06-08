@@ -486,6 +486,22 @@
   background: rgba(0, 0, 0, 0.45);
 }
 
+/* Two-button row for camera / gallery */
+.add-img-options {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.35rem;
+  z-index: 2;
+}
+
+.add-img-options .add-img-btn {
+  position: static;
+  transform: none;
+}
+
 .card-img-error {
   position: absolute;
   bottom: 0.25rem;

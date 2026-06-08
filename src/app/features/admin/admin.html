@@ -177,37 +177,62 @@
         <legend>🖼️ Product Image</legend>
 
         @if (!imagePreview()) {
-          <div class="image-upload-area" (click)="imageInput.click()" (keydown.enter)="imageInput.click()" tabindex="0" role="button" aria-label="Upload product image">
-            <span class="image-upload-icon" aria-hidden="true">📷</span>
-            <p class="image-upload-hint">Click to select an image</p>
-            <p class="image-upload-sub">JPEG, PNG or WebP · max 10 MB · will be compressed</p>
-            <input
-              #imageInput
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              class="image-file-input"
-              aria-label="Choose product image file"
-              (change)="onImageSelected($event)"
-            />
+          <div class="image-source-row">
+            <label class="image-source-btn" tabindex="0" (keydown.enter)="cameraInput.click()">
+              <span class="image-source-icon" aria-hidden="true">📷</span>
+              <span>Camera</span>
+              <input
+                #cameraInput
+                type="file"
+                accept="image/*"
+                capture="environment"
+                class="image-file-input"
+                aria-label="Take a photo"
+                (change)="onImageSelected($event)"
+              />
+            </label>
+            <label class="image-source-btn" tabindex="0" (keydown.enter)="galleryInput.click()">
+              <span class="image-source-icon" aria-hidden="true">🖼️</span>
+              <span>Gallery</span>
+              <input
+                #galleryInput
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                class="image-file-input"
+                aria-label="Choose from gallery"
+                (change)="onImageSelected($event)"
+              />
+            </label>
           </div>
+          <p class="image-upload-sub" style="margin-top:0.5rem">max 10 MB · will be compressed</p>
         } @else {
           <div class="image-preview-container">
             <img [src]="imagePreview()" alt="Product image preview" class="image-preview" />
             <div class="image-preview-actions">
-              <button type="button" class="btn btn-outline btn-sm" (click)="imageInput2.click()">
-                🔄 Change
-              </button>
+              <label class="btn btn-outline btn-sm">
+                📷 Camera
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  class="image-file-input"
+                  aria-label="Retake photo"
+                  (change)="onImageSelected($event)"
+                />
+              </label>
+              <label class="btn btn-outline btn-sm">
+                🖼️ Gallery
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  class="image-file-input"
+                  aria-label="Replace from gallery"
+                  (change)="onImageSelected($event)"
+                />
+              </label>
               <button type="button" class="btn btn-danger btn-sm" (click)="removeImage()">
                 🗑️ Remove
               </button>
-              <input
-                #imageInput2
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                class="image-file-input"
-                aria-label="Replace product image file"
-                (change)="onImageSelected($event)"
-              />
             </div>
           </div>
         }

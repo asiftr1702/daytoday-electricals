@@ -302,6 +302,44 @@ textarea {
   }
 }
 
+/* Camera / Gallery source buttons */
+.image-source-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.image-source-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.25rem 2rem;
+  border: 2px solid #c0c0c0;
+  border-radius: 10px;
+  background: #fafafa;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #444;
+  transition: border-color 0.2s, background 0.2s;
+  flex: 1;
+  min-width: 120px;
+}
+
+.image-source-btn:hover,
+.image-source-btn:focus {
+  border-color: #667eea;
+  background: #f0f0ff;
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+.image-source-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
 /* ── Image Upload ─────────────────────────────────────────────────────── */
 
 /* Hidden native file input */
