@@ -1,13 +1,15 @@
 <div class="admin-container">
   <div class="admin-header">
     <h1>📦 Product Admin</h1>
-    <p>Add new products to Google Sheets</p>
+    <p>Add new products to inventory</p>
   </div>
+
+  <div class="admin-content">
 
   <!-- Category Selection -->
   <div class="category-section">
-    <h2>Select Category</h2>
-    <div class="category-grid">
+    <h2>Category</h2>
+    <div class="category-scroll">
       @for (category of categories; track category.id) {
         <button
           class="category-btn"
@@ -21,8 +23,6 @@
       }
     </div>
   </div>
-
-  <!-- Product Form -->
   @if (selectedCategory) {
     <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="product-form">
       <h2>Add Product to {{ selectedCategory.name }}</h2>
@@ -260,7 +260,7 @@
   @if (selectedCategory) {
     <section class="product-sheet">
       <div class="sheet-header">
-        <h2>📋 {{ selectedCategory.name }} — Products</h2>
+        <h2>📋 {{ selectedCategory.name }}</h2>
         <span class="sheet-count">{{ products().length }} item{{ products().length !== 1 ? 's' : '' }}</span>
       </div>
 
@@ -269,15 +269,69 @@
       } @else if (products().length === 0) {
         <p class="sheet-empty">No products yet. Add one above.</p>
       } @else {
+        <!-- Mobile: card list -->
+        <div class="sheet-card-list">
+          @for (p of products(); track p.id) {
+            <div class="sheet-card" [class.row-deleting]="deletingId() === p.id">
+              <div class="sheet-card-thumb">
+                @if (p.imageUrl) {
+                  <img [src]="p.imageUrl" [alt]="p.name" class="sheet-thumb" />
+                } @else {
+                  <span class="sheet-thumb-placeholder" aria-hidden="true">📦</span>
+                }
+              </div>
+              <div class="sheet-card-info">
+                <div class="sheet-card-name">{{ p.name }}</div>
+                <div class="sheet-card-meta">
+                  @if (p.sku) { <span class="sheet-card-sku">{{ p.sku }}</span> }
+                  @if (p.brand) { <span class="sheet-card-brand">{{ p.brand }}</span> }
+                </div>
+                @if (p.price) {
+                  <div class="sheet-card-price">
+                    @if (p.discountedPrice) {
+                      <span class="price-strike">₹{{ p.price }}</span>
+                      <span class="price-offer">₹{{ p.discountedPrice }}</span>
+                    } @else { ₹{{ p.price }} }
+                    <span class="sheet-card-unit"> / {{ p.unit }}</span>
+                  </div>
+                }
+                <div class="sheet-card-badges">
+                  <span class="avail-badge" [class.avail-yes]="p.available" [class.avail-no]="!p.available">
+                    {{ p.available ? 'In Stock' : 'Out' }}
+                  </span>
+                  @if (p.stockQty != null) {
+                    <span class="sheet-card-stock">Qty: {{ p.stockQty }}</span>
+                  }
+                </div>
+              </div>
+              <div class="sheet-card-actions">
+                @if (confirmDeleteId() === p.id) {
+                  <div class="confirm-group">
+                    <span class="confirm-prompt">Delete?</span>
+                    <button type="button" class="btn-icon btn-confirm-yes" (click)="confirmDelete(p.id!)" aria-label="Confirm delete">✓</button>
+                    <button type="button" class="btn-icon btn-confirm-no" (click)="cancelDelete()" aria-label="Cancel">✕</button>
+                  </div>
+                } @else {
+                  <button type="button" class="btn-icon btn-delete" [disabled]="deletingId() === p.id" (click)="requestDelete(p.id!)" [attr.aria-label]="'Delete ' + p.name">
+                    {{ deletingId() === p.id ? '⏳' : '🗑️' }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Desktop: table -->
         <div class="sheet-table-wrap">
           <table class="sheet-table" aria-label="Products in {{ selectedCategory.name }}">
             <thead>
               <tr>
-                <th>Image</th>
+                <th class="col-thumb"></th>
                 <th>SKU</th>
                 <th>Name</th>
                 <th>Brand</th>
                 <th>Subcategory</th>
+                <th>Cost (₹)</th>
                 <th>Price (₹)</th>
                 <th>Stock</th>
                 <th>Available</th>
@@ -287,7 +341,6 @@
             <tbody>
               @for (p of products(); track p.id) {
                 <tr [class.row-deleting]="deletingId() === p.id">
-                  <!-- Thumbnail -->
                   <td class="col-thumb">
                     @if (p.imageUrl) {
                       <img [src]="p.imageUrl" [alt]="p.name" class="sheet-thumb" />
@@ -299,6 +352,7 @@
                   <td class="col-name">{{ p.name }}</td>
                   <td>{{ p.brand || '—' }}</td>
                   <td>{{ p.subcategory || '—' }}</td>
+                  <td>{{ p.costPrice ?? '—' }}</td>
                   <td class="col-price">
                     @if (p.discountedPrice) {
                       <span class="price-strike">{{ p.price }}</span>
@@ -313,35 +367,14 @@
                       {{ p.available ? 'Yes' : 'No' }}
                     </span>
                   </td>
-                  <!-- Delete -->
                   <td class="col-actions">
                     @if (confirmDeleteId() === p.id) {
                       <span class="confirm-prompt">Delete?</span>
-                      <button
-                        type="button"
-                        class="btn-icon btn-confirm-yes"
-                        (click)="confirmDelete(p.id!)"
-                        aria-label="Confirm delete {{ p.name }}"
-                      >✓</button>
-                      <button
-                        type="button"
-                        class="btn-icon btn-confirm-no"
-                        (click)="cancelDelete()"
-                        aria-label="Cancel delete"
-                      >✕</button>
+                      <button type="button" class="btn-icon btn-confirm-yes" (click)="confirmDelete(p.id!)" aria-label="Confirm delete">✓</button>
+                      <button type="button" class="btn-icon btn-confirm-no" (click)="cancelDelete()" aria-label="Cancel">✕</button>
                     } @else {
-                      <button
-                        type="button"
-                        class="btn-icon btn-delete"
-                        [disabled]="deletingId() === p.id"
-                        (click)="requestDelete(p.id!)"
-                        [attr.aria-label]="'Delete ' + p.name"
-                      >
-                        @if (deletingId() === p.id) {
-                          ⏳
-                        } @else {
-                          🗑️
-                        }
+                      <button type="button" class="btn-icon btn-delete" [disabled]="deletingId() === p.id" (click)="requestDelete(p.id!)" [attr.aria-label]="'Delete ' + p.name">
+                        {{ deletingId() === p.id ? '⏳' : '🗑️' }}
                       </button>
                     }
                   </td>
@@ -353,4 +386,6 @@
       }
     </section>
   }
+
+  </div><!-- /admin-content -->
 </div>
