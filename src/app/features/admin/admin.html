@@ -25,7 +25,7 @@
   </div>
   @if (selectedCategory) {
     <form [formGroup]="productForm" (ngSubmit)="onSubmit()" class="product-form">
-      <h2>Add Product to {{ selectedCategory.name }}</h2>
+      <h2>{{ editingProduct() ? '✏️ Edit: ' + editingProduct()!.name : 'Add Product to ' + selectedCategory.name }}</h2>
 
       <!-- Messages -->
       @if (successMessage) {
@@ -246,12 +246,18 @@
       <div class="form-actions">
         <button type="submit" class="btn btn-primary" [disabled]="isLoading || productForm.invalid">
           @if (isLoading) {
-            <span>⏳ Submitting...</span>
+            <span>⏳ Saving...</span>
+          } @else if (editingProduct()) {
+            <span>💾 Update Product</span>
           } @else {
             <span>➕ Add Product</span>
           }
         </button>
-        <button type="button" class="btn btn-secondary" (click)="resetForm()">Reset</button>
+        @if (editingProduct()) {
+          <button type="button" class="btn btn-secondary" (click)="cancelEdit()">Cancel Edit</button>
+        } @else {
+          <button type="button" class="btn btn-secondary" (click)="resetForm()">Reset</button>
+        }
       </div>
     </form>
   }
@@ -312,6 +318,7 @@
                     <button type="button" class="btn-icon btn-confirm-no" (click)="cancelDelete()" aria-label="Cancel">✕</button>
                   </div>
                 } @else {
+                  <button type="button" class="btn-icon btn-edit" [disabled]="deletingId() === p.id" (click)="startEdit(p)" [attr.aria-label]="'Edit ' + p.name">✏️</button>
                   <button type="button" class="btn-icon btn-delete" [disabled]="deletingId() === p.id" (click)="requestDelete(p.id!)" [attr.aria-label]="'Delete ' + p.name">
                     {{ deletingId() === p.id ? '⏳' : '🗑️' }}
                   </button>
@@ -373,6 +380,7 @@
                       <button type="button" class="btn-icon btn-confirm-yes" (click)="confirmDelete(p.id!)" aria-label="Confirm delete">✓</button>
                       <button type="button" class="btn-icon btn-confirm-no" (click)="cancelDelete()" aria-label="Cancel">✕</button>
                     } @else {
+                      <button type="button" class="btn-icon btn-edit" [disabled]="deletingId() === p.id" (click)="startEdit(p)" [attr.aria-label]="'Edit ' + p.name">✏️</button>
                       <button type="button" class="btn-icon btn-delete" [disabled]="deletingId() === p.id" (click)="requestDelete(p.id!)" [attr.aria-label]="'Delete ' + p.name">
                         {{ deletingId() === p.id ? '⏳' : '🗑️' }}
                       </button>

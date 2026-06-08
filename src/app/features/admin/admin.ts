@@ -31,6 +31,7 @@ export class AdminComponent implements OnInit {
   productsLoading = signal(false);
   deletingId = signal<string | null>(null);
   confirmDeleteId = signal<string | null>(null);
+  editingProduct = signal<Product | null>(null);
 
   // Image upload state
   imagePreview = signal<string | null>(null);
@@ -81,6 +82,46 @@ export class AdminComponent implements OnInit {
       },
       error: () => this.productsLoading.set(false),
     });
+  }
+
+  startEdit(product: Product): void {
+    this.editingProduct.set(product);
+    this.confirmDeleteId.set(null);
+    // Select the matching category first
+    const cat = this.categories.find(c => c.id === (product as any)['category']);
+    if (cat && this.selectedCategory?.id !== cat.id) {
+      this.selectedCategory = cat;
+      this.subcategories = [...cat.subcategories];
+    }
+    this.productForm.patchValue({
+      sku: product.sku ?? '',
+      name: product.name,
+      description: product.description ?? '',
+      subcategory: product.subcategory ?? '',
+      brand: product.brand ?? '',
+      price: product.price ?? 0,
+      costPrice: product.costPrice ?? 0,
+      discountedPrice: product.discountedPrice ?? 0,
+      stockQty: product.stockQty ?? 0,
+      unit: product.unit,
+      available: product.available,
+      purchaseDate: product.purchaseDate ?? '',
+      location: product.location ?? '',
+      remarks: product.remarks ?? '',
+    });
+    // Retain existing image preview if present
+    this.imagePreview.set(product.imageUrl ?? null);
+    this.imageFile = null;
+    // Scroll form into view
+    setTimeout(() => document.querySelector('.product-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+
+  cancelEdit(): void {
+    this.editingProduct.set(null);
+    this.productForm.reset({ unit: 'Piece', available: true });
+    this.removeImage();
+    this.successMessage = '';
+    this.errorMessage = '';
   }
 
   requestDelete(id: string): void {
@@ -203,24 +244,47 @@ export class AdminComponent implements OnInit {
       ...(imageUrl ? { imageUrl } : {}),
     };
 
-    this.firebaseAdmin.submitProduct(product, this.selectedCategory.id).subscribe({
-      next: () => {
-        this.successMessage = `✅ Product "${product.name}" added successfully!`;
-        this.productForm.reset({ unit: 'Piece', available: true });
-        this.removeImage();
-        this.isLoading = false;
-        this.loadProducts();
-        setTimeout(() => (this.successMessage = ''), 3000);
-      },
-      error: (err) => {
-        console.error('Error submitting product:', err);
-        this.errorMessage = `❌ Error: ${err?.message || 'Failed to add product'}`;
-        this.isLoading = false;
-      },
-    });
+    const editing = this.editingProduct();
+    if (editing?.id) {
+      // UPDATE existing product
+      this.firebaseAdmin.updateProduct(editing.id, { ...product, category: (editing as any)['category'] } as any).subscribe({
+        next: () => {
+          this.successMessage = `✅ Product "${product.name}" updated successfully!`;
+          this.editingProduct.set(null);
+          this.productForm.reset({ unit: 'Piece', available: true });
+          this.removeImage();
+          this.isLoading = false;
+          this.loadProducts();
+          setTimeout(() => (this.successMessage = ''), 3000);
+        },
+        error: (err) => {
+          console.error('Error updating product:', err);
+          this.errorMessage = `❌ Error: ${err?.message || 'Failed to update product'}`;
+          this.isLoading = false;
+        },
+      });
+    } else {
+      // ADD new product
+      this.firebaseAdmin.submitProduct(product, this.selectedCategory.id).subscribe({
+        next: () => {
+          this.successMessage = `✅ Product "${product.name}" added successfully!`;
+          this.productForm.reset({ unit: 'Piece', available: true });
+          this.removeImage();
+          this.isLoading = false;
+          this.loadProducts();
+          setTimeout(() => (this.successMessage = ''), 3000);
+        },
+        error: (err) => {
+          console.error('Error submitting product:', err);
+          this.errorMessage = `❌ Error: ${err?.message || 'Failed to add product'}`;
+          this.isLoading = false;
+        },
+      });
+    }
   }
 
   resetForm(): void {
+    this.editingProduct.set(null);
     this.productForm.reset({ unit: 'Piece', available: true });
     this.selectedCategory = null;
     this.removeImage();

@@ -621,6 +621,11 @@ select {
 .btn-delete:hover:not(:disabled),
 .btn-delete:active:not(:disabled) { background: #fdecea; }
 
+.btn-edit { color: #1565c0; }
+
+.btn-edit:hover:not(:disabled),
+.btn-edit:active:not(:disabled) { background: #e3f2fd; }
+
 .confirm-group {
   display: flex;
   flex-direction: column;
