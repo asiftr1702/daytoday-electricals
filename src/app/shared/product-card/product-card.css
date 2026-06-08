@@ -407,6 +407,20 @@
 
 .btn-sold:hover { background: #1b5e20; }
 
+.btn-out-of-stock {
+  background: #c62828;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0 0.75rem;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
 /* ─── QUICK SALE PANEL ───────────────────────────────────────────────────── */
 .quick-sale-panel {
   background: #f1f8e9;

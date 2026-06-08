@@ -197,6 +197,12 @@ export class ProductCardComponent {
   // ── Quick Sale ────────────────────────────────────────────────────────────
   private readonly salesService = inject(SalesService);
 
+  /** Locally tracks stock after a sale so UI updates without a page reload. */
+  readonly localStockQty = signal<number | null>(null);
+  readonly effectiveStockQty = computed(() =>
+    this.localStockQty() ?? this.product().stockQty ?? null
+  );
+
   readonly saleOpen = signal(false);
   readonly saleQty = signal(1);
   readonly saleSellPrice = signal(0);
@@ -206,6 +212,8 @@ export class ProductCardComponent {
 
   openSalePanel(event: Event): void {
     event.stopPropagation();
+    const stock = this.effectiveStockQty();
+    if (stock != null && stock <= 0) return;
     const p = this.product();
     this.saleSellPrice.set(p.discountedPrice ?? p.price ?? 0);
     this.saleQty.set(1);
@@ -221,6 +229,11 @@ export class ProductCardComponent {
   submitSale(event: Event): void {
     event.stopPropagation();
     const p = this.product();
+    const stock = this.effectiveStockQty();
+    if (stock != null && stock <= 0) {
+      this.saleError.set('Stock is 0 — cannot record sale.');
+      return;
+    }
     const qty = this.saleQty();
     const sell = this.saleSellPrice();
     const cost = p.costPrice ?? 0;
@@ -237,7 +250,10 @@ export class ProductCardComponent {
       profit: (sell - cost) * qty,
     }).subscribe({
       next: () => {
-        // Decrement stock if product has a Firestore ID
+        // Decrement stock locally so UI updates immediately
+        const cur = this.effectiveStockQty();
+        if (cur != null) this.localStockQty.set(Math.max(0, cur - qty));
+        // Persist to Firestore
         if (p.id) {
           this.firebaseAdmin.decrementStock(p.id, qty).subscribe();
         }

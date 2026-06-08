@@ -141,9 +141,13 @@
       <span>Visit Store</span>
       <span class="cta-arrow" aria-hidden="true">→</span>
     </div>
-    <button type="button" class="btn-sold" (click)="openSalePanel($event)" aria-label="Record sale for {{ product().name }}">
-      ✓ Sold
-    </button>
+    @if (effectiveStockQty() != null && effectiveStockQty()! <= 0) {
+      <span class="btn-out-of-stock">Out of Stock</span>
+    } @else {
+      <button type="button" class="btn-sold" (click)="openSalePanel($event)" aria-label="Record sale for {{ product().name }}">
+        ✓ Sold
+      </button>
+    }
   </div>
 
   <!-- ── Quick Sale Panel ── -->
