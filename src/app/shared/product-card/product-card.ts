@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, input, signal, viewChild, ElementRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, PLATFORM_ID, afterNextRender, computed, effect, input, signal, viewChild, ElementRef, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Product } from '../../core/models/product.model';
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
@@ -49,12 +49,13 @@ export class ProductCardComponent {
     this.costVisible.update(v => !v);
   }
 
-  // ── Image link dialog ────────────────────────────────────────────────────
+  // ── Image upload ──────────────────────────────────────────────────────────
   private readonly firebaseAdmin = inject(FirebaseAdminService);
-  readonly linkDialogOpen = signal(false);
-  readonly linkInput = signal('');
-  readonly linkSaving = signal(false);
-  readonly linkError = signal('');
+  readonly imageUploading = signal(false);
+  readonly imageUploadError = signal<string | null>(null);
+
+  private readonly MAX_DIMENSION = 900;
+  private readonly JPEG_QUALITY = 0.80;
   /** Locally overrides imageUrl after a successful save — no page reload needed. */
   readonly localImageUrl = signal<string | null>(null);
 
@@ -62,82 +63,120 @@ export class ProductCardComponent {
     this.localImageUrl() ?? this.product().imageUrl ?? null
   );
 
-  openLinkDialog(event: Event): void {
+  /** Becomes true once the card scrolls near the viewport — defers image decode. */
+  readonly imageRevealed = signal(false);
+
+  /** The src actually bound to <img> — null until the card is visible. */
+  readonly visibleImageSrc = computed(() =>
+    this.imageRevealed() ? this.effectiveImageUrl() : null
+  );
+
+  onImageFileSelected(event: Event): void {
     event.stopPropagation();
-    this.linkInput.set('');
-    this.linkError.set('');
-    this.linkDialogOpen.set(true);
-  }
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    input.value = ''; // allow re-selecting same file
 
-  closeLinkDialog(): void {
-    this.linkDialogOpen.set(false);
-  }
+    this.imageUploadError.set(null);
 
-  /** Accepts any image URL; also converts Google Drive share links to direct embed URLs. */
-  private toDriveEmbed(raw: string): string | null {
-    if (!raw) return null;
-    // Google Drive share link → direct embed
-    const fileMatch = raw.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-    const openMatch = raw.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    const rawId = /^[a-zA-Z0-9_-]{25,}$/.test(raw) ? raw : null;
-    const id = fileMatch?.[1] ?? openMatch?.[1] ?? rawId;
-    if (id && !raw.startsWith('http')) {
-      return `https://drive.google.com/uc?export=view&id=${id}`;
-    }
-    // Any other URL — use as-is
-    try {
-      new URL(raw);
-      return raw;
-    } catch {
-      return null;
-    }
-  }
-
-  saveDriveLink(): void {
-    const url = this.toDriveEmbed(this.linkInput().trim());
-    if (!url) {
-      this.linkError.set('Invalid URL. Paste any image URL or a Google Drive share link.');
+    if (!file.type.startsWith('image/')) {
+      this.imageUploadError.set('Please select a valid image (JPEG, PNG, WebP).');
       return;
     }
-    const sku = this.product().sku;
-    if (!sku) {
-      // No SKU — just update locally (sample data)
-      this.localImageUrl.set(url);
-      this.linkDialogOpen.set(false);
+    if (file.size > 10 * 1024 * 1024) {
+      this.imageUploadError.set('Image must be smaller than 10 MB.');
       return;
     }
-    this.linkSaving.set(true);
-    this.linkError.set('');
-    this.firebaseAdmin.updateImageUrl(sku, url).subscribe({
-      next: () => {
-        this.localImageUrl.set(url);
-        this.linkSaving.set(false);
-        this.linkDialogOpen.set(false);
-      },
-      error: (err: Error) => {
-        this.linkError.set(err.message ?? 'Failed to save. Try again.');
-        this.linkSaving.set(false);
-      },
+
+    this.imageUploading.set(true);
+    this.compressImage(file).then(dataUrl => {
+      const sku = this.product().sku;
+      if (!sku) {
+        // No SKU (sample/local product) — update locally only
+        this.localImageUrl.set(dataUrl);
+        this.imageRevealed.set(true);
+        this.imageUploading.set(false);
+        return;
+      }
+      this.firebaseAdmin.updateImageUrl(sku, dataUrl).subscribe({
+        next: () => {
+          this.localImageUrl.set(dataUrl);
+          this.imageRevealed.set(true);
+          this.imageUploading.set(false);
+        },
+        error: (err: Error) => {
+          this.imageUploadError.set(err.message ?? 'Failed to save image.');
+          this.imageUploading.set(false);
+        },
+      });
+    }).catch((err: Error) => {
+      this.imageUploadError.set(err.message ?? 'Image processing failed.');
+      this.imageUploading.set(false);
+    });
+  }
+
+  private compressImage(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Failed to read image file.'));
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('Failed to decode image.'));
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > this.MAX_DIMENSION || height > this.MAX_DIMENSION) {
+            if (width >= height) {
+              height = Math.round((height * this.MAX_DIMENSION) / width);
+              width = this.MAX_DIMENSION;
+            } else {
+              width = Math.round((width * this.MAX_DIMENSION) / height);
+              height = this.MAX_DIMENSION;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { reject(new Error('Canvas not available.')); return; }
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', this.JPEG_QUALITY));
+        };
+        img.src = e.target!.result as string;
+      };
+      reader.readAsDataURL(file);
     });
   }
 
   readonly lightboxOpen = signal(false);
   private readonly dialogRef = viewChild<ElementRef<HTMLDialogElement>>('lightboxDialog');
-  private readonly linkDialogRef = viewChild<ElementRef<HTMLDialogElement>>('linkDialog');
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly hostRef = inject(ElementRef);
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
+      // Lazy-reveal image via IntersectionObserver so text renders first.
+      afterNextRender(() => {
+        if (!('IntersectionObserver' in window)) {
+          this.imageRevealed.set(true);
+          return;
+        }
+        const observer = new IntersectionObserver(
+          (entries) => {
+            if (entries[0].isIntersecting) {
+              this.imageRevealed.set(true);
+              observer.disconnect();
+            }
+          },
+          { rootMargin: '300px 0px' }, // preload 300 px before entering viewport
+        );
+        observer.observe(this.hostRef.nativeElement);
+      });
+
       effect(() => {
         const dialog = this.dialogRef()?.nativeElement;
         if (!dialog) return;
         if (this.lightboxOpen()) dialog.showModal();
-        else if (dialog.open) dialog.close();
-      });
-      effect(() => {
-        const dialog = this.linkDialogRef()?.nativeElement;
-        if (!dialog) return;
-        if (this.linkDialogOpen()) dialog.showModal();
         else if (dialog.open) dialog.close();
       });
     }

@@ -62,17 +62,13 @@
         </div>
 
         <div class="form-group">
-          <label for="description">Description <span class="required">*</span></label>
+          <label for="description">Description</label>
           <textarea
             id="description"
             formControlName="description"
             placeholder="e.g., 3-blade ceiling fan, 70W, high speed"
             rows="3"
-            required
           ></textarea>
-          @if (productForm.get('description')?.invalid && productForm.get('description')?.touched) {
-            <span class="error">Description is required</span>
-          }
         </div>
 
         <div class="form-row">
@@ -176,6 +172,51 @@
         </div>
       </fieldset>
 
+      <!-- Product Image -->
+      <fieldset>
+        <legend>🖼️ Product Image</legend>
+
+        @if (!imagePreview()) {
+          <div class="image-upload-area" (click)="imageInput.click()" (keydown.enter)="imageInput.click()" tabindex="0" role="button" aria-label="Upload product image">
+            <span class="image-upload-icon" aria-hidden="true">📷</span>
+            <p class="image-upload-hint">Click to select an image</p>
+            <p class="image-upload-sub">JPEG, PNG or WebP · max 10 MB · will be compressed</p>
+            <input
+              #imageInput
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="image-file-input"
+              aria-label="Choose product image file"
+              (change)="onImageSelected($event)"
+            />
+          </div>
+        } @else {
+          <div class="image-preview-container">
+            <img [src]="imagePreview()" alt="Product image preview" class="image-preview" />
+            <div class="image-preview-actions">
+              <button type="button" class="btn btn-outline btn-sm" (click)="imageInput2.click()">
+                🔄 Change
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" (click)="removeImage()">
+                🗑️ Remove
+              </button>
+              <input
+                #imageInput2
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                class="image-file-input"
+                aria-label="Replace product image file"
+                (change)="onImageSelected($event)"
+              />
+            </div>
+          </div>
+        }
+
+        @if (imageError()) {
+          <p class="error image-error" role="alert">{{ imageError() }}</p>
+        }
+      </fieldset>
+
       <!-- Buttons -->
       <div class="form-actions">
         <button type="submit" class="btn btn-primary" [disabled]="isLoading || productForm.invalid">
@@ -188,5 +229,103 @@
         <button type="button" class="btn btn-secondary" (click)="resetForm()">Reset</button>
       </div>
     </form>
+  }
+
+  <!-- ── Product Sheet ───────────────────────────────────────────────────── -->
+  @if (selectedCategory) {
+    <section class="product-sheet">
+      <div class="sheet-header">
+        <h2>📋 {{ selectedCategory.name }} — Products</h2>
+        <span class="sheet-count">{{ products().length }} item{{ products().length !== 1 ? 's' : '' }}</span>
+      </div>
+
+      @if (productsLoading()) {
+        <p class="sheet-loading">Loading…</p>
+      } @else if (products().length === 0) {
+        <p class="sheet-empty">No products yet. Add one above.</p>
+      } @else {
+        <div class="sheet-table-wrap">
+          <table class="sheet-table" aria-label="Products in {{ selectedCategory.name }}">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>SKU</th>
+                <th>Name</th>
+                <th>Brand</th>
+                <th>Subcategory</th>
+                <th>Price (₹)</th>
+                <th>Stock</th>
+                <th>Available</th>
+                <th aria-label="Actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of products(); track p.id) {
+                <tr [class.row-deleting]="deletingId() === p.id">
+                  <!-- Thumbnail -->
+                  <td class="col-thumb">
+                    @if (p.imageUrl) {
+                      <img [src]="p.imageUrl" [alt]="p.name" class="sheet-thumb" />
+                    } @else {
+                      <span class="sheet-thumb-placeholder" aria-hidden="true">📦</span>
+                    }
+                  </td>
+                  <td class="col-sku">{{ p.sku || '—' }}</td>
+                  <td class="col-name">{{ p.name }}</td>
+                  <td>{{ p.brand || '—' }}</td>
+                  <td>{{ p.subcategory || '—' }}</td>
+                  <td class="col-price">
+                    @if (p.discountedPrice) {
+                      <span class="price-strike">{{ p.price }}</span>
+                      <span class="price-offer">{{ p.discountedPrice }}</span>
+                    } @else {
+                      {{ p.price ?? '—' }}
+                    }
+                  </td>
+                  <td>{{ p.stockQty ?? '—' }}</td>
+                  <td>
+                    <span class="avail-badge" [class.avail-yes]="p.available" [class.avail-no]="!p.available">
+                      {{ p.available ? 'Yes' : 'No' }}
+                    </span>
+                  </td>
+                  <!-- Delete -->
+                  <td class="col-actions">
+                    @if (confirmDeleteId() === p.id) {
+                      <span class="confirm-prompt">Delete?</span>
+                      <button
+                        type="button"
+                        class="btn-icon btn-confirm-yes"
+                        (click)="confirmDelete(p.id!)"
+                        aria-label="Confirm delete {{ p.name }}"
+                      >✓</button>
+                      <button
+                        type="button"
+                        class="btn-icon btn-confirm-no"
+                        (click)="cancelDelete()"
+                        aria-label="Cancel delete"
+                      >✕</button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="btn-icon btn-delete"
+                        [disabled]="deletingId() === p.id"
+                        (click)="requestDelete(p.id!)"
+                        [attr.aria-label]="'Delete ' + p.name"
+                      >
+                        @if (deletingId() === p.id) {
+                          ⏳
+                        } @else {
+                          🗑️
+                        }
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
   }
 </div>

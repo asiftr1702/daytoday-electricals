@@ -133,7 +133,7 @@ export class ProductsComponent {
     return products.filter(
       p =>
         p.name.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q) ||
         (p.brand?.toLowerCase().includes(q) ?? false),
     );
   });

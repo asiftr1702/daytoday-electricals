@@ -4,6 +4,7 @@ import {
   collection,
   addDoc,
   updateDoc,
+  deleteDoc,
   doc,
   getDocs,
   query,
@@ -16,7 +17,7 @@ import { Product } from '../models/product.model';
 
 /**
  * Firebase Admin Service
- * 
+ *
  * Stores product data in Firestore (Firebase's NoSQL database)
  * No CORS issues, real-time updates, scales automatically
  */
@@ -94,6 +95,14 @@ export class FirebaseAdminService {
         } as unknown as Product))
       )
     );
+  }
+
+  /**
+   * Delete a product by its Firestore document ID
+   */
+  deleteProduct(productId: string): Observable<void> {
+    const productDoc = doc(this.firestore, this.PRODUCTS_COLLECTION, productId);
+    return from(deleteDoc(productDoc));
   }
 
   /**
