@@ -10,6 +10,7 @@ import {
   query,
   where,
   Timestamp,
+  increment,
 } from '@angular/fire/firestore';
 import { Observable, from } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
@@ -95,6 +96,14 @@ export class FirebaseAdminService {
         } as unknown as Product))
       )
     );
+  }
+
+  /**
+   * Atomically decrement stockQty by the given amount (default 1)
+   */
+  decrementStock(productId: string, by = 1): Observable<void> {
+    const productDoc = doc(this.firestore, this.PRODUCTS_COLLECTION, productId);
+    return from(updateDoc(productDoc, { stockQty: increment(-by), updatedAt: Timestamp.now() }));
   }
 
   /**

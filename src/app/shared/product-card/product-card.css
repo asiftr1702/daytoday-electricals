@@ -355,6 +355,12 @@
 }
 
 /* ─── CTA BAR ────────────────────────────────────────────────────────────── */
+.card-cta-row {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
 .card-cta {
   display: flex;
   align-items: center;
@@ -368,7 +374,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   transition: background 0.18s ease;
-  flex-shrink: 0;
+  flex: 1;
 }
 
 .product-card:hover .card-cta {
@@ -383,6 +389,118 @@
 
 .product-card:hover .cta-arrow {
   transform: translateX(4px);
+}
+
+.btn-sold {
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0 0.875rem;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: background 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-sold:hover { background: #1b5e20; }
+
+/* ─── QUICK SALE PANEL ───────────────────────────────────────────────────── */
+.quick-sale-panel {
+  background: #f1f8e9;
+  border-top: 2px solid #a5d6a7;
+  padding: 0.75rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  animation: slideIn 0.18s ease;
+}
+
+.quick-sale-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.quick-sale-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.quick-sale-field label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.qs-input {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1.5px solid #c8e6c9;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.qs-input:focus {
+  outline: none;
+  border-color: #388e3c;
+  box-shadow: 0 0 0 3px rgba(56,142,60,0.12);
+}
+
+.quick-sale-profit {
+  font-size: 0.8rem;
+  color: #1b5e20;
+  font-weight: 600;
+  text-align: center;
+}
+
+.quick-sale-profit.qs-loss { color: #c62828; }
+
+.quick-sale-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.qs-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.qs-cancel { background: #e0e0e0; color: #333; }
+.qs-cancel:hover { background: #bdbdbd; }
+.qs-save { background: #2e7d32; color: #fff; }
+.qs-save:hover:not(:disabled) { background: #1b5e20; }
+.qs-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.quick-sale-done {
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #2e7d32;
+  padding: 0.5rem 0;
+}
+
+.qs-error {
+  font-size: 0.75rem;
+  color: #c62828;
+  background: #ffebee;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  text-align: center;
 }
 
 /* ─── IMAGE CLICK AFFORDANCE ─────────────────────────────────────────────── */

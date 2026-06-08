@@ -136,10 +136,47 @@
   }
 
   <!-- ── CTA bar ── -->
-  <div class="card-cta" aria-label="Visit store to buy {{ product().name }}">
-    <span>Visit Store</span>
-    <span class="cta-arrow" aria-hidden="true">→</span>
+  <div class="card-cta-row">
+    <div class="card-cta" aria-label="Visit store to buy {{ product().name }}">
+      <span>Visit Store</span>
+      <span class="cta-arrow" aria-hidden="true">→</span>
+    </div>
+    <button type="button" class="btn-sold" (click)="openSalePanel($event)" aria-label="Record sale for {{ product().name }}">
+      ✓ Sold
+    </button>
   </div>
+
+  <!-- ── Quick Sale Panel ── -->
+  @if (saleOpen()) {
+    <div class="quick-sale-panel" (click)="$event.stopPropagation()">
+      @if (saleDone()) {
+        <div class="quick-sale-done">✅ Sale recorded!</div>
+      } @else {
+        <div class="quick-sale-row">
+          <div class="quick-sale-field">
+            <label>Qty</label>
+            <input type="number" min="1" [ngModel]="saleQty()" (ngModelChange)="saleQty.set($event)" class="qs-input" />
+          </div>
+          <div class="quick-sale-field">
+            <label>Sell ₹</label>
+            <input type="number" min="0" [ngModel]="saleSellPrice()" (ngModelChange)="saleSellPrice.set($event)" class="qs-input" />
+          </div>
+        </div>
+        <div class="quick-sale-profit" [class.qs-loss]="saleProfit() < 0">
+          Profit: <strong>₹{{ saleProfit() | number:'1.0-0' }}</strong>
+        </div>
+        <div class="quick-sale-actions">
+          <button type="button" class="qs-btn qs-cancel" (click)="closeSalePanel($event)">Cancel</button>
+          <button type="button" class="qs-btn qs-save" [disabled]="saleSaving()" (click)="submitSale($event)">
+            {{ saleSaving() ? '⏳' : '💾 Save' }}
+          </button>
+        </div>
+        @if (saleError()) {
+          <div class="qs-error">❌ {{ saleError() }}</div>
+        }
+      }
+    </div>
+  }
 
 </article>
 

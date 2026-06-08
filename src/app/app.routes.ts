@@ -22,6 +22,11 @@ export const routes: Routes = [
     title: 'Admin — Add Products',
   },
   {
+    path: 'sales',
+    loadComponent: () => import('./features/sales/sales').then(m => m.SalesComponent),
+    title: 'Daily Sales — DayToDay Electricals',
+  },
+  {
     path: '**',
     redirectTo: '',
   },

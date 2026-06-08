@@ -1,0 +1,190 @@
+<div class="sales-container">
+
+  <!-- Header -->
+  <div class="sales-header">
+    <h1>💰 Daily Sales</h1>
+    <p>Record sales and track daily profit</p>
+  </div>
+
+  <div class="sales-content">
+
+    <!-- Date Picker -->
+    <div class="date-bar">
+      <label for="saleDate">📅 Date</label>
+      <input
+        id="saleDate"
+        type="date"
+        [value]="selectedDate()"
+        (change)="onDateChange($event)"
+        class="date-input"
+      />
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-row">
+      <div class="summary-card sell">
+        <div class="summary-label">Total Sales</div>
+        <div class="summary-value">{{ formatCurrency(totalSell()) }}</div>
+      </div>
+      <div class="summary-card cost">
+        <div class="summary-label">Total Cost</div>
+        <div class="summary-value">{{ formatCurrency(totalCost()) }}</div>
+      </div>
+      <div class="summary-card profit" [class.profit-negative]="totalProfit() < 0">
+        <div class="summary-label">Profit</div>
+        <div class="summary-value">{{ formatCurrency(totalProfit()) }}</div>
+      </div>
+    </div>
+
+    <!-- Add Sale Form -->
+    <form [formGroup]="saleForm" (ngSubmit)="onSubmit()" class="sale-form">
+      <h2>➕ Record a Sale</h2>
+
+      @if (successMsg()) {
+        <div class="alert alert-success">{{ successMsg() }}</div>
+      }
+      @if (errorMsg()) {
+        <div class="alert alert-error">{{ errorMsg() }}</div>
+      }
+
+      <!-- Product picker -->
+      <div class="form-group">
+        <label for="productPicker">Pick from inventory</label>
+        <select id="productPicker" (change)="onProductSelect($event)">
+          <option value="">— select to auto-fill —</option>
+          @for (p of allProducts(); track p.id) {
+            <option [value]="p.name">{{ p.name }}{{ p.brand ? ' · ' + p.brand : '' }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="productName">Item Name <span class="required">*</span></label>
+          <input id="productName" type="text" formControlName="productName" placeholder="e.g., Havells Fan 1200mm" />
+        </div>
+        <div class="form-group form-group-sm">
+          <label for="qty">Qty <span class="required">*</span></label>
+          <input id="qty" type="number" formControlName="qty" min="1" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="costPrice">Cost Price (₹) <span class="required">*</span></label>
+          <input id="costPrice" type="number" formControlName="costPrice" min="0" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label for="sellPrice">Sell Price (₹) <span class="required">*</span></label>
+          <input id="sellPrice" type="number" formControlName="sellPrice" min="0" placeholder="0" />
+        </div>
+      </div>
+
+      <!-- Live profit preview -->
+      @if (saleForm.get('sellPrice')?.value >= 0 && saleForm.get('costPrice')?.value >= 0) {
+        <div class="profit-preview" [class.loss]="(saleForm.get('sellPrice')?.value - saleForm.get('costPrice')?.value) * saleForm.get('qty')?.value < 0">
+          Profit per entry: <strong>{{ formatCurrency((saleForm.get('sellPrice')?.value - saleForm.get('costPrice')?.value) * saleForm.get('qty')?.value) }}</strong>
+        </div>
+      }
+
+      <div class="form-group">
+        <label for="note">Note (optional)</label>
+        <input id="note" type="text" formControlName="note" placeholder="e.g., cash sale, customer name…" />
+      </div>
+
+      <button type="submit" class="btn-save" [disabled]="saleForm.invalid || saving()">
+        {{ saving() ? '⏳ Saving…' : '💾 Add Sale' }}
+      </button>
+    </form>
+
+    <!-- Entries List -->
+    <section class="entries-section">
+      <h2>🧾 Entries for {{ selectedDate() }}</h2>
+
+      @if (loading()) {
+        <p class="loading-text">Loading…</p>
+      } @else if (entries().length === 0) {
+        <p class="empty-text">No sales recorded for this date.</p>
+      } @else {
+
+        <!-- Mobile list -->
+        <div class="entry-list">
+          @for (e of entries(); track e.id) {
+            <div class="entry-card" [class.deleting]="deletingId() === e.id">
+              <div class="entry-main">
+                <div class="entry-name">{{ e.productName }}</div>
+                @if (e.note) { <div class="entry-note">{{ e.note }}</div> }
+              </div>
+              <div class="entry-nums">
+                <span class="entry-qty">×{{ e.qty }}</span>
+                <span class="entry-sell">{{ formatCurrency(e.sellPrice) }}</span>
+                <span class="entry-profit" [class.profit-neg]="e.profit < 0">
+                  {{ e.profit >= 0 ? '+' : '' }}{{ formatCurrency(e.profit) }}
+                </span>
+              </div>
+              <button
+                type="button"
+                class="entry-delete"
+                [disabled]="deletingId() === e.id"
+                (click)="deleteEntry(e.id!)"
+                aria-label="Delete entry"
+              >{{ deletingId() === e.id ? '⏳' : '🗑️' }}</button>
+            </div>
+          }
+        </div>
+
+        <!-- Desktop table -->
+        <div class="entry-table-wrap">
+          <table class="entry-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Cost (₹)</th>
+                <th>Sell (₹)</th>
+                <th>Profit (₹)</th>
+                <th>Note</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of entries(); track e.id) {
+                <tr [class.deleting]="deletingId() === e.id">
+                  <td>{{ e.productName }}</td>
+                  <td>{{ e.qty }}</td>
+                  <td>{{ formatCurrency(e.costPrice) }}</td>
+                  <td>{{ formatCurrency(e.sellPrice) }}</td>
+                  <td [class.profit-pos]="e.profit >= 0" [class.profit-neg]="e.profit < 0">
+                    {{ e.profit >= 0 ? '+' : '' }}{{ formatCurrency(e.profit) }}
+                  </td>
+                  <td class="col-note">{{ e.note || '—' }}</td>
+                  <td>
+                    <button
+                      type="button"
+                      class="entry-delete"
+                      [disabled]="deletingId() === e.id"
+                      (click)="deleteEntry(e.id!)"
+                      aria-label="Delete"
+                    >{{ deletingId() === e.id ? '⏳' : '🗑️' }}</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="totals-row">
+                <td colspan="3"><strong>Day Total</strong></td>
+                <td><strong>{{ formatCurrency(totalSell()) }}</strong></td>
+                <td [class.profit-pos]="totalProfit() >= 0" [class.profit-neg]="totalProfit() < 0">
+                  <strong>{{ totalProfit() >= 0 ? '+' : '' }}{{ formatCurrency(totalProfit()) }}</strong>
+                </td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+      }
+    </section>
+
+  </div>
+</div>

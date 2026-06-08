@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, afterNextRender, computed, effect, input, signal, viewChild, ElementRef, inject } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, DecimalPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Product } from '../../core/models/product.model';
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
+import { SalesService } from '../../core/services/sales.service';
 
 @Component({
   selector: 'app-product-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [],
+  imports: [FormsModule, DecimalPipe],
   templateUrl: './product-card.html',
   styleUrl: './product-card.css',
 })
@@ -191,4 +193,65 @@ export class ProductCardComponent {
   closeLightbox(): void {
     this.lightboxOpen.set(false);
   }
+
+  // ── Quick Sale ────────────────────────────────────────────────────────────
+  private readonly salesService = inject(SalesService);
+
+  readonly saleOpen = signal(false);
+  readonly saleQty = signal(1);
+  readonly saleSellPrice = signal(0);
+  readonly saleSaving = signal(false);
+  readonly saleDone = signal(false);
+  readonly saleError = signal('');
+
+  openSalePanel(event: Event): void {
+    event.stopPropagation();
+    const p = this.product();
+    this.saleSellPrice.set(p.discountedPrice ?? p.price ?? 0);
+    this.saleQty.set(1);
+    this.saleDone.set(false);
+    this.saleOpen.set(true);
+  }
+
+  closeSalePanel(event: Event): void {
+    event.stopPropagation();
+    this.saleOpen.set(false);
+  }
+
+  submitSale(event: Event): void {
+    event.stopPropagation();
+    const p = this.product();
+    const qty = this.saleQty();
+    const sell = this.saleSellPrice();
+    const cost = p.costPrice ?? 0;
+    const today = new Date().toISOString().slice(0, 10);
+    this.saleSaving.set(true);
+    this.saleError.set('');
+    this.salesService.addSale({
+      date: today,
+      productName: p.name,
+      category: (p as any)['category'] ?? '',
+      qty,
+      costPrice: cost,
+      sellPrice: sell,
+      profit: (sell - cost) * qty,
+    }).subscribe({
+      next: () => {
+        // Decrement stock if product has a Firestore ID
+        if (p.id) {
+          this.firebaseAdmin.decrementStock(p.id, qty).subscribe();
+        }
+        this.saleSaving.set(false);
+        this.saleDone.set(true);
+        setTimeout(() => { this.saleOpen.set(false); this.saleDone.set(false); }, 1500);
+      },
+      error: (err) => {
+        this.saleSaving.set(false);
+        this.saleError.set(err?.message ?? 'Failed to save. Check console.');
+        console.error('Quick sale error:', err);
+      },
+    });
+  }
+
+  saleProfit = computed(() => (this.saleSellPrice() - (this.product().costPrice ?? 0)) * this.saleQty());
 }

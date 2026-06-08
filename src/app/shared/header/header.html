@@ -19,6 +19,7 @@
       <a routerLink="/products" routerLinkActive="active">Products</a>
       <a routerLink="/contact" routerLinkActive="active">Contact Us</a>
       <a routerLink="/admin" routerLinkActive="active" class="admin-link" title="Admin panel for adding products">📦 Admin</a>
+      <a routerLink="/sales" routerLinkActive="active" class="admin-link" title="Daily sales tracker">💰 Sales</a>
     </nav>
 
     <a routerLink="/products" class="btn btn-primary nav-cta" aria-label="Browse all products">
@@ -52,6 +53,9 @@
       </a>
       <a routerLink="/admin" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
         <span aria-hidden="true">📦</span> Admin
+      </a>
+      <a routerLink="/sales" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
+        <span aria-hidden="true">💰</span> Sales
       </a>
     </nav>
   }
