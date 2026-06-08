@@ -147,18 +147,41 @@
   flex: 1;
 }
 
+.card-top-row {
+  display: flex;
+  align-items: center;
+  min-height: 1.6rem;
+}
+
 .brand-tag {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #666666;
-  background: #F2F2F2;
-  border: 1px solid #E2E2E2;
-  padding: 0.12rem 0.5rem;
-  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #010101;
+  background: #eeecff;
+  border: 1px solid #c5bfff;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
   white-space: nowrap;
   align-self: flex-start;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.warranty-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #000000;
+  background: #ffd600;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .product-name {

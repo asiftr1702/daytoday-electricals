@@ -77,13 +77,21 @@
         Out of Stock
       }
     </span>
+    <!-- Warranty badge overlaid on image bottom-left -->
   </div>
 
   <!-- ── Body ── -->
   <div class="card-body">
-    @if (product().brand) {
-      <span class="brand-tag">{{ product().brand }}</span>
-    }
+    <div class="card-top-row">
+      @if (product().brand) {
+        <span class="brand-tag">{{ product().brand }}</span>
+      }
+      @if (product().warranty) {
+        <span class="warranty-tag" [attr.title]="product().warranty + ' warranty'">{{ product().warranty }}</span>
+      } @else if ($any(product()).warrantyYears > 0) {
+        <span class="warranty-tag" [attr.title]="$any(product()).warrantyYears + ' year warranty'">{{ $any(product()).warrantyYears }}y</span>
+      }
+    </div>
     <h3 class="product-name">{{ product().name }}</h3>
     @if (product().description) {
       <p class="product-desc">{{ product().description }}</p>

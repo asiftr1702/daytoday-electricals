@@ -62,6 +62,7 @@ export class AdminComponent implements OnInit {
       purchaseDate: [''],
       location: [''],
       remarks: [''],
+      warranty: [''],
     });
   }
 
@@ -108,6 +109,7 @@ export class AdminComponent implements OnInit {
       purchaseDate: product.purchaseDate ?? '',
       location: product.location ?? '',
       remarks: product.remarks ?? '',
+      warranty: product.warranty ?? '',
     });
     // Retain existing image preview if present
     this.imagePreview.set(product.imageUrl ?? null);
@@ -118,7 +120,7 @@ export class AdminComponent implements OnInit {
 
   cancelEdit(): void {
     this.editingProduct.set(null);
-    this.productForm.reset({ unit: 'Piece', available: true });
+    this.productForm.reset({ unit: 'Piece', available: true, warranty: '' });
     this.removeImage();
     this.successMessage = '';
     this.errorMessage = '';
@@ -251,7 +253,7 @@ export class AdminComponent implements OnInit {
         next: () => {
           this.successMessage = `✅ Product "${product.name}" updated successfully!`;
           this.editingProduct.set(null);
-          this.productForm.reset({ unit: 'Piece', available: true });
+          this.productForm.reset({ unit: 'Piece', available: true, warranty: '' });
           this.removeImage();
           this.isLoading = false;
           this.loadProducts();
@@ -268,7 +270,7 @@ export class AdminComponent implements OnInit {
       this.firebaseAdmin.submitProduct(product, this.selectedCategory.id).subscribe({
         next: () => {
           this.successMessage = `✅ Product "${product.name}" added successfully!`;
-          this.productForm.reset({ unit: 'Piece', available: true });
+          this.productForm.reset({ unit: 'Piece', available: true, warranty: '' });
           this.removeImage();
           this.isLoading = false;
           this.loadProducts();
@@ -285,7 +287,7 @@ export class AdminComponent implements OnInit {
 
   resetForm(): void {
     this.editingProduct.set(null);
-    this.productForm.reset({ unit: 'Piece', available: true });
+    this.productForm.reset({ unit: 'Piece', available: true, warranty: '' });
     this.selectedCategory = null;
     this.removeImage();
     this.successMessage = '';

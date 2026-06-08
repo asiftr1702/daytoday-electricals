@@ -15,4 +15,5 @@ export interface Product {
   location?: string;
   remarks?: string;
   imageUrl?: string;
+  warranty?: string;
 }
