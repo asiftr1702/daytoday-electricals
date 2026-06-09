@@ -31,11 +31,16 @@
        ══════════════════════════════════════════════════════════════════════ -->
   <div class="bill-printable">
 
+    <!-- Watermark stamp (print only) -->
+    <div class="print-watermark print-only">
+      <img src="/stamp.png" alt="" aria-hidden="true" class="watermark-img" />
+    </div>
+
     <!-- Print header -->
     <div class="print-shop-header print-only">
       <div class="print-header-row">
         <div class="print-header-left">
-          <div class="print-shop-name">⚡ DayToDay Electricals</div>
+          <div class="print-shop-name">DayToDay Electricals</div>
           <div class="print-address">Your Local Electrical Shop</div>
           @if (customerName()) {
             <div class="print-customer-inline">Customer: <strong>{{ customerName() }}</strong></div>
@@ -236,8 +241,12 @@
       <!-- Print footer -->
       <div class="print-footer print-only">
         <div class="print-divider"></div>
-        <p>Thank you for shopping at DayToDay Electricals!</p>
-        <p class="print-small">All prices are final. No exchange/return without bill.</p>
+        <div class="print-footer-row">
+          <div class="print-footer-text">
+            <p>Thank you for shopping at DayToDay Electricals!</p>
+            <p class="print-small">All prices are final. No exchange/return without bill.</p>
+          </div>
+        </div>
       </div>
 
       <!-- ── Action Buttons ──────────────────────────────────────────────── -->

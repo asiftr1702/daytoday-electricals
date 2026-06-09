@@ -187,10 +187,6 @@
         </div>
         @if (billQtyError()) {
           <div class="qs-error">⚠️ {{ billQtyError() }}</div>
-        } @else {
-          <div class="quick-sale-profit" [class.qs-loss]="billItemProfit() < 0">
-            Profit: <strong>₹{{ billItemProfit() | number:'1.0-0' }}</strong>
-          </div>
         }
         @if (availableForBill() != null) {
           <div class="bill-stock-hint">Stock available: {{ availableForBill() }}</div>

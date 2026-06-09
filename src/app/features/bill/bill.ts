@@ -183,13 +183,9 @@ export class BillComponent implements OnInit {
     return index;
   }
 
-  /** Returns "Rio 48 inch fan" (qty=1) or "Rio 48 inch fans" (qty>1) */
+  /** Returns just the product name */
   itemLabel(item: BillItem): string {
-    if (!item.category) return item.productName;
-    const cat = item.qty === 1
-      ? item.category.replace(/s$/i, '')   // strip trailing s for singular
-      : item.category;
-    return `${item.productName} ${cat}`;
+    return item.productName;
   }
 
   currentBillTotalCost(): number {
