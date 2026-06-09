@@ -27,6 +27,11 @@ export const routes: Routes = [
     title: 'Daily Sales — DayToDay Electricals',
   },
   {
+    path: 'bill',
+    loadComponent: () => import('./features/bill/bill').then(m => m.BillComponent),
+    title: 'Current Bill — DayToDay Electricals',
+  },
+  {
     path: '**',
     redirectTo: '',
   },

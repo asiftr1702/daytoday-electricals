@@ -141,46 +141,75 @@
       <span>Visit Store</span>
       <span class="cta-arrow" aria-hidden="true">→</span>
     </div>
-    @if (effectiveStockQty() != null && effectiveStockQty()! <= 0) {
-      <span class="btn-out-of-stock">Out of Stock</span>
-    } @else {
-      <button type="button" class="btn-sold" (click)="openSalePanel($event)" aria-label="Record sale for {{ product().name }}">
-        ✓ Sold
+    <div class="card-cta-btns">
+      @if (inBill()) {
+        <button type="button" class="btn-in-bill" (click)="goToBill($event)" aria-label="View bill">
+          🧾 {{ billItemCount() }}
+        </button>
+      }
+      <button
+        type="button"
+        class="btn-add-bill"
+        (click)="openBillPanel($event)"
+        [class.btn-add-bill-active]="inBill()"
+        [disabled]="effectiveStockQty() != null && effectiveStockQty()! <= 0"
+        aria-label="Add {{ product().name }} to bill"
+      >
+        @if (effectiveStockQty() != null && effectiveStockQty()! <= 0) {
+          Out of Stock
+        } @else {
+          {{ inBill() ? '＋ Add More' : '＋ Bill' }}
+        }
       </button>
-    }
+    </div>
   </div>
 
-  <!-- ── Quick Sale Panel ── -->
-  @if (saleOpen()) {
-    <div class="quick-sale-panel" (click)="$event.stopPropagation()">
-      @if (saleDone()) {
-        <div class="quick-sale-done">✅ Sale recorded!</div>
+  <!-- ── Add to Bill Panel ── -->
+  @if (billOpen()) {
+    <div class="quick-sale-panel bill-panel" (click)="$event.stopPropagation()">
+      @if (billAdded()) {
+        <div class="quick-sale-done">🧾 Added to bill!</div>
       } @else {
+        <div class="bill-panel-title">Add to Bill</div>
         <div class="quick-sale-row">
           <div class="quick-sale-field">
             <label>Qty</label>
-            <input type="number" min="1" [ngModel]="saleQty()" (ngModelChange)="saleQty.set($event)" class="qs-input" />
+            <input
+              type="number"
+              min="1"
+              [max]="availableForBill()"
+              [ngModel]="billQty()"
+              (ngModelChange)="billQty.set($event)"
+              class="qs-input"
+              [class.qs-input-error]="!!billQtyError()"
+            />
           </div>
           <div class="quick-sale-field">
-            <label>Sell ₹</label>
-            <input type="number" min="0" [ngModel]="saleSellPrice()" (ngModelChange)="saleSellPrice.set($event)" class="qs-input" />
+            <label>Agreed Price ₹</label>
+            <input type="number" min="0" [ngModel]="billSellPrice()" (ngModelChange)="billSellPrice.set($event)" class="qs-input" />
           </div>
         </div>
-        <div class="quick-sale-profit" [class.qs-loss]="saleProfit() < 0">
-          Profit: <strong>₹{{ saleProfit() | number:'1.0-0' }}</strong>
-        </div>
+        @if (billQtyError()) {
+          <div class="qs-error">⚠️ {{ billQtyError() }}</div>
+        } @else {
+          <div class="quick-sale-profit" [class.qs-loss]="billItemProfit() < 0">
+            Profit: <strong>₹{{ billItemProfit() | number:'1.0-0' }}</strong>
+          </div>
+        }
+        @if (availableForBill() != null) {
+          <div class="bill-stock-hint">Stock available: {{ availableForBill() }}</div>
+        }
         <div class="quick-sale-actions">
-          <button type="button" class="qs-btn qs-cancel" (click)="closeSalePanel($event)">Cancel</button>
-          <button type="button" class="qs-btn qs-save" [disabled]="saleSaving()" (click)="submitSale($event)">
-            {{ saleSaving() ? '⏳' : '💾 Save' }}
+          <button type="button" class="qs-btn qs-cancel" (click)="closeBillPanel($event)">Cancel</button>
+          <button type="button" class="qs-btn qs-save" [disabled]="!!billQtyError()" (click)="addToBill($event)">
+            🧾 Add
           </button>
         </div>
-        @if (saleError()) {
-          <div class="qs-error">❌ {{ saleError() }}</div>
-        }
       }
     </div>
   }
+
+  <!-- ── Quick Sale Panel ── -->
 
 </article>
 

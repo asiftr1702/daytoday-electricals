@@ -1,0 +1,367 @@
+<div class="bill-container">
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <div class="bill-header no-print">
+    <div>
+      <h1>🧾 Current Bill</h1>
+      <p>Add items from Products, set quantities & agreed price, then finalize.</p>
+    </div>
+    <div class="bill-date-bar">
+      <label for="billDate">📅 Date</label>
+      <input
+        id="billDate"
+        type="date"
+        [value]="billDate()"
+        (change)="onDateChange($any($event.target).value)"
+        class="date-input"
+      />
+    </div>
+  </div>
+
+  <!-- ── Success / Error ─────────────────────────────────────────────────── -->
+  @if (successMsg()) {
+    <div class="alert alert-success no-print">{{ successMsg() }}</div>
+  }
+  @if (errorMsg()) {
+    <div class="alert alert-error no-print">{{ errorMsg() }}</div>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       PRINTABLE BILL AREA
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="bill-printable">
+
+    <!-- Print header -->
+    <div class="print-shop-header print-only">
+      <div class="print-header-row">
+        <div class="print-header-left">
+          <div class="print-shop-name">⚡ DayToDay Electricals</div>
+          <div class="print-address">Your Local Electrical Shop</div>
+          @if (customerName()) {
+            <div class="print-customer-inline">Customer: <strong>{{ customerName() }}</strong></div>
+          }
+          @if (mobileNumber()) {
+            <div class="print-customer-inline">Mobile: <strong>{{ mobileNumber() }}</strong></div>
+          }
+          @if (location()) {
+            <div class="print-customer-inline">Location: <strong>{{ location() }}</strong></div>
+          }
+        </div>
+        <div class="print-header-right">
+          <div class="print-date-label">Date</div>
+          <div class="print-date-value">{{ billDate() }}</div>
+          @if (billNote()) {
+            <div class="print-note-inline">Note: {{ billNote() }}</div>
+          }
+        </div>
+      </div>
+      <div class="print-divider"></div>
+    </div>
+
+    <!-- ── Customer & Note ────────────────────────────────────────────────── -->
+    <div class="bill-meta no-print">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="customerName">Customer Name (optional)</label>
+          <input
+            id="customerName"
+            type="text"
+            [value]="customerName()"
+            (input)="billService.customerName.set($any($event.target).value)"
+            placeholder="e.g., Ravi Kumar"
+            class="meta-input"
+          />
+        </div>
+        <div class="form-group">
+          <label for="mobileNumber">Mobile Number (optional)</label>
+          <input
+            id="mobileNumber"
+            type="tel"
+            [value]="mobileNumber()"
+            (input)="billService.mobileNumber.set($any($event.target).value)"
+            placeholder="e.g., 98765 43210"
+            class="meta-input"
+          />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="location">Location / Area (optional)</label>
+          <input
+            id="location"
+            type="text"
+            [value]="location()"
+            (input)="billService.location.set($any($event.target).value)"
+            placeholder="e.g., Sector 12, Near Bus Stand"
+            class="meta-input"
+          />
+        </div>
+        <div class="form-group">
+          <label for="billNote">Note (optional)</label>
+          <input
+            id="billNote"
+            type="text"
+            [value]="billNote()"
+            (input)="billService.billNote.set($any($event.target).value)"
+            placeholder="e.g., cash sale, warranty given"
+            class="meta-input"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Print meta (only shown in print) -->
+
+    <!-- ── Items Table ──────────────────────────────────────────────────── -->
+    @if (items().length === 0) {
+      <div class="empty-bill no-print">
+        <p>🛒 No items added yet.</p>
+        <button type="button" class="btn-add-items" (click)="goToProducts()">
+          ➕ Go to Products
+        </button>
+      </div>
+    } @else {
+      <table class="bill-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Unit Price (₹)</th>
+            <th>Total (₹)</th>
+            <th class="no-print">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of items(); track trackByIndex($index)) {
+            <tr>
+              <td class="col-num">{{ $index + 1 }}</td>
+              <td class="col-name">
+                <div class="item-name">{{ itemLabel(item) }}</div>
+                @if (item.brand) {
+                  <span class="brand-tag">{{ item.brand }}</span>
+                }
+              </td>
+
+              <!-- Qty -->
+              <td class="col-qty">
+                @if (editingIndex() === $index) {
+                  <input
+                    type="number"
+                    class="inline-input"
+                    [value]="item.qty"
+                    min="1"
+                    (change)="updateQty($index, +$any($event.target).value)"
+                  />
+                } @else {
+                  <span class="editable-val" (click)="editingIndex.set($index)" title="Click to edit">
+                    {{ item.qty }}
+                  </span>
+                }
+              </td>
+
+              <!-- Unit Sell Price -->
+              <td class="col-price">
+                @if (editingIndex() === $index) {
+                  <input
+                    type="number"
+                    class="inline-input"
+                    [value]="item.sellPrice"
+                    min="0"
+                    (change)="updateSellPrice($index, +$any($event.target).value)"
+                  />
+                } @else {
+                  <span class="editable-val" (click)="editingIndex.set($index)" title="Click to edit">
+                    {{ formatCurrency(item.sellPrice) }}
+                  </span>
+                }
+              </td>
+
+              <!-- Row total -->
+              <td class="col-total">{{ formatCurrency(item.sellPrice * item.qty) }}</td>
+
+              <!-- Actions (no-print) -->
+              <td class="col-actions no-print">
+                @if (editingIndex() === $index) {
+                  <button type="button" class="btn-done" (click)="editingIndex.set(null)" title="Done">✓</button>
+                } @else {
+                  <button type="button" class="btn-edit" (click)="editingIndex.set($index)" title="Edit">✏️</button>
+                }
+                <button type="button" class="btn-remove" (click)="removeItem($index)" title="Remove">🗑️</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          @if (discount() > 0) {
+            <tr class="bill-subtotal-row">
+              <td colspan="4" class="total-label">Subtotal</td>
+              <td class="total-amount">{{ formatCurrency(billTotal()) }}</td>
+              <td class="no-print"></td>
+            </tr>
+          }
+          <tr class="bill-discount-row no-print">
+            <td colspan="4" class="total-label discount-label">
+              Discount
+              <input
+                type="number"
+                class="discount-input"
+                min="0"
+                [max]="billTotal()"
+                placeholder="0"
+                [value]="discount()"
+                (input)="discount.set(Math.max(0, Math.min(billTotal(), +$any($event.target).value || 0)))"
+              />
+            </td>
+            <td class="total-amount discount-amount">
+              @if (discount() > 0) { − {{ formatCurrency(discount()) }} }
+            </td>
+            <td class="no-print"></td>
+          </tr>
+          <!-- Discount row shown on print only when a discount was applied -->
+          @if (discount() > 0) {
+            <tr class="bill-discount-row print-only">
+              <td colspan="4" class="total-label">Discount</td>
+              <td class="total-amount discount-amount">− {{ formatCurrency(discount()) }}</td>
+            </tr>
+          }
+          <tr class="bill-total-row">
+            <td colspan="4" class="total-label"><strong>{{ discount() > 0 ? 'Amount Paid' : 'Grand Total' }}</strong></td>
+            <td class="total-amount final-amount"><strong>{{ formatCurrency(finalAmount()) }}</strong></td>
+            <td class="no-print"></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <!-- Print footer -->
+      <div class="print-footer print-only">
+        <div class="print-divider"></div>
+        <p>Thank you for shopping at DayToDay Electricals!</p>
+        <p class="print-small">All prices are final. No exchange/return without bill.</p>
+      </div>
+
+      <!-- ── Action Buttons ──────────────────────────────────────────────── -->
+      <div class="bill-actions no-print">
+        <div class="actions-left">
+          <button type="button" class="btn-clear" (click)="clearAll()">🗑️ Clear Bill</button>
+          <button type="button" class="btn-products" (click)="goToProducts()">➕ Add More Items</button>
+        </div>
+        <div class="actions-right">
+          <button type="button" class="btn-print" (click)="printBill()">🖨️ Print Bill</button>
+          <button
+            type="button"
+            class="btn-finalize"
+            [disabled]="saving()"
+            (click)="finalizeBill()"
+          >
+            {{ saving() ? '⏳ Saving…' : '✅ Finalize & Record Sale' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Profit summary (admin-only visible, no print) -->
+      <div class="profit-summary no-print">
+        <span>Items: <strong>{{ itemCount() }}</strong></span>
+        <span>Total Cost: <strong>{{ formatCurrency(currentBillTotalCost()) }}</strong></span>
+        @if (discount() > 0) {
+          <span>Discount: <strong class="discount-amount">− {{ formatCurrency(discount()) }}</strong></span>
+        }
+        <span class="profit-label" [class.profit-neg]="(finalAmount() - currentBillTotalCost()) < 0">
+          Profit: <strong>{{ formatCurrency(finalAmount() - currentBillTotalCost()) }}</strong>
+        </span>
+      </div>
+    }
+
+  </div><!-- end .bill-printable -->
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       PAST BILLS
+       ══════════════════════════════════════════════════════════════════════ -->
+  <section class="past-bills no-print">
+    <h2>🗂️ Bills for {{ billDate() }}</h2>
+
+    @if (loadingPast()) {
+      <p class="loading-text">Loading…</p>
+    } @else if (pastBills().length === 0) {
+      <p class="empty-text">No bills recorded for this date.</p>
+    } @else {
+      @for (bill of pastBills(); track bill.id) {
+        <div class="past-bill-card" [class.expanded]="expandedBillId() === bill.id">
+          <div class="past-bill-header" (click)="toggleExpand(bill.id!)">
+            <div class="past-bill-info">
+              <span class="bill-num">{{ bill.billNumber ?? bill.id }}</span>
+              @if (bill.customerName) {
+                <span class="bill-customer">👤 {{ bill.customerName }}</span>
+              }
+              <span class="bill-items-count">{{ billTotalItems(bill) }} item(s)</span>
+            </div>
+            <div class="past-bill-right">
+              <span class="past-bill-total">{{ formatCurrency(bill.finalAmount ?? bill.totalAmount) }}</span>
+              <span class="expand-icon">{{ expandedBillId() === bill.id ? '▲' : '▼' }}</span>
+            </div>
+          </div>
+
+          @if (expandedBillId() === bill.id) {
+            <div class="past-bill-body">
+              <table class="mini-table">
+                <thead>
+                  <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+                </thead>
+                <tbody>
+                  @for (item of bill.items; track item.productName) {
+                    <tr>
+                      <td>
+                        <div>{{ itemLabel(item) }}</div>
+                        @if (item.brand) { <span class="brand-tag">{{ item.brand }}</span> }
+                      </td>
+                      <td>{{ item.qty }}</td>
+                      <td>{{ formatCurrency(item.sellPrice) }}</td>
+                      <td>{{ formatCurrency(item.sellPrice * item.qty) }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  @if ((bill.discountAmount ?? 0) > 0) {
+                    <tr>
+                      <td colspan="3">Subtotal</td>
+                      <td>{{ formatCurrency(bill.totalAmount) }}</td>
+                    </tr>
+                    <tr>
+                      <td colspan="3" class="discount-label">Discount</td>
+                      <td class="discount-amount">− {{ formatCurrency(bill.discountAmount) }}</td>
+                    </tr>
+                  }
+                  <tr>
+                    <td colspan="3"><strong>Amount Paid</strong></td>
+                    <td><strong>{{ formatCurrency(bill.finalAmount ?? bill.totalAmount) }}</strong></td>
+                  </tr>
+                </tfoot>
+              </table>
+              @if (bill.note) {
+                <p class="past-bill-note">📝 {{ bill.note }}</p>
+              }
+              <div class="past-bill-actions">
+                <button
+                  type="button"
+                  class="btn-delete-bill"
+                  [disabled]="deletingBillId() === bill.id"
+                  (click)="deleteBill(bill.id!)"
+                >
+                  {{ deletingBillId() === bill.id ? '⏳' : '🗑️ Delete' }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Day summary for past bills -->
+      <div class="past-day-summary">
+        <span>Bills: <strong>{{ pastBills().length }}</strong></span>
+        <span>Day Total: <strong>{{ formatCurrency(pastBillsTotal()) }}</strong></span>
+        <span>Day Profit: <strong>{{ formatCurrency(pastBillsProfit()) }}</strong></span>
+      </div>
+    }
+  </section>
+
+</div>

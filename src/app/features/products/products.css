@@ -354,3 +354,49 @@
   max-width: 360px;
   line-height: 1.6;
 }
+
+/* ─── FLOATING BILL BUTTON ───────────────────────────────────────────────── */
+.fab-bill {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.25rem;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #4f46e5;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 50px;
+  padding: 0.65rem 1.1rem 0.65rem 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(79,70,229,.45);
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  user-select: none;
+}
+
+.fab-bill:hover {
+  background: #4338ca;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(79,70,229,.55);
+}
+
+.fab-icon { font-size: 1.1rem; }
+.fab-label { white-space: nowrap; }
+
+.fab-badge {
+  background: #fbbf24;
+  color: #1c1917;
+  border-radius: 50%;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0 3px;
+  margin-left: 2px;
+}
+

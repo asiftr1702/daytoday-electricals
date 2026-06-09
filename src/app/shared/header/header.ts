@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { BillService } from '../../core/services/bill.service';
 
 @Component({
   selector: 'app-header',
@@ -10,6 +11,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 })
 export class HeaderComponent {
   readonly menuOpen = signal(false);
+  readonly billService = inject(BillService);
 
   toggleMenu(): void {
     this.menuOpen.update(v => !v);

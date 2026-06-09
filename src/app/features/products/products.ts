@@ -5,12 +5,13 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map, startWith, catchError, distinctUntilChanged } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
 import { CATEGORIES, getCategoryById } from '../../core/config/categories.config';
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
+import { BillService } from '../../core/services/bill.service';
 import { Product } from '../../core/models/product.model';
 import { ProductCardComponent } from '../../shared/product-card/product-card';
 
@@ -23,7 +24,7 @@ interface ProductsState {
 @Component({
   selector: 'app-products',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ProductCardComponent],
+  imports: [ProductCardComponent, RouterLink],
   templateUrl: './products.html',
   styleUrl: './products.css',
 })
@@ -31,6 +32,7 @@ export class ProductsComponent {
   private readonly firebaseAdmin = inject(FirebaseAdminService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  readonly billService = inject(BillService);
 
   readonly categories = CATEGORIES;
   readonly searchQuery = signal('');

@@ -95,11 +95,32 @@
   color: white;
   font-weight: 600;
   margin-left: 0.75rem;
+  position: relative;
 }
 
 .nav-desktop a.admin-link:hover {
   background: linear-gradient(135deg, #5568d3 0%, #66388a 100%);
   color: white;
+}
+
+.bill-nav-link {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.header-bill-badge {
+  background: #fbbf24;
+  color: #1c1917;
+  border-radius: 50%;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0 2px;
 }
 
 .nav-cta {

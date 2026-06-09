@@ -158,3 +158,12 @@
     </div>
   }
 </main>
+
+<!-- ── Floating Bill Button ───────────────────────────────────────────────── -->
+@if (billService.itemCount() > 0) {
+  <a routerLink="/bill" class="fab-bill" aria-label="View current bill">
+    <span class="fab-icon">🧾</span>
+    <span class="fab-label">View Bill</span>
+    <span class="fab-badge">{{ billService.itemCount() }}</span>
+  </a>
+}

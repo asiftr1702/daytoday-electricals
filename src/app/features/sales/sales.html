@@ -36,7 +36,124 @@
       </div>
     </div>
 
-    <!-- Add Sale Form -->
+    <!-- Tab Bar -->
+    <div class="sales-tabs">
+      <button
+        type="button"
+        class="sales-tab"
+        [class.active]="activeTab() === 'bills'"
+        (click)="activeTab.set('bills')"
+      >
+        🧾 Bills <span class="tab-count">{{ bills().length }}</span>
+      </button>
+      <button
+        type="button"
+        class="sales-tab"
+        [class.active]="activeTab() === 'entries'"
+        (click)="activeTab.set('entries')"
+      >
+        📋 Line Entries <span class="tab-count">{{ entries().length }}</span>
+      </button>
+      <a routerLink="/bill" class="sales-tab-cta">＋ New Bill</a>
+    </div>
+
+    <!-- ════════ BILLS TAB ════════ -->
+    @if (activeTab() === 'bills') {
+      <section class="entries-section">
+        <h2>🧾 Bills for {{ selectedDate() }}</h2>
+
+        @if (loadingBills()) {
+          <p class="loading-text">Loading…</p>
+        } @else if (bills().length === 0) {
+          <div class="empty-bills">
+            <p>No bills recorded for this date.</p>
+            <a routerLink="/bill" class="btn-new-bill">＋ Create a Bill</a>
+          </div>
+        } @else {
+          @for (bill of bills(); track bill.id) {
+            <div class="past-bill-card" [class.expanded]="expandedBillId() === bill.id">
+              <div class="past-bill-header" (click)="toggleBillExpand(bill.id!)">
+                <div class="past-bill-info">
+                  <span class="bill-num">{{ bill.billNumber ?? bill.id }}</span>
+                  @if (bill.customerName) {
+                    <span class="bill-customer">👤 {{ bill.customerName }}</span>
+                  }
+                  <span class="bill-items-count">{{ billTotalItems(bill) }} item(s)</span>
+                </div>
+                <div class="past-bill-right">
+                  <span class="past-bill-total">{{ formatCurrency(bill.finalAmount ?? bill.totalAmount) }}</span>
+                  <span class="expand-icon">{{ expandedBillId() === bill.id ? '▲' : '▼' }}</span>
+                </div>
+              </div>
+
+              @if (expandedBillId() === bill.id) {
+                <div class="past-bill-body">
+                  <table class="mini-table">
+                    <thead>
+                      <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+                    </thead>
+                    <tbody>
+                      @for (item of bill.items; track item.productName) {
+                        <tr>
+                          <td>
+                            <div>{{ itemLabel(item) }}</div>
+                            @if (item.brand) { <span class="mini-brand-tag">{{ item.brand }}</span> }
+                          </td>
+                          <td>{{ item.qty }}</td>
+                          <td>{{ formatCurrency(item.sellPrice) }}</td>
+                          <td>{{ formatCurrency(item.sellPrice * item.qty) }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                    <tfoot>
+                      @if ((bill.discountAmount ?? 0) > 0) {
+                        <tr>
+                          <td colspan="3">Subtotal</td>
+                          <td>{{ formatCurrency(bill.totalAmount) }}</td>
+                        </tr>
+                        <tr>
+                          <td colspan="3" class="discount-label">Discount</td>
+                          <td class="discount-amount">− {{ formatCurrency(bill.discountAmount) }}</td>
+                        </tr>
+                      }
+                      <tr>
+                        <td colspan="3"><strong>Amount Paid</strong></td>
+                        <td><strong>{{ formatCurrency(bill.finalAmount ?? bill.totalAmount) }}</strong></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                  @if (bill.note) {
+                    <p class="past-bill-note">📝 {{ bill.note }}</p>
+                  }
+                  <div class="past-bill-profit">
+                    Profit: <strong>{{ formatCurrency(bill.totalProfit) }}</strong>
+                  </div>
+                  <div class="past-bill-actions">
+                    <button
+                      type="button"
+                      class="btn-delete-bill"
+                      [disabled]="deletingBillId() === bill.id"
+                      (click)="deleteBill(bill.id!)"
+                    >
+                      {{ deletingBillId() === bill.id ? '⏳ Deleting…' : '🗑️ Delete Bill' }}
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="bills-day-summary">
+            <span>{{ bills().length }} bill(s)</span>
+            <span>Total: <strong>{{ formatCurrency(billsTotalSell()) }}</strong></span>
+            <span class="profit-label">Profit: <strong>{{ formatCurrency(billsTotalProfit()) }}</strong></span>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- ════════ LINE ENTRIES TAB ════════ -->
+    @if (activeTab() === 'entries') {
     <form [formGroup]="saleForm" (ngSubmit)="onSubmit()" class="sale-form">
       <h2>➕ Record a Sale</h2>
 
@@ -185,6 +302,8 @@
 
       }
     </section>
+
+    } <!-- end @if activeTab === 'entries' -->
 
   </div>
 </div>

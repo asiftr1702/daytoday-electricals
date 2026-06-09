@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, afterNextRender, computed, effect, input, signal, viewChild, ElementRef, inject } from '@angular/core';
 import { isPlatformBrowser, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Product } from '../../core/models/product.model';
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
 import { SalesService } from '../../core/services/sales.service';
+import { BillService } from '../../core/services/bill.service';
 
 @Component({
   selector: 'app-product-card',
@@ -270,4 +272,91 @@ export class ProductCardComponent {
   }
 
   saleProfit = computed(() => (this.saleSellPrice() - (this.product().costPrice ?? 0)) * this.saleQty());
+
+  // ── Add to Bill ───────────────────────────────────────────────────────────
+  private readonly billService = inject(BillService);
+  private readonly router = inject(Router);
+
+  readonly billOpen = signal(false);
+  readonly billQty = signal(1);
+  readonly billSellPrice = signal(0);
+  readonly billAdded = signal(false);
+
+  /** Stock already reserved in the current bill for this product */
+  readonly qtyAlreadyInBill = computed(() =>
+    this.billService.currentItems()
+      .filter(i => i.productName === this.product().name)
+      .reduce((s, i) => s + i.qty, 0)
+  );
+
+  /** Remaining stock available to add (null = no stock tracking) */
+  readonly availableForBill = computed(() => {
+    const stock = this.effectiveStockQty();
+    if (stock == null) return null;
+    return Math.max(0, stock - this.qtyAlreadyInBill());
+  });
+
+  /** Validation error for the bill qty input */
+  readonly billQtyError = computed(() => {
+    const avail = this.availableForBill();
+    if (avail === null) return '';
+    if (avail <= 0) return 'Out of stock';
+    if (this.billQty() > avail) return `Only ${avail} available`;
+    if (this.billQty() < 1) return 'Qty must be at least 1';
+    return '';
+  });
+
+  readonly inBill = computed(() =>
+    this.billService.currentItems().some(i => i.productName === this.product().name)
+  );
+
+  readonly billItemCount = computed(() => {
+    const item = this.billService.currentItems().find(i => i.productName === this.product().name);
+    return item?.qty ?? 0;
+  });
+
+  openBillPanel(event: Event): void {
+    event.stopPropagation();
+    const stock = this.effectiveStockQty();
+    if (stock != null && stock <= 0) return; // blocked — out of stock
+    const p = this.product();
+    const isOffer = p.discountedPrice && p.price && p.discountedPrice < p.price;
+    this.billSellPrice.set(isOffer ? p.discountedPrice! : (p.price ?? 0));
+    const avail = this.availableForBill();
+    this.billQty.set(avail != null ? Math.min(1, avail) : 1);
+    this.billAdded.set(false);
+    this.billOpen.set(true);
+  }
+
+  closeBillPanel(event: Event): void {
+    event.stopPropagation();
+    this.billOpen.set(false);
+  }
+
+  addToBill(event: Event): void {
+    event.stopPropagation();
+    if (this.billQtyError()) return;
+    const p = this.product();
+    this.billService.addItem({
+      productId: p.id,
+      productName: p.name,
+      ...(p.brand ? { brand: p.brand } : {}),
+      category: (p as any)['category'] ?? '',
+      unit: p.unit,
+      qty: this.billQty(),
+      costPrice: p.costPrice ?? 0,
+      sellPrice: this.billSellPrice(),
+    });
+    this.billAdded.set(true);
+    setTimeout(() => { this.billOpen.set(false); this.billAdded.set(false); }, 1200);
+  }
+
+  goToBill(event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/bill']);
+  }
+
+  billItemProfit = computed(() =>
+    (this.billSellPrice() - (this.product().costPrice ?? 0)) * this.billQty()
+  );
 }

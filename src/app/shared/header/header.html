@@ -20,6 +20,12 @@
       <a routerLink="/contact" routerLinkActive="active">Contact Us</a>
       <a routerLink="/admin" routerLinkActive="active" class="admin-link" title="Admin panel for adding products">📦 Admin</a>
       <a routerLink="/sales" routerLinkActive="active" class="admin-link" title="Daily sales tracker">💰 Sales</a>
+      <a routerLink="/bill" routerLinkActive="active" class="admin-link bill-nav-link" title="Current bill / cart">
+        🧾 Bill
+        @if (billService.itemCount() > 0) {
+          <span class="header-bill-badge">{{ billService.itemCount() }}</span>
+        }
+      </a>
     </nav>
 
     <a routerLink="/products" class="btn btn-primary nav-cta" aria-label="Browse all products">
@@ -56,6 +62,12 @@
       </a>
       <a routerLink="/sales" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
         <span aria-hidden="true">💰</span> Sales
+      </a>
+      <a routerLink="/bill" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
+        <span aria-hidden="true">🧾</span> Bill
+        @if (billService.itemCount() > 0) {
+          <span class="header-bill-badge">{{ billService.itemCount() }}</span>
+        }
       </a>
     </nav>
   }

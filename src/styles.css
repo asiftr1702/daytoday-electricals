@@ -168,3 +168,41 @@ textarea {
   outline-offset: 2px;
 }
 
+/* ─── PRINT: Bill page only ─────────────────────────────────────────────── */
+@media print {
+  /* Remove browser's built-in header (title/date) and footer (URL/page no.) */
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  /* Hide all app chrome */
+  app-header,
+  app-footer,
+  .notice-bar,
+  .skip-link {
+    display: none !important;
+  }
+
+  /* Hide everything on the bill page except the printable section */
+  app-bill .bill-header,
+  app-bill .bill-meta,
+  app-bill .alert,
+  app-bill .bill-actions,
+  app-bill .profit-summary,
+  app-bill .past-bills,
+  app-bill .empty-bill {
+    display: none !important;
+  }
+
+  /* Let the printable area fill the page with its own padding */
+  app-bill .bill-container {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  app-bill .bill-printable {
+    padding: 1.5cm 1.8cm !important;
+  }
+}
+
