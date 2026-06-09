@@ -116,7 +116,40 @@
     </div>
 
     <!-- Print meta (only shown in print) -->
-
+    <!-- ── Add Custom Item ────────────────────────────────────────────────────── -->
+    <div class="custom-item-bar no-print">
+      <input
+        type="text"
+        class="custom-item-input"
+        placeholder="Item name"
+        [ngModel]="customName()"
+        (ngModelChange)="customName.set($event)"
+      />
+      <input
+        type="number"
+        class="custom-item-input custom-item-qty"
+        placeholder="Qty"
+        min="1"
+        [ngModel]="customQty()"
+        (ngModelChange)="customQty.set(+$event)"
+      />
+      <input
+        type="number"
+        class="custom-item-input custom-item-price"
+        placeholder="Price ₹"
+        min="0"
+        [ngModel]="customPrice()"
+        (ngModelChange)="customPrice.set(+$event)"
+      />
+      <button
+        type="button"
+        class="btn-custom-add"
+        [disabled]="!customName().trim()"
+        (click)="addCustomItem()"
+      >
+        + Add to Bill
+      </button>
+    </div>
     <!-- ── Items Table ──────────────────────────────────────────────────── -->
     @if (items().length === 0) {
       <div class="empty-bill no-print">

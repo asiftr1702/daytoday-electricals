@@ -35,6 +35,26 @@ export class BillComponent implements OnInit {
   // Edit mode for an item
   editingIndex = signal<number | null>(null);
 
+  // Custom item fields
+  readonly customName = signal('');
+  readonly customQty = signal(1);
+  readonly customPrice = signal(0);
+
+  addCustomItem(): void {
+    const name = this.customName().trim();
+    if (!name) return;
+    this.billService.addItem({
+      productName: name,
+      qty: this.customQty() || 1,
+      sellPrice: this.customPrice() || 0,
+      costPrice: 0,
+      unit: 'pc',
+    });
+    this.customName.set('');
+    this.customQty.set(1);
+    this.customPrice.set(0);
+  }
+
   // Toggle profit visibility (hidden by default so customers can't see)
   showProfit = signal(false);
 
