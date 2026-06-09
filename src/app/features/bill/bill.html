@@ -262,13 +262,18 @@
       <!-- Profit summary (admin-only visible, no print) -->
       <div class="profit-summary no-print">
         <span>Items: <strong>{{ itemCount() }}</strong></span>
-        <span>Total Cost: <strong>{{ formatCurrency(currentBillTotalCost()) }}</strong></span>
-        @if (discount() > 0) {
-          <span>Discount: <strong class="discount-amount">− {{ formatCurrency(discount()) }}</strong></span>
+        @if (showProfit()) {
+          <span>Total Cost: <strong>{{ formatCurrency(currentBillTotalCost()) }}</strong></span>
+          @if (discount() > 0) {
+            <span>Discount: <strong class="discount-amount">− {{ formatCurrency(discount()) }}</strong></span>
+          }
+          <span class="profit-label" [class.profit-neg]="(finalAmount() - currentBillTotalCost()) < 0">
+            Profit: <strong>{{ formatCurrency(finalAmount() - currentBillTotalCost()) }}</strong>
+          </span>
         }
-        <span class="profit-label" [class.profit-neg]="(finalAmount() - currentBillTotalCost()) < 0">
-          Profit: <strong>{{ formatCurrency(finalAmount() - currentBillTotalCost()) }}</strong>
-        </span>
+        <button type="button" class="profit-toggle" (click)="showProfit.update(v => !v)" [attr.aria-label]="showProfit() ? 'Hide profit' : 'Show profit'">
+          {{ showProfit() ? '🙈' : '👁️' }}
+        </button>
       </div>
     }
 
@@ -359,7 +364,12 @@
       <div class="past-day-summary">
         <span>Bills: <strong>{{ pastBills().length }}</strong></span>
         <span>Day Total: <strong>{{ formatCurrency(pastBillsTotal()) }}</strong></span>
-        <span>Day Profit: <strong>{{ formatCurrency(pastBillsProfit()) }}</strong></span>
+        @if (showProfit()) {
+          <span>Day Profit: <strong>{{ formatCurrency(pastBillsProfit()) }}</strong></span>
+        }
+        <button type="button" class="profit-toggle" (click)="showProfit.update(v => !v)" [attr.aria-label]="showProfit() ? 'Hide profit' : 'Show profit'">
+          {{ showProfit() ? '🙈' : '👁️' }}
+        </button>
       </div>
     }
   </section>

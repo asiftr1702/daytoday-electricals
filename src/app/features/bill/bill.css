@@ -269,6 +269,19 @@
 .profit-label { color: #1a6b3a; }
 .profit-neg   { color: #9b1c1c; }
 
+.profit-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+  margin-left: auto;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.profit-toggle:hover { opacity: 1; }
+
 /* ── Action Buttons ──────────────────────────────────────── */
 .bill-actions {
   display: flex;
@@ -498,9 +511,14 @@
   .no-print { display: none !important; }
   .print-only { display: block !important; }
 
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+  }
+
   body {
-    font-family: Arial, sans-serif;
-    font-size: 12pt;
+    font-size: 11pt;
     margin: 0;
     padding: 0;
     background: #fff;
@@ -520,7 +538,7 @@
 
   .print-shop-name {
     font-size: 15pt;
-    font-weight: 700;
+    font-weight: 700 !important;
     margin: 0 0 2px;
   }
 
@@ -535,7 +553,7 @@
     letter-spacing: 0.05em;
   }
 
-  .print-date-value { font-size: 12pt; font-weight: 700; }
+  .print-date-value { font-size: 12pt; font-weight: 700 !important; }
 
   .print-divider {
     border: none;
@@ -545,7 +563,7 @@
 
   /* ── Table ── */
   .bill-table {
-    font-size: 10.5pt;
+    font-size: 10pt;
     width: 100%;
     border-collapse: collapse;
     border: 1px solid #999;
@@ -555,28 +573,65 @@
   .bill-table td {
     border: 1px solid #bbb;
     padding: 5px 8px;
+    text-align: left;
   }
+
+  /* Restore right-align for price/total columns */
+  .col-price, .col-total { text-align: right !important; }
+  .col-qty { text-align: center !important; }
+  .col-num { text-align: center !important; width: 28px; }
 
   .bill-table thead th {
     background: #f0f0f0 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-    font-size: 9pt;
+    font-size: 8.5pt;
+    font-weight: 700 !important;
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
 
-  .col-actions { display: none !important; }
-  .col-num { width: 28px; text-align: center; }
+  /* Item name & brand tag */
+  .item-name { font-weight: 700 !important; }
 
-  /* ── Tfoot rows ── */
-  .bill-subtotal-row td,
-  .bill-discount-row td,
-  .bill-total-row td {
-    background: #fff !important;
+  .brand-tag {
+    font-size: 7pt !important;
+    font-weight: 500 !important;
+    color: #374151 !important;
+    border: 1.5px solid #374151 !important;
+    border-radius: 4px !important;
+    padding: 0 3px !important;
+    line-height: 1.6;
+    display: inline-block;
   }
 
-  .bill-discount-row { display: none !important; } /* input row — hidden in print */
+  /* Remove editable-val dashed underline */
+  .editable-val {
+    border-bottom: none !important;
+    cursor: default;
+  }
+
+  .col-actions { display: none !important; }
+
+  /* ── Tfoot rows ── */
+  .bill-subtotal-row td {
+    background: #fff !important;
+    color: #555 !important;
+    font-size: 9.5pt;
+  }
+
+  .bill-discount-row { display: none !important; }
+
+  .bill-total-row td {
+    background: #fff !important;
+    border-top: 2px solid #333 !important;
+  }
+
+  .final-amount {
+    color: #1a6b3a !important;
+    font-size: 12pt !important;
+    font-weight: 700 !important;
+  }
+
+  .discount-amount { color: #92400e !important; }
 
   /* ── Footer ── */
   .print-footer {
@@ -586,7 +641,7 @@
     color: #555;
   }
 
-  .print-small { font-size: 9pt; color: #888; }
+  .print-small { font-size: 8.5pt; color: #888; }
 }
 
 @media (max-width: 600px) {

@@ -35,6 +35,9 @@ export class BillComponent implements OnInit {
   // Edit mode for an item
   editingIndex = signal<number | null>(null);
 
+  // Toggle profit visibility (hidden by default so customers can't see)
+  showProfit = signal(false);
+
   ngOnInit(): void {
     this.loadPastBills();
   }
