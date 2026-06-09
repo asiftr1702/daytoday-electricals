@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
-import { CATEGORIES } from '../../core/config/categories.config';
+import { CATEGORIES, UNITS, WARRANTY_OPTIONS } from '../../core/config/categories.config';
 import { Product } from '../../core/models/product.model';
 import './admin.css';
 
@@ -18,6 +18,8 @@ export class AdminComponent implements OnInit {
   private readonly firebaseAdmin = inject(FirebaseAdminService);
 
   categories = CATEGORIES;
+  units = UNITS;
+  warrantyOptions = WARRANTY_OPTIONS;
   selectedCategory: (typeof CATEGORIES)[0] | null = null;
   subcategories: string[] = [];
   productForm!: FormGroup;

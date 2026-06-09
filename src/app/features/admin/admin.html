@@ -132,12 +132,9 @@
           <div class="form-group">
             <label for="unit">Unit <span class="required">*</span></label>
             <select id="unit" formControlName="unit" required>
-              <option value="Piece">Piece</option>
-              <option value="Roll">Roll</option>
-              <option value="Meter">Meter</option>
-              <option value="Pack">Pack</option>
-              <option value="Box">Box</option>
-              <option value="Dozen">Dozen</option>
+              @for (u of units; track u) {
+                <option [value]="u">{{ u }}</option>
+              }
             </select>
           </div>
 
@@ -170,12 +167,9 @@
           <div class="form-group">
             <label for="warranty">Warranty</label>
             <select id="warranty" formControlName="warranty">
-              <option value="">No Warranty</option>
-              <option value="1y">1 Year</option>
-              <option value="2y">2 Years</option>
-              <option value="6m">6 Months</option>
-              <option value="3m">3 Months</option>
-              <option value="1s">1 Season</option>
+              @for (w of warrantyOptions; track w.value) {
+                <option [value]="w.value">{{ w.label }}</option>
+              }
             </select>
           </div>
 

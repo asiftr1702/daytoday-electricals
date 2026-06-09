@@ -112,3 +112,27 @@ export const CATEGORIES: readonly Category[] = [
 
 export const getCategoryById = (id: string): Category | undefined =>
   CATEGORIES.find(c => c.id === id);
+
+export const UNITS: readonly string[] = [
+  'Piece',
+  'Roll',
+  'Bundle',
+  'Meter',
+  'Pack',
+  'Box',
+  'Dozen',
+];
+
+export interface WarrantyOption {
+  value: string;
+  label: string;
+}
+
+export const WARRANTY_OPTIONS: readonly WarrantyOption[] = [
+  { value: '', label: 'No Warranty' },
+  { value: '1y', label: '1 Year' },
+  { value: '2y', label: '2 Years' },
+  { value: '6m', label: '6 Months' },
+  { value: '3m', label: '3 Months' },
+  { value: '1s', label: '1 Season' },
+];
