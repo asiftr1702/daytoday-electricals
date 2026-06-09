@@ -61,7 +61,7 @@ export const CATEGORIES: readonly Category[] = [
     icon: '⚡',
     sheetName: 'FittingItems',
     color: '#FFF3E0',
-    subcategories: ['MCB', 'RCCB / ELCB', 'Distribution Board', 'Surface Boxes', 'Cable Clips & Ties', 'Conduit Fittings'],
+    subcategories: ['Pipes', 'Casing', 'Distribution Board', 'Surface Boxes', 'Cable Clips & Ties', 'Conduit Fittings'],
   },
   {
     id: 'mixers',

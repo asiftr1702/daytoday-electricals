@@ -282,10 +282,15 @@ export class ProductCardComponent {
   readonly billSellPrice = signal(0);
   readonly billAdded = signal(false);
 
+  private isSameProduct(i: { productName: string; brand?: string }): boolean {
+    const p = this.product();
+    return i.productName === p.name && (i.brand ?? '') === (p.brand ?? '');
+  }
+
   /** Stock already reserved in the current bill for this product */
   readonly qtyAlreadyInBill = computed(() =>
     this.billService.currentItems()
-      .filter(i => i.productName === this.product().name)
+      .filter(i => this.isSameProduct(i))
       .reduce((s, i) => s + i.qty, 0)
   );
 
@@ -307,19 +312,20 @@ export class ProductCardComponent {
   });
 
   readonly inBill = computed(() =>
-    this.billService.currentItems().some(i => i.productName === this.product().name)
+    this.billService.currentItems().some(i => this.isSameProduct(i))
   );
 
   readonly billItemCount = computed(() => {
-    const item = this.billService.currentItems().find(i => i.productName === this.product().name);
+    const item = this.billService.currentItems().find(i => this.isSameProduct(i));
     return item?.qty ?? 0;
   });
 
   openBillPanel(event: Event): void {
     event.stopPropagation();
+    const p = this.product();
+    if (!p.available) return; // blocked — out of stock
     const stock = this.effectiveStockQty();
     if (stock != null && stock <= 0) return; // blocked — out of stock
-    const p = this.product();
     const isOffer = p.discountedPrice && p.price && p.discountedPrice < p.price;
     this.billSellPrice.set(isOffer ? p.discountedPrice! : (p.price ?? 0));
     const avail = this.availableForBill();

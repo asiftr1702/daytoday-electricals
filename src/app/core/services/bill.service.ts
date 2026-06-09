@@ -50,14 +50,16 @@ export class BillService {
   );
 
   // ─── Cart operations ────────────────────────────────────────────────────
+  private isSameProduct(a: Pick<BillItem, 'productName' | 'brand'>, b: Pick<BillItem, 'productName' | 'brand'>): boolean {
+    return a.productName === b.productName && (a.brand ?? '') === (b.brand ?? '');
+  }
+
   addItem(item: Omit<BillItem, 'profit'>): void {
-    const existing = this.currentItems().find(
-      i => i.productName === item.productName
-    );
+    const existing = this.currentItems().find(i => this.isSameProduct(i, item));
     if (existing) {
       this.currentItems.update(items =>
         items.map(i =>
-          i.productName === item.productName
+          this.isSameProduct(i, item)
             ? {
                 ...i,
                 qty: i.qty + item.qty,

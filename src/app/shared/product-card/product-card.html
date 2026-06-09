@@ -66,17 +66,13 @@
       </div>
     }
     <!-- Stock badge overlaid on image -->
-    <span
-      class="stock-badge"
-      [class.in-stock]="product().available"
-      [class.out-stock]="!product().available"
-    >
-      @if (product().available) {
+    @if (!product().available || (effectiveStockQty() != null && effectiveStockQty()! <= 0)) {
+      <span class="stock-badge out-stock">Out of Stock</span>
+    } @else {
+      <span class="stock-badge in-stock">
         <span class="stock-dot" aria-hidden="true"></span> In Stock
-      } @else {
-        Out of Stock
-      }
-    </span>
+      </span>
+    }
     <!-- Warranty badge overlaid on image bottom-left -->
   </div>
 
@@ -152,13 +148,13 @@
         class="btn-add-bill"
         (click)="openBillPanel($event)"
         [class.btn-add-bill-active]="inBill()"
-        [disabled]="effectiveStockQty() != null && effectiveStockQty()! <= 0"
+        [disabled]="!product().available || (effectiveStockQty() != null && effectiveStockQty()! <= 0)"
         aria-label="Add {{ product().name }} to bill"
       >
-        @if (effectiveStockQty() != null && effectiveStockQty()! <= 0) {
+        @if (!product().available || (effectiveStockQty() != null && effectiveStockQty()! <= 0)) {
           Out of Stock
         } @else {
-          {{ inBill() ? '＋ Add More' : '＋ Bill' }}
+          {{ inBill() ? '＋ Add More' : '＋ Add' }}
         }
       </button>
     </div>
