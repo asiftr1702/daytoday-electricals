@@ -123,7 +123,7 @@ export class ProductsComponent {
 
     if (offersOnly) {
       products = products.filter(
-        p => p.discountedPrice != null && p.price != null && p.discountedPrice < p.price,
+        p => p.discountedPrice != null && p.discountedPrice > 0 && p.price != null && p.discountedPrice < p.price,
       );
     }
 
