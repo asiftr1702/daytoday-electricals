@@ -316,8 +316,8 @@
                   </div>
                 }
                 <div class="sheet-card-badges">
-                  <span class="avail-badge" [class.avail-yes]="p.available" [class.avail-no]="!p.available">
-                    {{ p.available ? 'In Stock' : 'Out' }}
+                  <span class="avail-badge" [class.avail-yes]="p.available && (p.stockQty ?? 1) > 0" [class.avail-no]="!p.available || (p.stockQty ?? 1) <= 0">
+                    {{ p.available && (p.stockQty ?? 1) > 0 ? 'In Stock' : 'Out' }}
                   </span>
                   @if (p.stockQty != null) {
                     <span class="sheet-card-stock">Qty: {{ p.stockQty }}</span>
@@ -384,8 +384,8 @@
                   </td>
                   <td>{{ p.stockQty ?? '—' }}</td>
                   <td>
-                    <span class="avail-badge" [class.avail-yes]="p.available" [class.avail-no]="!p.available">
-                      {{ p.available ? 'Yes' : 'No' }}
+                    <span class="avail-badge" [class.avail-yes]="p.available && (p.stockQty ?? 1) > 0" [class.avail-no]="!p.available || (p.stockQty ?? 1) <= 0">
+                      {{ p.available && (p.stockQty ?? 1) > 0 ? 'Yes' : 'No' }}
                     </span>
                   </td>
                   <td class="col-actions">
