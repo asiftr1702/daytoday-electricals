@@ -18,14 +18,19 @@
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
       <a routerLink="/products" routerLinkActive="active">Products</a>
       <a routerLink="/contact" routerLinkActive="active">Contact Us</a>
-      <a routerLink="/admin" routerLinkActive="active" class="admin-link" title="Admin panel for adding products">📦 Admin</a>
-      <a routerLink="/sales" routerLinkActive="active" class="admin-link" title="Daily sales tracker">💰 Sales</a>
-      <a routerLink="/bill" routerLinkActive="active" class="admin-link bill-nav-link" title="Current bill / cart">
-        🧾 Bill
-        @if (billService.itemCount() > 0) {
-          <span class="header-bill-badge">{{ billService.itemCount() }}</span>
-        }
-      </a>
+      @if (adminAuth.isAdmin()) {
+        <a routerLink="/admin" routerLinkActive="active" class="admin-link" title="Admin panel for adding products">📦 Admin</a>
+        <a routerLink="/sales" routerLinkActive="active" class="admin-link" title="Daily sales tracker">💰 Sales</a>
+        <a routerLink="/bill" routerLinkActive="active" class="admin-link bill-nav-link" title="Current bill / cart">
+          🧾 Bill
+          @if (billService.itemCount() > 0) {
+            <span class="header-bill-badge">{{ billService.itemCount() }}</span>
+          }
+        </a>
+        <button type="button" class="btn-admin-logout" (click)="logout()" title="Logout">🔒 Logout</button>
+      } @else {
+        <button type="button" class="btn-admin-login" (click)="openLogin()">🔑 Admin Login</button>
+      }
     </nav>
 
     <a routerLink="/products" class="btn btn-primary nav-cta" aria-label="Browse all products">
@@ -57,18 +62,60 @@
       <a routerLink="/contact" routerLinkActive="active" (click)="closeMenu()">
         <span aria-hidden="true">📍</span> Contact Us
       </a>
-      <a routerLink="/admin" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
-        <span aria-hidden="true">📦</span> Admin
-      </a>
-      <a routerLink="/sales" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
-        <span aria-hidden="true">💰</span> Sales
-      </a>
-      <a routerLink="/bill" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
-        <span aria-hidden="true">🧾</span> Bill
-        @if (billService.itemCount() > 0) {
-          <span class="header-bill-badge">{{ billService.itemCount() }}</span>
-        }
-      </a>
+      @if (adminAuth.isAdmin()) {
+        <a routerLink="/admin" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
+          <span aria-hidden="true">📦</span> Admin
+        </a>
+        <a routerLink="/sales" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
+          <span aria-hidden="true">💰</span> Sales
+        </a>
+        <a routerLink="/bill" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
+          <span aria-hidden="true">🧾</span> Bill
+          @if (billService.itemCount() > 0) {
+            <span class="header-bill-badge">{{ billService.itemCount() }}</span>
+          }
+        </a>
+        <button type="button" class="admin-link mobile-logout-btn" (click)="logout()">
+          <span aria-hidden="true">🔒</span> Logout
+        </button>
+      } @else {
+        <button type="button" class="admin-link mobile-login-btn" (click)="closeMenu(); openLogin()">
+          <span aria-hidden="true">🔑</span> Admin Login
+        </button>
+      }
     </nav>
   }
 </header>
+
+<!-- ── Admin Login Modal ── -->
+@if (loginOpen()) {
+  <div class="login-backdrop" (click)="closeLogin()" role="dialog" aria-modal="true" aria-label="Admin Login">
+    <div class="login-modal" (click)="$event.stopPropagation()">
+      <h2 class="login-title">🔑 Admin Login</h2>
+      <form (ngSubmit)="submitLogin()" #loginForm="ngForm">
+        <label class="login-label" for="admin-pw">Password</label>
+        <input
+          id="admin-pw"
+          type="password"
+          class="login-input"
+          [class.login-input-error]="loginError()"
+          [ngModel]="loginPassword()"
+          (ngModelChange)="loginPassword.set($event)"
+          name="password"
+          autocomplete="current-password"
+          placeholder="Enter admin password"
+          autofocus
+        />
+        @if (loginError()) {
+          <p class="login-error" role="alert">{{ loginError() }}</p>
+        }
+        <div class="login-actions">
+          <button type="button" class="login-btn-cancel" (click)="closeLogin()">Cancel</button>
+          <button type="submit" class="login-btn-submit" [disabled]="loginLoading()">
+            {{ loginLoading() ? 'Verifying…' : 'Login' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
