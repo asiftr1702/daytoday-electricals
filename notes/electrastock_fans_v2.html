@@ -1,0 +1,233 @@
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f4f3f0;--surface:#fff;--sur2:#f0efe9;
+  --b2:rgba(0,0,0,.14);--t1:#111;--t2:#5a5a5a;--t3:#aaa;
+  --ac:#4f49c8;--ach:#3c37a8;--acl:#eeecfb;--act:#3c37a8;
+  --gbg:#e4f4d0;--gtx:#256007;--rbg:#fde8e8;--rtx:#922020;
+  --r:10px;--rc:16px;--rp:999px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+.header{background:var(--surface);border-bottom:.5px solid var(--b2);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:54px}
+.logo{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px;color:var(--t1)}
+.lmark{width:28px;height:28px;background:var(--ac);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
+.btn-add{font-size:13px;font-weight:500;padding:7px 14px;background:var(--ac);color:#fff;border:none;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:5px}
+.btn-add:hover{background:var(--ach)}
+.tabs{background:var(--surface);border-bottom:.5px solid var(--b2);display:flex;overflow-x:auto;scrollbar-width:none;padding:0 1.25rem;gap:2px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font-size:13px;padding:13px 14px;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--t2);white-space:nowrap;display:flex;align-items:center;gap:5px;background:none;flex-shrink:0}
+.tab i{font-size:14px}
+.tab.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:500}
+.toolbar{background:var(--bg);padding:12px 1.25rem 0;border-bottom:.5px solid var(--b2)}
+.trow{display:flex;gap:8px;margin-bottom:10px}
+.sw{position:relative;flex:1}
+.sw i{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--t3);pointer-events:none}
+.sw input{width:100%;padding:9px 10px 9px 32px;font-size:13px;border:.5px solid var(--b2);border-radius:var(--r);background:var(--surface);color:var(--t1);outline:none;-webkit-appearance:none}
+.sw input:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(79,73,200,.1)}
+.sel{font-size:13px;padding:9px 12px;border:.5px solid var(--b2);border-radius:var(--r);background:var(--surface);color:var(--t2);outline:none;cursor:pointer;flex-shrink:0}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:12px}
+.chips::-webkit-scrollbar{display:none}
+.chip{font-size:12px;padding:6px 12px;border:.5px solid var(--b2);border-radius:var(--rp);background:var(--surface);color:var(--t2);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.chip.active{background:var(--acl);border-color:var(--ac);color:var(--ac);font-weight:500}
+.csep{width:.5px;background:var(--b2);height:18px;align-self:center;flex-shrink:0}
+.rbar{padding:10px 1.25rem 6px;font-size:12px;color:var(--t3)}
+.main{padding:0 1.25rem 2rem}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.card{background:var(--surface);border:.5px solid var(--b2);border-radius:var(--rc);overflow:hidden;display:flex;flex-direction:column}
+.card:hover{border-color:rgba(0,0,0,.22)}
+.img-area{position:relative;background:var(--sur2);height:120px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fi{font-size:46px;color:var(--t3);opacity:.25}
+.itop{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
+.bdg{font-size:10px;font-weight:600;padding:3px 8px;border-radius:var(--rp);line-height:1.4;letter-spacing:.02em}
+.bd{background:var(--rbg);color:var(--rtx)}
+.bi{background:var(--gbg);color:var(--gtx)}
+.bo{background:var(--sur2);color:var(--t3);border:.5px solid var(--b2)}
+.strip{position:absolute;bottom:0;left:0;right:0;height:26px;background:rgba(0,0,0,.04);border-top:.5px solid rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center}
+.sp{display:flex;align-items:center;gap:3px;font-size:10px;font-weight:500;color:var(--t2);padding:0 8px;white-space:nowrap;flex-shrink:0}
+.cdot{width:7px;height:7px;border-radius:50%;border:.5px solid rgba(0,0,0,.14);flex-shrink:0}
+.sdiv{width:.5px;height:11px;background:var(--b2);flex-shrink:0}
+.body{padding:9px 10px 10px;display:flex;flex-direction:column;flex:1}
+.mrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.brand{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ac)}
+.warr{font-size:10px;color:var(--t3);display:flex;align-items:center;gap:2px}
+.warr i{font-size:11px}
+.name-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:7px}
+.pname{font-size:13px;font-weight:500;color:var(--t1);line-height:1.25;flex:1}
+.type-tag{font-size:10px;font-weight:600;padding:3px 8px;border-radius:var(--rp);background:var(--acl);color:var(--act);white-space:nowrap;flex-shrink:0;letter-spacing:.02em}
+.perf{display:flex;gap:5px}
+.pill{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:500;color:var(--t2);background:var(--sur2);border-radius:6px;padding:3px 7px}
+.pill i{font-size:11px;color:var(--t3)}
+.spacer{flex:1;min-height:6px}
+.prow{display:flex;align-items:baseline;gap:5px;margin:7px 0 8px}
+.pold{font-size:11px;color:var(--t3);text-decoration:line-through}
+.price{font-size:17px;font-weight:600;color:var(--t1)}
+.unit{font-size:10px;color:var(--t3)}
+.bcart{width:100%;font-size:12px;font-weight:500;padding:8px 0;background:var(--ac);color:#fff;border:none;border-radius:var(--r);cursor:pointer;min-height:34px;transition:background .15s}
+.bcart:hover{background:var(--ach)}
+.bcart:active{transform:scale(.98)}
+.bcart:disabled{background:var(--sur2);color:var(--t3);border:.5px solid var(--b2);cursor:not-allowed;transform:none}
+.empty{grid-column:1/-1;text-align:center;padding:3rem 1rem;color:var(--t3)}
+.empty i{font-size:32px;display:block;margin-bottom:8px}
+.empty p{font-size:13px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:rgba(17,17,17,.92);color:#fff;font-size:13px;padding:9px 18px;border-radius:var(--rp);opacity:0;transition:transform .2s,opacity .2s;z-index:100;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+@media(min-width:480px){.grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+
+<header class="header">
+  <div class="logo">
+    <div class="lmark"><i class="ti ti-bolt" aria-hidden="true"></i></div>
+    ElectraStock
+  </div>
+  <button class="btn-add" onclick="showToast('Opening add product form…')">
+    <i class="ti ti-plus" aria-hidden="true"></i>
+    <span>Add product</span>
+  </button>
+</header>
+
+<nav class="tabs">
+  <button class="tab active"><i class="ti ti-propeller"></i>Fans</button>
+  <button class="tab"><i class="ti ti-bulb"></i>Lights</button>
+  <button class="tab"><i class="ti ti-plug"></i>Wires &amp; Cables</button>
+  <button class="tab"><i class="ti ti-tool"></i>Modular</button>
+  <button class="tab"><i class="ti ti-cpu"></i>Non-Modular</button>
+  <button class="tab"><i class="ti ti-settings"></i>Fitting</button>
+  <button class="tab"><i class="ti ti-device-floppy"></i>Appliances</button>
+</nav>
+
+<div class="toolbar">
+  <div class="trow">
+    <div class="sw">
+      <i class="ti ti-search"></i>
+      <input type="search" id="q" placeholder="Search brand, name, type…" oninput="render()" autocomplete="off">
+    </div>
+    <select class="sel" id="sort" onchange="render()">
+      <option value="def">Default</option>
+      <option value="pa">Price ↑</option>
+      <option value="pd">Price ↓</option>
+      <option value="br">Brand A–Z</option>
+    </select>
+  </div>
+  <div class="chips">
+    <button class="chip active" onclick="sf('sz','all',this)">All sizes</button>
+    <button class="chip" onclick="sf('sz','24',this)">24″</button>
+    <button class="chip" onclick="sf('sz','36',this)">36″</button>
+    <button class="chip" onclick="sf('sz','48',this)">48″</button>
+    <div class="csep"></div>
+    <button class="chip active" onclick="sf('mt','all',this)">All material</button>
+    <button class="chip" onclick="sf('mt','Alu',this)">Aluminium</button>
+    <button class="chip" onclick="sf('mt','Cu',this)">Copper</button>
+    <div class="csep"></div>
+    <button class="chip active" onclick="sf('st','all',this)">All stock</button>
+    <button class="chip" onclick="sf('st','in',this)">In stock</button>
+    <button class="chip" onclick="sf('st','out',this)">Out of stock</button>
+  </div>
+</div>
+
+<div class="rbar"><span id="cnt"></span></div>
+
+<main class="main">
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="toast" id="t"></div>
+
+<script>
+const CM={White:"#f2f0eb",Silver:"#c0c0c0",Brown:"#8b6343",Black:"#2a2a2a",Gold:"#c9960e",Copper:"#b87333"};
+
+const P=[
+  {brand:"Classic",  name:"Pedestal Fan", type:"Pedestal",sz:"48",mat:"Alu",col:"White", w:55,rpm:380,price:1650,             war:"2y",in:true },
+  {brand:"Crompton", name:"High Speed",   type:"Ceiling", sz:"48",mat:"Cu", col:"Brown", w:75,rpm:400,price:1650,             war:"2y",in:true },
+  {brand:"Unique",   name:"Breeze",       type:"Ceiling", sz:"48",mat:"Alu",col:"White", w:60,rpm:370,price:1050,             war:"1y",in:true },
+  {brand:"Titen",    name:"Swift",        type:"Ceiling", sz:"36",mat:"Alu",col:"White", w:50,rpm:350,price:950, old:1150,d:17,war:"2y",in:true },
+  {brand:"Chetak",   name:"Turbo",        type:"Pedestal",sz:"48",mat:"Alu",col:"White", w:65,rpm:410,price:1050,             war:"1y",in:true },
+  {brand:"Classic",  name:"Slim Air",     type:"Wall",    sz:"24",mat:"Alu",col:"White", w:45,rpm:330,price:1550,old:1650,d:6, war:"2y",in:true },
+  {brand:"Chetak",   name:"AlphaWind",    type:"Ceiling", sz:"24",mat:"Alu",col:"White", w:48,rpm:420,price:1050,             war:"1y",in:true },
+  {brand:"Orient",   name:"Decorique",    type:"Ceiling", sz:"48",mat:"Alu",col:"Gold",  w:70,rpm:360,price:2850,             war:"2y",in:true },
+  {brand:"Bajaj",    name:"Maxima",       type:"Ceiling", sz:"48",mat:"Alu",col:"Brown", w:60,rpm:370,price:1650,             war:"2y",in:true },
+  {brand:"Usha",     name:"Striker",      type:"Pedestal",sz:"48",mat:"Alu",col:"White", w:55,rpm:390,price:1650,             war:"2y",in:true },
+  {brand:"Chetak",   name:"SlimAir",      type:"Wall",    sz:"36",mat:"Alu",col:"White", w:45,rpm:340,price:1050,             war:"1y",in:true },
+  {brand:"Mysore",   name:"Ornate",       type:"Ceiling", sz:"48",mat:"Alu",col:"White", w:60,rpm:360,price:1650,             war:"1y",in:true },
+  {brand:"Classic",  name:"CopperKool",   type:"Ceiling", sz:"48",mat:"Cu", col:"White", w:72,rpm:395,price:1650,             war:"2y",in:false},
+];
+
+const F={sz:'all',mt:'all',st:'all'};
+let TT;
+function sf(k,v,el){
+  F[k]=v;
+  el.closest('.chips').querySelectorAll(`[onclick*="'${k}'"]`).forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');render();
+}
+function showToast(m){
+  const t=document.getElementById('t');
+  t.textContent=m;t.classList.add('show');
+  clearTimeout(TT);TT=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function fmt(n){return n.toLocaleString('en-IN')}
+
+function render(){
+  const q=document.getElementById('q').value.toLowerCase().trim();
+  const s=document.getElementById('sort').value;
+  let L=P.filter(p=>{
+    if(F.sz!=='all'&&p.sz!==F.sz)return false;
+    if(F.mt!=='all'&&p.mat!==F.mt)return false;
+    if(F.st==='in'&&!p.in)return false;
+    if(F.st==='out'&&p.in)return false;
+    if(q&&![p.brand,p.name,p.type,p.mat,p.col].some(v=>v.toLowerCase().includes(q)))return false;
+    return true;
+  });
+  if(s==='pa')L.sort((a,b)=>a.price-b.price);
+  if(s==='pd')L.sort((a,b)=>b.price-a.price);
+  if(s==='br')L.sort((a,b)=>a.brand.localeCompare(b.brand));
+  document.getElementById('cnt').textContent=L.length+' item'+(L.length!==1?'s':'');
+  const g=document.getElementById('grid');
+  if(!L.length){
+    g.innerHTML='<div class="empty"><i class="ti ti-mood-empty"></i><p>No fans match your filters</p></div>';
+    return;
+  }
+  g.innerHTML=L.map(p=>{
+    const dot=CM[p.col]||'#ccc';
+    const sn=p.name.replace(/'/g,"\\'"),sb=p.brand.replace(/'/g,"\\'");
+    return`<div class="card">
+  <div class="img-area">
+    <i class="ti ti-propeller fi"></i>
+    <div class="itop">
+      ${p.d?`<span class="bdg bd">−${p.d}%</span>`:'<span></span>'}
+      <span class="bdg ${p.in?'bi':'bo'}">${p.in?'In stock':'Out of stock'}</span>
+    </div>
+    <div class="strip">
+      <span class="sp">${p.sz}″</span>
+      <div class="sdiv"></div>
+      <span class="sp">${p.mat}</span>
+      <div class="sdiv"></div>
+      <span class="sp"><span class="cdot" style="background:${dot}"></span>${p.col}</span>
+    </div>
+  </div>
+  <div class="body">
+    <div class="mrow">
+      <span class="brand">${p.brand}</span>
+      <span class="warr"><i class="ti ti-shield-check"></i>${p.war}</span>
+    </div>
+    <div class="name-row">
+      <span class="pname">${p.name}</span>
+      <span class="type-tag">${p.type}</span>
+    </div>
+    <div class="perf">
+      <span class="pill"><i class="ti ti-bolt"></i>${p.w}W</span>
+      <span class="pill"><i class="ti ti-rotate"></i>${p.rpm} rpm</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="prow">
+      ${p.old?`<span class="pold">₹${fmt(p.old)}</span>`:''}
+      <span class="price">₹${fmt(p.price)}</span>
+      <span class="unit">/pc</span>
+    </div>
+    <button class="bcart"${p.in?'':' disabled'} onclick="showToast('${sb} ${sn} added to cart')">
+      ${p.in?'+ Add to cart':'Out of stock'}
+    </button>
+  </div>
+</div>`}).join('');
+}
+render();
+</script>

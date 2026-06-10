@@ -1,0 +1,236 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.wrap{padding:1rem 0;max-width:680px}
+.section-label{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-secondary);margin:1.5rem 0 .75rem;display:flex;align-items:center;gap:6px}
+.section-label i{font-size:14px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:.75rem}
+.row{display:grid;gap:12px;margin-bottom:12px}
+.row.two{grid-template-columns:1fr 1fr}
+.row.three{grid-template-columns:1fr 1fr 1fr}
+.row.four{grid-template-columns:1fr 1fr 1fr 1fr}
+.field{display:flex;flex-direction:column;gap:4px}
+label{font-size:13px;color:var(--color-text-secondary)}
+label span.req{color:#E24B4A;margin-left:2px}
+input,select,textarea{width:100%;font-size:14px;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);outline:none}
+input:focus,select:focus,textarea:focus{border-color:#378ADD;box-shadow:0 0 0 2px #E6F1FB}
+input[readonly]{background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:default}
+textarea{resize:vertical;min-height:60px}
+.sku-box{display:flex;gap:8px;align-items:center}
+.sku-box input{flex:1}
+.sku-badge{font-size:11px;background:var(--color-background-success);color:var(--color-text-success);border-radius:var(--border-radius-md);padding:3px 8px;white-space:nowrap;border:0.5px solid var(--color-border-success)}
+.pill-group{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:13px;padding:5px 12px;border:0.5px solid var(--color-border-secondary);border-radius:20px;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-primary);transition:all .15s}
+.pill:hover{border-color:#378ADD}
+.pill.active{background:#E6F1FB;border-color:#378ADD;color:#185FA5}
+.pill.color-pill{display:flex;align-items:center;gap:6px}
+.color-dot{width:12px;height:12px;border-radius:50%;border:0.5px solid var(--color-border-secondary)}
+.hint{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+.price-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.currency-wrap{position:relative}
+.currency-wrap span{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--color-text-secondary);pointer-events:none}
+.currency-wrap input{padding-left:22px}
+.toggle-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+.toggle{width:36px;height:20px;border-radius:10px;background:var(--color-border-secondary);position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;border:none;outline:none}
+.toggle.on{background:#378ADD}
+.toggle::after{content:'';position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s}
+.toggle.on::after{left:19px}
+.toggle-label{font-size:13px;color:var(--color-text-primary)}
+.btn-row{display:flex;gap:10px;margin-top:1.25rem}
+.btn-primary{flex:1;padding:10px;background:#5B57D1;border:none;border-radius:var(--border-radius-md);color:#fff;font-size:14px;font-weight:500;cursor:pointer}
+.btn-primary:hover{background:#534AB7}
+.btn-ghost{padding:10px 20px;background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:14px;color:var(--color-text-secondary);cursor:pointer}
+.preview-sku{font-size:12px;font-family:var(--font-mono);background:var(--color-background-secondary);padding:4px 8px;border-radius:var(--border-radius-md);color:var(--color-text-primary)}
+.divider{height:0.5px;background:var(--color-border-tertiary);margin:1rem 0}
+</style>
+
+<div class="wrap">
+<h2 class="sr-only">Add fan product form — redesigned with smart defaults and auto-generated SKU</h2>
+
+<div class="section-label"><i class="ti ti-cpu" aria-hidden="true"></i> Basic info</div>
+<div class="card">
+  <div class="row two" style="margin-bottom:12px">
+    <div class="field">
+      <label>Brand<span class="req">*</span></label>
+      <select id="brand" onchange="genSKU()">
+        <option value="">Select brand</option>
+        <option>Havells</option>
+        <option>Bajaj</option>
+        <option>Crompton</option>
+        <option>Orient</option>
+        <option>Usha</option>
+        <option>V-Guard</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Subcategory<span class="req">*</span></label>
+      <select id="subcat" onchange="genSKU()">
+        <option value="">Select type</option>
+        <option>Ceiling Fan</option>
+        <option>Pedestal Fan</option>
+        <option>Wall Fan</option>
+        <option>Exhaust Fan</option>
+        <option>Table Fan</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="row two" style="margin-bottom:12px">
+    <div class="field">
+      <label>Product name<span class="req">*</span></label>
+      <input id="pname" type="text" placeholder="e.g. Rio, Enticer, Stealth" oninput="genSKU()">
+    </div>
+    <div class="field">
+      <label>SKU <span style="font-size:11px;color:var(--color-text-tertiary)">(auto-generated)</span></label>
+      <div class="sku-box">
+        <input id="sku" type="text" readonly placeholder="Fill fields above…">
+        <span class="sku-badge" id="sku-status">Auto</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <div style="margin-bottom:8px"><label style="font-size:13px;color:var(--color-text-secondary)">Blade size</label></div>
+  <div class="pill-group" id="size-group">
+    <button class="pill" onclick="togglePill(this,'size')">16 inch</button>
+    <button class="pill" onclick="togglePill(this,'size')">24 inch</button>
+    <button class="pill" onclick="togglePill(this,'size')">36 inch</button>
+    <button class="pill" onclick="togglePill(this,'size')">48 inch</button>
+    <button class="pill" onclick="togglePill(this,'size')">56 inch</button>
+  </div>
+
+  <div class="divider"></div>
+  <div style="margin-bottom:8px"><label style="font-size:13px;color:var(--color-text-secondary)">Blade material</label></div>
+  <div class="pill-group" id="material-group">
+    <button class="pill" onclick="togglePill(this,'material')">Aluminium (Alu)</button>
+    <button class="pill" onclick="togglePill(this,'material')">Copper (Cu)</button>
+    <button class="pill" onclick="togglePill(this,'material')">PVC</button>
+    <button class="pill" onclick="togglePill(this,'material')">Steel</button>
+  </div>
+
+  <div class="divider"></div>
+  <div style="margin-bottom:8px"><label style="font-size:13px;color:var(--color-text-secondary)">Color</label></div>
+  <div class="pill-group" id="color-group">
+    <button class="pill color-pill" onclick="togglePill(this,'color')"><span class="color-dot" style="background:#fff;border-color:#ccc"></span>White</button>
+    <button class="pill color-pill" onclick="togglePill(this,'color')"><span class="color-dot" style="background:#C0C0C0"></span>Silver</button>
+    <button class="pill color-pill" onclick="togglePill(this,'color')"><span class="color-dot" style="background:#5a4a3a"></span>Brown</button>
+    <button class="pill color-pill" onclick="togglePill(this,'color')"><span class="color-dot" style="background:#222"></span>Black</button>
+    <button class="pill color-pill" onclick="togglePill(this,'color')"><span class="color-dot" style="background:#b8860b"></span>Gold</button>
+    <button class="pill color-pill" onclick="togglePill(this,'color')"><span class="color-dot" style="background:#e07b55"></span>Copper</button>
+  </div>
+</div>
+
+<div class="section-label"><i class="ti ti-currency-rupee" aria-hidden="true"></i> Pricing & stock</div>
+<div class="card">
+  <div class="price-row" style="margin-bottom:12px">
+    <div class="field">
+      <label>Cost price<span class="req">*</span></label>
+      <div class="currency-wrap"><span>₹</span><input type="number" id="cost" placeholder="0" min="0" oninput="calcMargin()"></div>
+    </div>
+    <div class="field">
+      <label>Selling price<span class="req">*</span></label>
+      <div class="currency-wrap"><span>₹</span><input type="number" id="sell" placeholder="0" min="0" oninput="calcMargin()"></div>
+    </div>
+    <div class="field">
+      <label>Margin</label>
+      <input id="margin" type="text" readonly placeholder="—">
+      <div class="hint" id="margin-hint"></div>
+    </div>
+  </div>
+
+  <div class="row two" style="margin-bottom:8px">
+    <div class="field">
+      <label>Discounted price <span style="font-size:11px;color:var(--color-text-tertiary)">(optional)</span></label>
+      <div class="currency-wrap"><span>₹</span><input type="number" placeholder="0" min="0"></div>
+    </div>
+    <div class="field">
+      <label>Stock quantity<span class="req">*</span></label>
+      <input type="number" id="qty" placeholder="0" min="0">
+    </div>
+  </div>
+
+  <div class="toggle-row">
+    <button class="toggle on" id="avail-toggle" onclick="this.classList.toggle('on');this.nextElementSibling.textContent=this.classList.contains('on')?'In stock':'Out of stock'"></button>
+    <span class="toggle-label">In stock</span>
+  </div>
+</div>
+
+<div class="section-label"><i class="ti ti-info-circle" aria-hidden="true"></i> Additional info <span style="font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--color-text-tertiary)">(all optional)</span></div>
+<div class="card">
+  <div class="row three">
+    <div class="field">
+      <label>Wattage (W)</label>
+      <input type="number" placeholder="e.g. 70">
+    </div>
+    <div class="field">
+      <label>Speed settings</label>
+      <select>
+        <option value="">—</option>
+        <option>3 speed</option>
+        <option>4 speed</option>
+        <option>5 speed</option>
+        <option>Variable (regulator)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Warranty</label>
+      <select>
+        <option>No warranty</option>
+        <option>6 months</option>
+        <option>1 year</option>
+        <option>2 years</option>
+        <option>3 years</option>
+      </select>
+    </div>
+  </div>
+  <div class="row two">
+    <div class="field">
+      <label>Purchase date</label>
+      <input type="date">
+    </div>
+    <div class="field">
+      <label>Location / rack</label>
+      <input type="text" placeholder="e.g. Rack-A, Shelf-1">
+    </div>
+  </div>
+  <div class="field">
+    <label>Remarks</label>
+    <textarea placeholder="Any notes…" rows="2"></textarea>
+  </div>
+</div>
+
+<div class="btn-row">
+  <button class="btn-primary" onclick="sendPrompt('I submitted the fan product form. SKU: '+document.getElementById('sku').value+', Brand: '+document.getElementById('brand').value+', Type: '+document.getElementById('subcat').value)">Add product ↗</button>
+  <button class="btn-ghost">Reset</button>
+</div>
+</div>
+
+<script>
+let counters = {};
+function genSKU(){
+  const brand = document.getElementById('brand').value;
+  const subcat = document.getElementById('subcat').value;
+  const name = document.getElementById('pname').value.trim();
+  if(!brand||!subcat||!name){document.getElementById('sku').value='';return;}
+  const b = brand.slice(0,3).toUpperCase();
+  const s = {'Ceiling Fan':'CF','Pedestal Fan':'PF','Wall Fan':'WF','Exhaust Fan':'EF','Table Fan':'TF'}[subcat]||subcat.slice(0,2).toUpperCase();
+  const n = name.slice(0,4).toUpperCase().replace(/\s/g,'');
+  const key = b+s+n;
+  if(!counters[key]) counters[key] = Math.floor(Math.random()*8)+1;
+  document.getElementById('sku').value = b+'-'+s+'-'+n+'-'+String(counters[key]).padStart(3,'0');
+}
+function togglePill(el, group){
+  document.querySelectorAll('#'+group+'-group .pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+}
+function calcMargin(){
+  const c = parseFloat(document.getElementById('cost').value)||0;
+  const s = parseFloat(document.getElementById('sell').value)||0;
+  const el = document.getElementById('margin');
+  const hint = document.getElementById('margin-hint');
+  if(!c||!s){el.value='';hint.textContent='';return;}
+  const pct = ((s-c)/c*100).toFixed(1);
+  el.value = (s>c?'+':'')+pct+'%';
+  hint.textContent = 'Profit ₹'+Math.round(s-c)+' per unit';
+}
+</script>
