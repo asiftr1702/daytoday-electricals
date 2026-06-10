@@ -1,0 +1,216 @@
+<div class="cs-page">
+
+  <!-- Page header -->
+  <div class="cs-header">
+    <h1>📂 Catalogue Settings</h1>
+    <p>Manage categories, subcategories, units, warranty options and brands — no redeployment needed.</p>
+  </div>
+
+  <!-- Save toast -->
+  @if (saving()) {
+    <div class="cs-toast cs-toast-saving" aria-live="polite">💾 Saving…</div>
+  }
+  @if (saveSuccess()) {
+    <div class="cs-toast cs-toast-success" aria-live="polite">✅ Saved!</div>
+  }
+  @if (saveError()) {
+    <div class="cs-toast cs-toast-error" role="alert">⚠️ {{ saveError() }}</div>
+  }
+
+  <!-- Section tabs -->
+  <div class="cs-tabs" role="tablist">
+    <button class="cs-tab" [class.active]="section() === 'categories'" (click)="section.set('categories')">📦 Categories</button>
+    <button class="cs-tab" [class.active]="section() === 'units'" (click)="section.set('units')">📏 Units</button>
+    <button class="cs-tab" [class.active]="section() === 'warranty'" (click)="section.set('warranty')">🛡️ Warranty</button>
+  </div>
+
+  <!-- ── CATEGORIES ───────────────────────────────────────────────────── -->
+  @if (section() === 'categories') {
+    <div class="cs-section">
+      <div class="cs-section-actions">
+        <button class="cs-btn cs-btn-primary" (click)="startAddCategory()">+ Add Category</button>
+      </div>
+
+      <!-- Add / Edit form -->
+      @if (showCatForm()) {
+        <div class="cs-cat-form-card">
+          <h3>{{ editingCatId() ? '✏️ Edit Category' : '➕ New Category' }}</h3>
+          <div class="cs-form-row">
+            <div class="cs-form-group">
+              <label>Name *</label>
+              <input type="text" class="cs-input" [value]="catFormName()" (input)="catFormName.set($any($event.target).value)" placeholder="e.g., MCBs" />
+            </div>
+            <div class="cs-form-group cs-form-group-sm">
+              <label>Icon *</label>
+              <input type="text" class="cs-input" [value]="catFormIcon()" (input)="catFormIcon.set($any($event.target).value)" placeholder="e.g., ⚡" />
+            </div>
+            <div class="cs-form-group cs-form-group-sm">
+              <label>Colour</label>
+              <input type="color" class="cs-input cs-color-input" [value]="catFormColor()" (input)="catFormColor.set($any($event.target).value)" />
+            </div>
+          </div>
+          <div class="cs-form-row">
+            <div class="cs-form-group">
+              <label>Description</label>
+              <input type="text" class="cs-input" [value]="catFormDesc()" (input)="catFormDesc.set($any($event.target).value)" placeholder="e.g., Circuit breakers and protection" />
+            </div>
+            <div class="cs-form-group">
+              <label>Sheet Name <span class="cs-hint">(no spaces)</span></label>
+              <input type="text" class="cs-input" [value]="catFormSheetName()" (input)="catFormSheetName.set($any($event.target).value)" placeholder="e.g., MCBs" />
+            </div>
+          </div>
+          <div class="cs-form-actions">
+            <button class="cs-btn cs-btn-outline" (click)="cancelCatForm()">Cancel</button>
+            <button class="cs-btn cs-btn-primary" (click)="saveCatForm()">
+              {{ editingCatId() ? '💾 Update' : '➕ Add' }} Category
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Category list -->
+      @for (cat of config.categories(); track cat.id) {
+        <div class="cs-cat-card">
+          <div class="cs-cat-row">
+            <div class="cs-cat-icon-wrap" [style.background]="cat.color">{{ cat.icon }}</div>
+            <div class="cs-cat-meta">
+              <span class="cs-cat-name">{{ cat.name }}</span>
+              @if (cat.description) {
+                <span class="cs-cat-desc">{{ cat.description }}</span>
+              }
+            </div>
+            <div class="cs-cat-acts">
+              <button class="cs-icon-btn" (click)="toggleSubs(cat.id)" title="Subcategories & Brands">
+                📂 {{ cat.subcategories.length }} · 🏷️ {{ cat.brands.length }}
+              </button>
+              <button class="cs-icon-btn" (click)="startEditCategory(cat)" title="Edit">✏️</button>
+              <button class="cs-icon-btn cs-icon-btn-danger" (click)="deleteCategory(cat.id)" title="Delete">🗑️</button>
+            </div>
+          </div>
+
+          <!-- Subcategories & Brands panel -->
+          @if (expandedCatId() === cat.id) {
+            <div class="cs-subs-panel">
+              <!-- Mini tab bar -->
+              <div class="cs-panel-tabs">
+                <button class="cs-panel-tab" [class.active]="expandedTab() === 'subs'" (click)="expandedTab.set('subs')">
+                  📂 Subcategories ({{ cat.subcategories.length }})
+                </button>
+                <button class="cs-panel-tab" [class.active]="expandedTab() === 'brands'" (click)="expandedTab.set('brands')">
+                  🏷️ Brands ({{ cat.brands.length }})
+                </button>
+              </div>
+
+              @if (expandedTab() === 'subs') {
+                <div class="cs-sub-chips">
+                  @for (sub of cat.subcategories; track sub; let i = $index) {
+                    <span class="cs-chip">
+                      {{ sub }}
+                      <button class="cs-chip-remove" (click)="removeSubcategory(cat.id, i)" aria-label="Remove {{ sub }}">×</button>
+                    </span>
+                  }
+                  @if (cat.subcategories.length === 0) {
+                    <span class="cs-empty-hint">No subcategories yet</span>
+                  }
+                </div>
+                <div class="cs-sub-add-row">
+                  <input
+                    type="text"
+                    class="cs-input"
+                    [value]="newSubcatValue()"
+                    (input)="newSubcatValue.set($any($event.target).value)"
+                    placeholder="New subcategory name"
+                    (keydown.enter)="addSubcategory(cat.id)"
+                  />
+                  <button class="cs-btn cs-btn-sm cs-btn-primary" (click)="addSubcategory(cat.id)">Add</button>
+                </div>
+              }
+
+              @if (expandedTab() === 'brands') {
+                <div class="cs-sub-chips">
+                  @for (brand of cat.brands; track brand; let i = $index) {
+                    <span class="cs-chip cs-chip-brand">
+                      {{ brand }}
+                      <button class="cs-chip-remove" (click)="removeBrand(cat.id, i)" aria-label="Remove {{ brand }}">×</button>
+                    </span>
+                  }
+                  @if (cat.brands.length === 0) {
+                    <span class="cs-empty-hint">No brands added for this category yet</span>
+                  }
+                </div>
+                <div class="cs-sub-add-row">
+                  <input
+                    type="text"
+                    class="cs-input"
+                    [value]="newBrandValue()"
+                    (input)="newBrandValue.set($any($event.target).value)"
+                    placeholder="e.g., Havells"
+                    (keydown.enter)="addBrand(cat.id)"
+                  />
+                  <button class="cs-btn cs-btn-sm cs-btn-primary" (click)="addBrand(cat.id)">Add</button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (config.categories().length === 0) {
+        <p class="cs-empty">No categories yet. Click "+ Add Category" to get started.</p>
+      }
+    </div>
+  }
+
+  <!-- ── UNITS ─────────────────────────────────────────────────────────── -->
+  @if (section() === 'units') {
+    <div class="cs-section">
+      <h2 class="cs-section-title">📏 Units of Measurement</h2>
+      <p class="cs-section-sub">These appear in the unit dropdown when adding a product.</p>
+      <div class="cs-chips-wrap">
+        @for (unit of config.units(); track unit; let i = $index) {
+          <span class="cs-chip">
+            {{ unit }}
+            <button class="cs-chip-remove" (click)="removeUnit(i)" aria-label="Remove {{ unit }}">×</button>
+          </span>
+        }
+      </div>
+      <div class="cs-add-row">
+        <input
+          type="text"
+          class="cs-input"
+          [value]="newUnit()"
+          (input)="newUnit.set($any($event.target).value)"
+          placeholder="e.g., Coil"
+          (keydown.enter)="addUnit()"
+        />
+        <button class="cs-btn cs-btn-primary" (click)="addUnit()">Add Unit</button>
+      </div>
+    </div>
+  }
+
+  <!-- ── WARRANTY ────────────────────────────────────────────────────── -->
+  @if (section() === 'warranty') {
+    <div class="cs-section">
+      <h2 class="cs-section-title">🛡️ Warranty Options</h2>
+      <p class="cs-section-sub">These appear in the warranty dropdown when adding a product.</p>
+      <div class="cs-warranty-list">
+        @for (w of config.warrantyOptions(); track w.value; let i = $index) {
+          <div class="cs-warranty-row">
+            <span class="cs-warranty-label">{{ w.label }}</span>
+            <span class="cs-warranty-code">{{ w.value }}</span>
+            <button class="cs-icon-btn cs-icon-btn-danger" (click)="removeWarrantyOption(i)" title="Remove">🗑️</button>
+          </div>
+        }
+        @if (config.warrantyOptions().length === 0) {
+          <p class="cs-empty">No warranty options yet.</p>
+        }
+      </div>
+      <div class="cs-add-row cs-add-warranty">
+        <input type="text" class="cs-input" [value]="newWarrantyLabel()" (input)="newWarrantyLabel.set($any($event.target).value)" placeholder="Label — e.g., 3 Years" />
+        <input type="text" class="cs-input cs-input-code" [value]="newWarrantyValue()" (input)="newWarrantyValue.set($any($event.target).value)" placeholder="Code — e.g., 3y" />
+        <button class="cs-btn cs-btn-primary" (click)="addWarrantyOption()">Add</button>
+      </div>
+    </div>
+  }
+
+</div>

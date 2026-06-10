@@ -10,7 +10,7 @@
   <div class="category-section">
     <h2>Category</h2>
     <div class="category-scroll">
-      @for (category of categories; track category.id) {
+      @for (category of catalogueConfig.categories(); track category.id) {
         <button
           class="category-btn"
           [class.active]="selectedCategory?.id === category.id"
@@ -74,7 +74,12 @@
         <div class="form-row">
           <div class="form-group">
             <label for="brand">Brand</label>
-            <input id="brand" type="text" formControlName="brand" placeholder="e.g., Havells" />
+            <input id="brand" type="text" formControlName="brand" placeholder="e.g., Havells" list="brand-list" autocomplete="off" />
+            <datalist id="brand-list">
+              @for (brand of selectedCategory?.brands ?? []; track brand) {
+                <option [value]="brand">{{ brand }}</option>
+              }
+            </datalist>
           </div>
 
           <div class="form-group">
@@ -132,7 +137,7 @@
           <div class="form-group">
             <label for="unit">Unit <span class="required">*</span></label>
             <select id="unit" formControlName="unit" required>
-              @for (u of units; track u) {
+              @for (u of catalogueConfig.units(); track u) {
                 <option [value]="u">{{ u }}</option>
               }
             </select>
@@ -167,7 +172,7 @@
           <div class="form-group">
             <label for="warranty">Warranty</label>
             <select id="warranty" formControlName="warranty">
-              @for (w of warrantyOptions; track w.value) {
+              @for (w of catalogueConfig.warrantyOptions(); track w.value) {
                 <option [value]="w.value">{{ w.label }}</option>
               }
             </select>

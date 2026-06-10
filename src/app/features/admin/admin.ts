@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
-import { CATEGORIES, UNITS, WARRANTY_OPTIONS } from '../../core/config/categories.config';
+import { CatalogueConfigService, DynamicCategory } from '../../core/services/catalogue-config.service';
 import { Product } from '../../core/models/product.model';
 import './admin.css';
 
@@ -16,11 +16,9 @@ import './admin.css';
 export class AdminComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly firebaseAdmin = inject(FirebaseAdminService);
+  readonly catalogueConfig = inject(CatalogueConfigService);
 
-  categories = CATEGORIES;
-  units = UNITS;
-  warrantyOptions = WARRANTY_OPTIONS;
-  selectedCategory: (typeof CATEGORIES)[0] | null = null;
+  selectedCategory: DynamicCategory | null = null;
   subcategories: string[] = [];
   productForm!: FormGroup;
 
@@ -46,6 +44,7 @@ export class AdminComponent implements OnInit {
 
   ngOnInit(): void {
     this.initializeForm();
+    this.catalogueConfig.loadConfig();
   }
 
   private initializeForm(): void {
@@ -68,7 +67,7 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  onCategorySelect(category: (typeof CATEGORIES)[0]): void {
+  onCategorySelect(category: DynamicCategory): void {
     this.selectedCategory = category;
     this.subcategories = [...category.subcategories];
     this.productForm.patchValue({ subcategory: this.subcategories[0] || '' });
@@ -91,7 +90,7 @@ export class AdminComponent implements OnInit {
     this.editingProduct.set(product);
     this.confirmDeleteId.set(null);
     // Select the matching category first
-    const cat = this.categories.find(c => c.id === (product as any)['category']);
+    const cat = this.catalogueConfig.categories().find(c => c.id === (product as any)['category']);
     if (cat && this.selectedCategory?.id !== cat.id) {
       this.selectedCategory = cat;
       this.subcategories = [...cat.subcategories];
