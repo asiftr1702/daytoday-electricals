@@ -1,6 +1,10 @@
 <a href="#main-content" class="skip-link">Skip to main content</a>
-<app-header />
+@if (!isLoginPage) {
+  <app-header />
+}
 <main id="main-content">
   <router-outlet />
 </main>
-<app-footer />
+@if (!isLoginPage) {
+  <app-footer />
+}

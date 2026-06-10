@@ -1,0 +1,59 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="login-bolt" aria-hidden="true">⚡</span>
+      <div class="login-brand-text">
+        <span class="login-brand-name">DayToDay</span>
+        <span class="login-brand-sub">Electricals</span>
+      </div>
+    </div>
+
+    <h1 class="login-title">Welcome back</h1>
+    <p class="login-subtitle">Enter your password to continue</p>
+
+    <form class="login-form" (submit)="$event.preventDefault(); submit()" novalidate>
+      <div class="login-field">
+        <label for="login-pw" class="login-label">Password</label>
+        <div class="login-input-wrap">
+          <input
+            id="login-pw"
+            [type]="showPassword() ? 'text' : 'password'"
+            class="login-input"
+            [class.login-input-error]="error()"
+            placeholder="Enter password"
+            autocomplete="current-password"
+            [value]="password()"
+            (input)="password.set($any($event.target).value)"
+            required
+            autofocus
+            (keydown.enter)="submit()"
+          />
+          <button
+            type="button"
+            class="login-eye"
+            (click)="showPassword.set(!showPassword())"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+          >
+            {{ showPassword() ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        @if (error()) {
+          <p class="login-error" role="alert">{{ error() }}</p>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="login-btn"
+        [disabled]="loading()"
+      >
+        @if (loading()) {
+          <span class="login-spinner" aria-hidden="true"></span>
+          Verifying…
+        } @else {
+          🔑 Unlock
+        }
+      </button>
+    </form>
+  </div>
+</div>

@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './shared/header/header';
 import { FooterComponent } from './shared/footer/footer';
 
@@ -10,4 +10,10 @@ import { FooterComponent } from './shared/footer/footer';
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App {}
+export class App {
+  readonly router = inject(Router);
+
+  get isLoginPage(): boolean {
+    return this.router.url === '/login' || this.router.url.startsWith('/login?');
+  }
+}

@@ -77,6 +77,7 @@
   color: var(--color-text);
   transition: background var(--transition), color var(--transition);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .nav-desktop a:hover {
@@ -96,6 +97,7 @@
   font-weight: 600;
   margin-left: 0.75rem;
   position: relative;
+  white-space: nowrap;
 }
 
 .nav-desktop a.admin-link:hover {
@@ -224,6 +226,7 @@
   cursor: pointer;
   margin-left: 0.75rem;
   transition: background var(--transition), color var(--transition);
+  white-space: nowrap;
 }
 
 .btn-admin-login {
@@ -248,17 +251,21 @@
 
 .mobile-login-btn,
 .mobile-logout-btn {
-  background: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  border-radius: var(--border-radius-sm);
+  margin: 0.5rem 0.5rem 0;
+  width: calc(100% - 1rem);
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
   border: none;
   cursor: pointer;
-  width: 100%;
   text-align: left;
-  font-size: 1rem;
-}
-
-.mobile-logout-btn {
-  background: #f3f4f6 !important;
-  color: #374151 !important;
 }
 
 /* ──── Login Modal ──── */

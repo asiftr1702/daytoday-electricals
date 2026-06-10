@@ -741,3 +741,38 @@ select {
   .col-price   { white-space: nowrap; }
   .col-actions { width: 110px; white-space: nowrap; text-align: center; }
 }
+
+/* -----------------------------------------------------------------------
+   CHANGE PASSWORD SECTION
+   ----------------------------------------------------------------------- */
+.change-pw-section {
+  padding: 0 0.875rem 2rem;
+}
+
+.change-pw-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
+  max-width: 480px;
+}
+
+.change-pw-card h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 0.25rem;
+}
+
+.change-pw-sub {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 0 0 1rem;
+}
+
+.change-pw-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
