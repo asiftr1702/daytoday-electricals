@@ -3,7 +3,7 @@
   <!-- ── Header ── -->
   <div class="fan-admin-header">
     <button class="back-btn" type="button" (click)="goBack()" aria-label="Back to Admin">
-      ← Back
+      ←
     </button>
     <div class="header-title">
       <span class="header-icon" aria-hidden="true">🌀</span>
@@ -22,7 +22,6 @@
       <h2 class="form-title">
         {{ editingProduct() ? '✏️ Edit: ' + editingProduct()!.name : 'Add Fan Product' }}
       </h2>
-      <p class="form-subtitle">Stored in Firestore collection <code class="cat-code">fans</code></p>
 
       @if (successMessage()) {
         <div class="alert alert-success" role="status">{{ successMessage() }}</div>
