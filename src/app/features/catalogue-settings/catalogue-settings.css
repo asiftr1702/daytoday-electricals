@@ -1,26 +1,28 @@
 .cs-page {
   max-width: 780px;
   margin: 0 auto;
-  padding: 1.25rem 1rem 3rem;
+  padding: 1rem 0.75rem 3rem;
 }
 
 /* Header */
-.cs-header { margin-bottom: 1.5rem; }
-.cs-header h1 { font-size: 1.4rem; font-weight: 800; color: #1a1a2e; margin: 0 0 0.2rem; }
-.cs-header p { font-size: 0.85rem; color: #888; margin: 0; }
+.cs-header { margin-bottom: 1.25rem; }
+.cs-header h1 { font-size: 1.2rem; font-weight: 800; color: #1a1a2e; margin: 0 0 0.2rem; }
+.cs-header p { font-size: 0.8rem; color: #888; margin: 0; }
 
 /* Toast */
 .cs-toast {
   position: fixed;
   top: 4.5rem;
-  right: 1rem;
-  padding: 0.6rem 1.1rem;
+  right: 0.75rem;
+  left: 0.75rem;
+  padding: 0.6rem 1rem;
   border-radius: 10px;
   font-size: 0.85rem;
   font-weight: 600;
   z-index: 900;
   animation: cs-fade-in 0.2s;
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  text-align: center;
 }
 .cs-toast-saving { background: #e5e7eb; color: #374151; }
 .cs-toast-success { background: #d1fae5; color: #065f46; }
@@ -29,24 +31,25 @@
 /* Tabs */
 .cs-tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   overflow-x: auto;
   padding-bottom: 2px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   scrollbar-width: none;
 }
 .cs-tabs::-webkit-scrollbar { display: none; }
 
 .cs-tab {
-  padding: 0.45rem 1rem;
+  padding: 0.45rem 0.875rem;
   border-radius: 20px;
   border: 1.5px solid #ddd;
   background: #fff;
   color: #555;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.18s;
 }
 .cs-tab.active {
@@ -56,14 +59,14 @@
 }
 
 /* Section */
-.cs-section { display: flex; flex-direction: column; gap: 0.875rem; }
+.cs-section { display: flex; flex-direction: column; gap: 0.75rem; }
 .cs-section-actions { display: flex; justify-content: flex-end; }
-.cs-section-title { font-size: 1.05rem; font-weight: 700; color: #1a1a2e; margin: 0; }
-.cs-section-sub { font-size: 0.8rem; color: #888; margin: -0.4rem 0 0; }
+.cs-section-title { font-size: 1rem; font-weight: 700; color: #1a1a2e; margin: 0; }
+.cs-section-sub { font-size: 0.78rem; color: #888; margin: -0.3rem 0 0; }
 
 /* Buttons */
 .cs-btn {
-  padding: 0.55rem 1.2rem;
+  padding: 0.6rem 1.1rem;
   border-radius: 8px;
   border: none;
   cursor: pointer;
@@ -72,6 +75,7 @@
   transition: opacity 0.18s, transform 0.1s;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.3rem;
   white-space: nowrap;
 }
@@ -79,18 +83,23 @@
 .cs-btn:active { transform: scale(0.97); }
 .cs-btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
 .cs-btn-outline  { background: #fff; color: #667eea; border: 1.5px solid #667eea; }
-.cs-btn-sm { padding: 0.4rem 0.875rem; font-size: 0.8rem; }
+.cs-btn-sm { padding: 0.45rem 0.875rem; font-size: 0.8rem; }
 
 /* Icon buttons */
 .cs-icon-btn {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0.3rem 0.4rem;
-  font-size: 0.95rem;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.9rem;
   border-radius: 6px;
   transition: background 0.15s;
   white-space: nowrap;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .cs-icon-btn:hover { background: #f3f4f6; }
 .cs-icon-btn-danger:hover { background: #fee2e2; }
@@ -99,40 +108,47 @@
 .cs-cat-form-card {
   background: #fff;
   border-radius: 14px;
-  padding: 1.25rem;
+  padding: 1rem;
   box-shadow: 0 2px 10px rgba(0,0,0,0.08);
   border: 2px solid rgba(102,126,234,0.25);
 }
-.cs-cat-form-card h3 { font-size: 1rem; font-weight: 700; margin: 0 0 1rem; color: #1a1a2e; }
+.cs-cat-form-card h3 { font-size: 0.95rem; font-weight: 700; margin: 0 0 0.875rem; color: #1a1a2e; }
 
 .cs-form-row {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.6rem;
 }
 .cs-form-group {
-  flex: 1;
-  min-width: 140px;
+  flex: 1 1 130px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
 }
-.cs-form-group.cs-form-group-sm { flex: 0 0 88px; }
+.cs-form-group.cs-form-group-sm { flex: 0 0 80px; }
 .cs-form-group label {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: #555;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.cs-hint { font-weight: 400; text-transform: none; color: #aaa; font-size: 0.68rem; }
+.cs-hint { font-weight: 400; text-transform: none; color: #aaa; font-size: 0.65rem; }
 
-.cs-form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem; }
+.cs-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+.cs-form-actions .cs-btn { flex: 1 1 auto; }
 
 /* Inputs */
 .cs-input {
-  padding: 0.6rem 0.875rem;
+  padding: 0.65rem 0.875rem;
   border: 1.5px solid #ddd;
   border-radius: 8px;
   font-size: 0.875rem;
@@ -142,14 +158,15 @@
   transition: border-color 0.18s, box-shadow 0.18s;
   width: 100%;
   box-sizing: border-box;
+  -webkit-appearance: none;
 }
 .cs-input:focus {
   border-color: #667eea;
   background: #fff;
   box-shadow: 0 0 0 3px rgba(102,126,234,0.12);
 }
-.cs-color-input { padding: 0.15rem; height: 38px; cursor: pointer; }
-.cs-input-code { max-width: 110px; }
+.cs-color-input { padding: 0.15rem; height: 40px; cursor: pointer; }
+.cs-input-code { flex: 0 0 100px !important; min-width: 0 !important; }
 
 /* Category cards */
 .cs-cat-card {
@@ -161,17 +178,17 @@
 .cs-cat-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.8rem 1rem;
+  gap: 0.6rem;
+  padding: 0.75rem 0.875rem;
 }
 .cs-cat-icon-wrap {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   flex-shrink: 0;
 }
 .cs-cat-meta {
@@ -181,20 +198,25 @@
   gap: 0.1rem;
   min-width: 0;
 }
-.cs-cat-name { font-weight: 700; font-size: 0.9rem; color: #1a1a2e; }
+.cs-cat-name { font-weight: 700; font-size: 0.88rem; color: #1a1a2e; }
 .cs-cat-desc {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: #888;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.cs-cat-acts { display: flex; gap: 0.2rem; flex-shrink: 0; align-items: center; }
+.cs-cat-acts {
+  display: flex;
+  gap: 0.15rem;
+  flex-shrink: 0;
+  align-items: center;
+}
 
 /* Subcategories panel */
 .cs-subs-panel {
   border-top: 1px solid #f0f0f0;
-  padding: 0.875rem 1rem;
+  padding: 0.75rem 0.875rem;
   background: #fafafe;
 }
 
@@ -205,16 +227,18 @@
   margin-bottom: 0.75rem;
 }
 .cs-panel-tab {
-  padding: 0.3rem 0.875rem;
+  flex: 1;
+  padding: 0.4rem 0.5rem;
   border-radius: 20px;
   border: 1.5px solid #ddd;
   background: #fff;
   color: #666;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
+  text-align: center;
 }
 .cs-panel-tab.active {
   background: #667eea;
@@ -224,7 +248,7 @@
 
 .cs-sub-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; min-height: 28px; }
 .cs-sub-add-row { display: flex; gap: 0.5rem; }
-.cs-sub-add-row .cs-input { flex: 1; }
+.cs-sub-add-row .cs-input { flex: 1; min-width: 0; }
 
 /* Chips */
 .cs-chips-wrap { display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 36px; }
@@ -236,7 +260,7 @@
   color: #3730a3;
   border-radius: 20px;
   padding: 0.3rem 0.5rem 0.3rem 0.75rem;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
 }
 .cs-chip-brand {
@@ -251,20 +275,35 @@
   color: #6366f1;
   line-height: 1;
   padding: 0;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   transition: background 0.15s;
+  flex-shrink: 0;
 }
 .cs-chip-remove:hover { background: #c7d2fe; }
 
 /* Add row */
-.cs-add-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.cs-add-row .cs-input { flex: 1; min-width: 160px; }
-.cs-add-warranty .cs-input { flex: 1; min-width: 130px; }
+.cs-add-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.cs-add-row .cs-input { flex: 1; min-width: 130px; }
+.cs-add-row .cs-btn { flex-shrink: 0; }
+
+/* Warranty add row — stack on mobile */
+.cs-add-warranty {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.cs-add-warranty .cs-input { flex: 1 1 120px; min-width: 0; }
+.cs-input-code { flex: 0 1 90px !important; min-width: 0 !important; }
+.cs-add-warranty .cs-btn { width: 100%; margin-top: 0.25rem; }
 
 /* Warranty list */
 .cs-warranty-list { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -290,6 +329,66 @@
 /* Misc */
 .cs-empty { text-align: center; color: #bbb; font-size: 0.85rem; padding: 2rem 0; }
 .cs-empty-hint { font-size: 0.75rem; color: #bbb; font-style: italic; }
+
+/* Mobile info row (desc + sheet name) — hidden on desktop */
+.cs-cat-info-row { display: none; }
+
+@media (max-width: 600px) {
+  /* Hide inline desc from the main row on mobile */
+  .cs-cat-desc-desktop { display: none; }
+
+  /* Show the dedicated info row below the card header */
+  .cs-cat-info-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.75rem;
+    padding: 0 0.875rem 0.6rem;
+    border-top: 1px solid #f0f0f0;
+  }
+  .cs-cat-info-desc {
+    flex: 1;
+    font-size: 0.72rem;
+    color: #888;
+  }
+  .cs-cat-info-sheet {
+    font-size: 0.7rem;
+    color: #aaa;
+    background: #f3f4f6;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+    white-space: nowrap;
+  }
+
+  /* ── Edit / Add Category form ── */
+  /* Normal fields go full width */
+  .cs-form-group {
+    flex: 1 1 100%;
+  }
+  /* Small fields (Icon + Colour) share a row, 50/50 */
+  .cs-form-group.cs-form-group-sm {
+    flex: 1 1 calc(50% - 0.3rem);
+    max-width: calc(50% - 0.3rem);
+  }
+  /* Tighten up the form card padding */
+  .cs-cat-form-card {
+    padding: 0.875rem 0.75rem;
+  }
+  /* Form action buttons stack and go full-width */
+  .cs-form-actions {
+    flex-direction: column;
+  }
+  .cs-form-actions .cs-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  /* Add Category button full-width */
+  .cs-section-actions .cs-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
 
 @keyframes cs-fade-in {
   from { opacity: 0; transform: translateY(-6px); }

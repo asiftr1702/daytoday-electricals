@@ -76,7 +76,7 @@
             <div class="cs-cat-meta">
               <span class="cs-cat-name">{{ cat.name }}</span>
               @if (cat.description) {
-                <span class="cs-cat-desc">{{ cat.description }}</span>
+                <span class="cs-cat-desc cs-cat-desc-desktop">{{ cat.description }}</span>
               }
             </div>
             <div class="cs-cat-acts">
@@ -86,6 +86,13 @@
               <button class="cs-icon-btn" (click)="startEditCategory(cat)" title="Edit">✏️</button>
               <button class="cs-icon-btn cs-icon-btn-danger" (click)="deleteCategory(cat.id)" title="Delete">🗑️</button>
             </div>
+          </div>
+          <!-- Mobile: description + sheet name row -->
+          <div class="cs-cat-info-row">
+            @if (cat.description) {
+              <span class="cs-cat-info-desc">{{ cat.description }}</span>
+            }
+            <span class="cs-cat-info-sheet">Sheet: {{ cat.sheetName }}</span>
           </div>
 
           <!-- Subcategories & Brands panel -->
