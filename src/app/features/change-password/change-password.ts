@@ -1,5 +1,6 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { AdminAuthService } from '../../core/services/admin-auth.service';
+import { StampService } from '../../core/services/stamp.service';
 
 @Component({
   selector: 'app-change-password',
@@ -9,8 +10,9 @@ import { AdminAuthService } from '../../core/services/admin-auth.service';
   templateUrl: './change-password.html',
   styleUrl: './change-password.css',
 })
-export class ChangePasswordComponent {
+export class ChangePasswordComponent implements OnInit {
   private readonly auth = inject(AdminAuthService);
+  readonly stampService = inject(StampService);
 
   readonly current = signal('');
   readonly newPw = signal('');
@@ -22,6 +24,48 @@ export class ChangePasswordComponent {
   readonly showCurrent = signal(false);
   readonly showNew = signal(false);
   readonly showConfirm = signal(false);
+
+  // Stamp upload
+  readonly stampPreview = signal<string | null>(null);
+  readonly stampUploading = signal(false);
+  readonly stampError = signal('');
+  readonly stampSuccess = signal(false);
+  private stampFile: File | null = null;
+
+  ngOnInit(): void {
+    this.stampService.loadStamp();
+  }
+
+  onStampSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.stampError.set('');
+    this.stampSuccess.set(false);
+    if (!file.type.startsWith('image/')) {
+      this.stampError.set('Please select a valid image file.');
+      return;
+    }
+    this.stampFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => this.stampPreview.set(e.target!.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  async uploadStamp(): Promise<void> {
+    if (!this.stampFile) { this.stampError.set('Please select an image first.'); return; }
+    this.stampUploading.set(true);
+    this.stampError.set('');
+    try {
+      await this.stampService.uploadStamp(this.stampFile);
+      this.stampSuccess.set(true);
+      this.stampFile = null;
+      this.stampPreview.set(null);
+      setTimeout(() => this.stampSuccess.set(false), 4000);
+    } catch {
+      this.stampError.set('Upload failed. Please try again.');
+    }
+    this.stampUploading.set(false);
+  }
 
   async submit(): Promise<void> {
     this.error.set('');

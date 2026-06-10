@@ -26,7 +26,7 @@
           <span class="header-bill-badge">{{ billService.itemCount() }}</span>
         }
       </a>
-      <a routerLink="/change-password" routerLinkActive="active" class="admin-link" title="Change password">🔑 Password</a>
+      <a routerLink="/change-password" routerLinkActive="active" class="admin-link" title="Settings">⚙️ Settings</a>
       <button type="button" class="btn-admin-logout" (click)="logout()" title="Logout">🔒 Logout</button>
     </nav>
 
@@ -72,7 +72,7 @@
         }
       </a>
       <a routerLink="/change-password" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
-        <span aria-hidden="true">🔑</span> Password
+        <span aria-hidden="true">⚙️</span> Settings
       </a>
       <button type="button" class="admin-link mobile-logout-btn" (click)="logout()">
         <span aria-hidden="true">🔒</span> Logout

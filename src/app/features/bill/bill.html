@@ -33,7 +33,9 @@
 
     <!-- Watermark stamp (print only) -->
     <div class="print-watermark print-only">
-      <img src="stamp.png" alt="" aria-hidden="true" class="watermark-img" />
+      @if (stampService.stampUrl()) {
+        <img [src]="stampService.stampUrl()!" alt="" aria-hidden="true" class="watermark-img" />
+      }
     </div>
 
     <!-- Print header -->

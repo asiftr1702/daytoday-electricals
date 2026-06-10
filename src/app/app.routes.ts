@@ -49,7 +49,7 @@ export const routes: Routes = [
         path: 'change-password',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/change-password/change-password').then(m => m.ChangePasswordComponent),
-        title: 'Change Password — DayToDay Electricals',
+        title: 'Settings — DayToDay Electricals',
       },
       {
         path: '**',

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { BillService } from '../../core/services/bill.service';
 import { BillItem, Bill } from '../../core/models/bill.model';
+import { StampService } from '../../core/services/stamp.service';
 
 @Component({
   selector: 'app-bill',
@@ -15,6 +16,7 @@ import { BillItem, Bill } from '../../core/models/bill.model';
 export class BillComponent implements OnInit {
   readonly billService = inject(BillService);
   private readonly router = inject(Router);
+  readonly stampService = inject(StampService);
 
   readonly Math = Math;
 
@@ -60,6 +62,7 @@ export class BillComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPastBills();
+    this.stampService.loadStamp();
   }
 
   get items() {
