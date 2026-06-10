@@ -28,7 +28,7 @@
   position: relative;
   width: 100%;
   height: 180px;
-  background: #F7F8FA;
+  background: #faf9f7;
   overflow: hidden;
   flex-shrink: 0;
   border-bottom: 1px solid #EBEBEB;
@@ -52,7 +52,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #F7F8FA;
+  background: #faf9f7;
 }
 
 /* Shimmer shown while image is off-screen */
@@ -150,36 +150,36 @@
 .card-top-row {
   display: flex;
   align-items: center;
-  min-height: 1.6rem;
+  min-height: 0;
 }
 
 .brand-tag {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #010101;
-  background: #eeecff;
-  border: 1px solid #c5bfff;
-  padding: 0.2rem 0.4rem;
-  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #292524;
+  background: #f5f5f4;
+  border: 1px solid #d6d3d1;
+  padding: 0.18rem 0.5rem;
+  border-radius: 5px;
   white-space: nowrap;
   align-self: flex-start;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .warranty-tag {
   display: inline-flex;
   align-items: center;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  color: #000000;
+  color: #292524;
   background: #ffd600;
-  border: none;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-  padding: 0.2rem 0.6rem;
-  border-radius: 6px;
+  border: 1px solid #d6d3d1;
+  box-shadow: none;
+  padding: 0.2rem 0.55rem;
+  border-radius: 5px;
   white-space: nowrap;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -197,6 +197,31 @@
   margin-top: 0.1rem;
 }
 
+.card-name-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.fan-subcat-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #78716c;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.card-name-row .product-name {
+  flex: 1;
+  margin-top: 0;
+}
+
+.card-name-row .warranty-tag {
+  margin-left: 0;
+  flex-shrink: 0;
+}
+
 .product-desc {
   font-size: var(--font-size-sm);
   color: #777777;
@@ -206,6 +231,87 @@
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ─── FAN ATTRIBUTE STRIP (between image and body) ──────────────────────── */
+.fan-attr-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 7px 12px;
+  background: #fff8e1;
+  border-top: 1px solid #ffe082;
+  border-bottom: 1px solid #ffe082;
+  flex-shrink: 0;
+}
+
+/* Divider between chips */
+.fan-attr-strip > * + * {
+  margin-left: 0;
+}
+.fan-attr-strip > *:not(:last-child)::after {
+  content: '';
+  display: inline-block;
+  width: 1px;
+  height: 12px;
+  background: #ffc107;
+  margin: 0 10px;
+  vertical-align: middle;
+  opacity: 0.6;
+}
+
+.fan-attr-chip {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #7a4f00;
+  background: transparent;
+  border: none;
+  padding: 0;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.fan-attr-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #7a4f00;
+  background: transparent;
+  border: none;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.fan-color-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* ─── FAN SPECS STRIP ──────────────────────────────────────────────────────── */
+.fan-specs-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.fan-spec-chip {
+  font-size: 0.66rem;
+  font-weight: 600;
+  background: #f5f5f4;
+  color: #44403c;
+  border: 1px solid #d6d3d1;
+  border-radius: 5px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  line-height: 1.6;
 }
 
 /* ─── CARD FOOTER ─────────────────────────────────────────────────────────── */
@@ -415,7 +521,7 @@
 }
 
 .btn-add-bill {
-  background: #4f46e5;
+  background: #1c1917;
   color: #fff;
   border: none;
   font-size: 0.72rem;
@@ -428,9 +534,9 @@
   flex-shrink: 0;
 }
 
-.btn-add-bill:hover { background: #4338ca; }
-.btn-add-bill.btn-add-bill-active { background: #7c3aed; }
-.btn-add-bill.btn-add-bill-active:hover { background: #6d28d9; }
+.btn-add-bill:hover { background: #292524; }
+.btn-add-bill.btn-add-bill-active { background: #292524; }
+.btn-add-bill.btn-add-bill-active:hover { background: #44403c; }
 .btn-add-bill:disabled { background: #c62828; color: #fff; cursor: not-allowed; opacity: 1; }
 
 .btn-in-bill {

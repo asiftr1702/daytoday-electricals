@@ -53,7 +53,44 @@ export class ProductCardComponent {
     this.costVisible.update(v => !v);
   }
 
-  // ── Image upload ──────────────────────────────────────────────────────────
+  // ── Fan-specific specs ────────────────────────────────────────────────────
+  readonly isFan = computed(() => (this.product() as any)['category'] === 'fans');
+
+  private readonly FAN_COLOR_HEX: Record<string, string> = {
+    'White':  '#f0f0f0',
+    'Silver': '#C0C0C0',
+    'Brown':  '#5a4a3a',
+    'Black':  '#222222',
+    'Gold':   '#b8860b',
+    'Copper': '#e07b55',
+  };
+
+  /** Strip items shown between image and body: blade size, material abbrev, color swatch. */
+  readonly fanVisualStrip = computed((): Array<{ type: 'text' | 'color'; value: string; hex?: string }> => {
+    if (!this.isFan()) return [];
+    const p = this.product() as any;
+    const items: Array<{ type: 'text' | 'color'; value: string; hex?: string }> = [];
+    if (p.bladeSize) items.push({ type: 'text', value: p.bladeSize });
+    if (p.bladeMaterial) {
+      // Show abbreviation from parens, e.g. "Copper (Cu)" → "Cu"; fallback to full name
+      const m = (p.bladeMaterial as string).match(/\(([^)]+)\)/);
+      items.push({ type: 'text', value: m ? m[1] : p.bladeMaterial });
+    }
+    if (p.color) {
+      items.push({ type: 'color', value: p.color, hex: this.FAN_COLOR_HEX[p.color] ?? '#cccccc' });
+    }
+    return items;
+  });
+
+  /** Remaining fan spec chips shown in the card body: wattage, RPM, speed. */
+  readonly fanSpecs = computed((): { value: string }[] => {
+    const p = this.product() as any;
+    return [
+      p.wattage       ? { value: `${p.wattage}W` }    : null,
+      p.rpm           ? { value: `${p.rpm} RPM` }     : null,
+      p.speedSettings ? { value: p.speedSettings }    : null,
+    ].filter(Boolean) as { value: string }[];
+  });
   private readonly firebaseAdmin = inject(FirebaseAdminService);
   readonly imageUploading = signal(false);
   readonly imageUploadError = signal<string | null>(null);
@@ -103,7 +140,7 @@ export class ProductCardComponent {
         this.imageUploading.set(false);
         return;
       }
-      this.firebaseAdmin.updateImageUrl(sku, dataUrl).subscribe({
+      this.firebaseAdmin.updateImageUrl(sku, dataUrl, (this.product() as any)['category'] ?? '').subscribe({
         next: () => {
           this.localImageUrl.set(dataUrl);
           this.imageRevealed.set(true);
@@ -257,7 +294,7 @@ export class ProductCardComponent {
         if (cur != null) this.localStockQty.set(Math.max(0, cur - qty));
         // Persist to Firestore
         if (p.id) {
-          this.firebaseAdmin.decrementStock(p.id, qty).subscribe();
+          this.firebaseAdmin.decrementStock(p.id, qty, (p as any)['category'] ?? '').subscribe();
         }
         this.saleSaving.set(false);
         this.saleDone.set(true);

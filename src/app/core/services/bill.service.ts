@@ -146,7 +146,7 @@ export class BillService {
           this.salesService.addSale(entry).subscribe();
           // Decrement stock in Firestore for products that have an ID
           if (item.productId) {
-            this.firebaseAdmin.decrementStock(item.productId, item.qty).subscribe();
+            this.firebaseAdmin.decrementStock(item.productId, item.qty, item.category ?? '').subscribe();
           }
         });
         return ref.id;

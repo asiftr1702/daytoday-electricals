@@ -18,6 +18,11 @@ export const routes: Routes = [
         title: 'DayToDay Electricals — Your Local Electrical Shop',
       },
       {
+        path: 'fans',
+        loadComponent: () => import('./features/fans/fans').then(m => m.FansComponent),
+        title: 'Fans — DayToDay Electricals',
+      },
+      {
         path: 'products',
         loadComponent: () => import('./features/products/products').then(m => m.ProductsComponent),
         title: 'Products — DayToDay Electricals',
@@ -32,6 +37,12 @@ export const routes: Routes = [
         canActivate: [adminGuard],
         loadComponent: () => import('./features/admin/admin').then(m => m.AdminComponent),
         title: 'Admin — Add Products',
+      },
+      {
+        path: 'admin/fans',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/admin/fan-admin/fan-admin').then(m => m.FanAdminComponent),
+        title: 'Fans Admin — DayToDay Electricals',
       },
       {
         path: 'sales',

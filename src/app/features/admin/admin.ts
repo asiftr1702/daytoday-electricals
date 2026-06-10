@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
 import { CatalogueConfigService, DynamicCategory } from '../../core/services/catalogue-config.service';
 import { Product } from '../../core/models/product.model';
@@ -9,7 +10,7 @@ import './admin.css';
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './admin.html',
   styleUrls: ['./admin.css'],
 })
@@ -138,7 +139,7 @@ export class AdminComponent implements OnInit {
   confirmDelete(id: string): void {
     this.deletingId.set(id);
     this.confirmDeleteId.set(null);
-    this.firebaseAdmin.deleteProduct(id).subscribe({
+    this.firebaseAdmin.deleteProduct(id, this.selectedCategory?.id ?? '').subscribe({
       next: () => {
         this.products.update(list => list.filter(p => p.id !== id));
         this.deletingId.set(null);
@@ -250,7 +251,7 @@ export class AdminComponent implements OnInit {
     const editing = this.editingProduct();
     if (editing?.id) {
       // UPDATE existing product
-      this.firebaseAdmin.updateProduct(editing.id, { ...product, category: (editing as any)['category'] } as any).subscribe({
+      this.firebaseAdmin.updateProduct(editing.id, { ...product, category: (editing as any)['category'] } as any, (editing as any)['category'] || this.selectedCategory?.id || '').subscribe({
         next: () => {
           this.successMessage = `✅ Product "${product.name}" updated successfully!`;
           this.editingProduct.set(null);
