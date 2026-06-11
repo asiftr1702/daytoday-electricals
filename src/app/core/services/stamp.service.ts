@@ -1,6 +1,7 @@
 import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
+import { compressImage } from '../utils/image.util';
 
 @Injectable({ providedIn: 'root' })
 export class StampService {
@@ -32,34 +33,6 @@ export class StampService {
   }
 
   private compressImage(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error('Failed to read image file.'));
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onerror = () => reject(new Error('Failed to decode image.'));
-        img.onload = () => {
-          let { width, height } = img;
-          if (width > this.MAX_DIMENSION || height > this.MAX_DIMENSION) {
-            if (width >= height) {
-              height = Math.round((height * this.MAX_DIMENSION) / width);
-              width = this.MAX_DIMENSION;
-            } else {
-              width = Math.round((width * this.MAX_DIMENSION) / height);
-              height = this.MAX_DIMENSION;
-            }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) { reject(new Error('Canvas not available.')); return; }
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/png', this.JPEG_QUALITY));
-        };
-        img.src = e.target!.result as string;
-      };
-      reader.readAsDataURL(file);
-    });
+    return compressImage(file, { maxDimension: this.MAX_DIMENSION, quality: this.JPEG_QUALITY, mimeType: 'image/png' });
   }
 }
