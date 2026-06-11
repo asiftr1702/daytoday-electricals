@@ -126,11 +126,21 @@
                 <input id="ca-bundle-len" type="number" formControlName="bundleLength" placeholder="Custom length in metres" min="1" />
               </div>
               <div class="field">
-                <label for="ca-cost-m">Cost price / metre (₹) <span class="req">*</span></label>
-                <div class="currency-wrap">
-                  <span class="currency-sym">₹</span>
-                  <input id="ca-cost-m" type="number" formControlName="costPerMeter" placeholder="0.00" min="0" step="0.01" />
+                <label for="ca-cost-m">
+                  Cost price {{ productForm.get('costUnit')?.value === 'box' ? '/ box' : '/ metre' }} (₹) <span class="req">*</span>
+                </label>
+                <div class="cost-input-row">
+                  <div class="currency-wrap" style="flex:1">
+                    <span class="currency-sym">₹</span>
+                    <input id="ca-cost-m" type="number" formControlName="costPerMeter" placeholder="0.00" min="0" step="0.01" />
+                  </div>
+                  <select class="cost-unit-select" formControlName="costUnit" aria-label="Cost unit">
+                    @for (cu of costUnits(); track cu.value) { <option [value]="cu.value">{{ cu.label }}</option> }
+                  </select>
                 </div>
+                @if (productForm.get('costUnit')?.value === 'box' && costPerMeterDerived() != null) {
+                  <span class="price-hint price-hint-m">💲 ₹{{ costPerMeterDerived() | number:'1.2-2' }} / m cost</span>
+                }
               </div>
             </div>
 
@@ -182,7 +192,7 @@
             <div class="row-three">
               <div class="field">
                 <label for="ca-cost">
-                  {{ isRope() ? 'Total box cost' : 'Cost price' }} <span class="req" aria-hidden="true">*</span>
+                  {{ isRope() ? 'Total box cost' : (isWireStandard() ? 'Whole box / roll cost' : 'Cost price') }} <span class="req" aria-hidden="true">*</span>
                 </label>
                 @if (pricingMode() === 'unit-rope') {
                   <div class="cost-input-row">
@@ -203,7 +213,7 @@
               </div>
               <div class="field">
                 <label for="ca-sell">
-                  {{ isRope() ? 'Total box selling price' : 'Selling price' }} <span class="req" aria-hidden="true">*</span>
+                  {{ isRope() ? 'Total box selling price' : (isWireStandard() ? 'Whole box / roll price' : 'Selling price') }} <span class="req" aria-hidden="true">*</span>
                 </label>
                 <div class="currency-wrap">
                   <span class="currency-sym" aria-hidden="true">₹</span>
@@ -219,6 +229,27 @@
                 @if (marginHint()) { <div class="hint" aria-live="polite">{{ marginHint() }}</div> }
               </div>
             </div>
+
+            @if (isWireStandard()) {
+              <div class="divider"></div>
+              <p class="price-sync-note">⇄ Enter the whole box/roll price and its length — the per-metre price is calculated automatically</p>
+              <div class="row-two">
+                <div class="field">
+                  <label for="ca-roll-len">Roll / box length (m) <span class="req" aria-hidden="true">*</span></label>
+                  <input id="ca-roll-len" type="number" formControlName="rollLength" placeholder="e.g. 90" min="1" step="1" />
+                </div>
+                <div class="field">
+                  <label>Selling price / metre <span class="label-note">(auto)</span></label>
+                  <div class="currency-wrap">
+                    <span class="currency-sym" aria-hidden="true">₹</span>
+                    <input type="text" [value]="wirePerMeterPrice() != null ? (wirePerMeterPrice() | number:'1.0-0') : ''" placeholder="—" readonly />
+                  </div>
+                  @if (wirePerMeterPrice() != null) {
+                    <span class="price-hint price-hint-m">💲 ₹{{ wirePerMeterPrice() | number:'1.0-0' }} / m</span>
+                  }
+                </div>
+              </div>
+            }
 
             <div class="field">
               <label for="ca-disc">Discounted price <span class="label-note">(optional)</span></label>

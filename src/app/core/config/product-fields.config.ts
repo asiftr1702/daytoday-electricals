@@ -68,6 +68,33 @@ export interface CategoryFieldConfig {
 
 const STANDARD_WARRANTY = ['No warranty', '6 months', '1 year', '2 years', '3 years'];
 
+// ── Wire size + colour spec fields (shared so they apply to any wire/cable category) ──
+export const WIRE_COLOR_OPTIONS: ColorOption[] = [
+  { label: 'Red',    hex: '#ef4444' },
+  { label: 'Black',  hex: '#222222' },
+  { label: 'Green',  hex: '#22c55e' },
+  { label: 'Yellow', hex: '#eab308' },
+  { label: 'Blue',   hex: '#3b82f6' },
+  { label: 'White',  hex: '#f0f0f0' },
+  { label: 'Grey',   hex: '#9ca3af' },
+  { label: 'Brown',  hex: '#92400e' },
+];
+
+/** The size + colour spec fields shown when adding/editing a wire. Deep-cloned per call. */
+export function wireSpecFields(): ProductField[] {
+  return [
+    {
+      key: 'size', label: 'Wire size', type: 'pills', group: 'specs',
+      options: ['1 mm', '1.5 mm', '2.5 mm', '4 mm', '6 mm', '8 mm'],
+    },
+    {
+      key: 'color', label: 'Colour', type: 'color-pills', group: 'specs',
+      colorOptions: structuredClone(WIRE_COLOR_OPTIONS),
+    },
+  ];
+}
+
+
 // ── Fans ──────────────────────────────────────────────────────────────────
 const FAN_CONFIG: CategoryFieldConfig = {
   pricingMode: 'standard',
@@ -173,6 +200,11 @@ const WIRE_CONFIG: CategoryFieldConfig = {
     { value: 'm',      label: 'Metres' },
     { value: 'piece',  label: 'Piece' },
   ],
+  // How the purchase/cost price is entered. Wires are usually bought per box/coil.
+  costUnits: [
+    { value: 'box', label: '/ box' },
+    { value: 'm',   label: '/ metre' },
+  ],
   skuCodes: {
     'FR Wire': 'FR', 'FR-LSH Wire': 'LS', 'Flexible Wire': 'FX',
     'Armoured Cable': 'AC', 'Coaxial Cable': 'CX', 'Telephone Cable': 'TC',
@@ -187,6 +219,7 @@ const WIRE_CONFIG: CategoryFieldConfig = {
       key: 'cores', label: 'Number of cores', type: 'pills', group: 'specs',
       options: ['1 core', '2 core', '3 core', '4 core', '3.5 core'],
     },
+    ...wireSpecFields(),
   ],
 };
 

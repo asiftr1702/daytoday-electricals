@@ -43,7 +43,27 @@ export class ProductCardComponent {
 
   readonly costVisible = signal(false);
 
+  /**
+   * Whole-box / coil cost for a wire, when applicable.
+   *  • New records store a per-metre cost with costUnit='box' → multiply by the length.
+   *  • Legacy records stored the whole-box figure directly in costPrice (no costUnit) —
+   *    detected because a per-metre cost can never exceed the per-metre selling price.
+   * Returns null for wires genuinely costed per metre and for non-wire categories.
+   */
+  readonly wireBoxCost = computed<number | null>(() => {
+    if (!this.isWire()) return null;
+    const prod = this.product() as any;
+    const cost = prod.costPrice;
+    if (cost == null) return null;
+    const len = prod.bundleLength ?? prod.totalLength;
+    if (prod.costUnit === 'box' && len) return Math.round(cost * len);
+    if (!prod.costUnit && prod.price != null && cost > prod.price) return Math.round(cost);
+    return null;
+  });
+
   readonly costPriceDisplay = computed(() => {
+    const box = this.wireBoxCost();
+    if (box != null) return '₹\u202f' + box.toLocaleString('en-IN');
     const p = this.product().costPrice;
     if (!p) return null;
     return '₹\u202f' + p.toLocaleString('en-IN');
@@ -57,6 +77,16 @@ export class ProductCardComponent {
   // ── Category detection ──────────────────────────────────────────────────────
   readonly isFan   = computed(() => (this.product() as any)['category'] === 'fans');
   readonly isLight = computed(() => (this.product() as any)['category'] === 'lights');
+  readonly isWire  = computed(() => /wire|cable/i.test(String((this.product() as any)['category'] ?? '')));
+
+  /** Whole roll/box price for a per-metre wire (shown as a tag on the card). */
+  readonly wireBoxPrice = computed(() => {
+    if (!this.isWire()) return null;
+    const p = this.product() as any;
+    if (!p.totalLength || !p.price) return null;
+    const box = p.bundlePrice ?? Math.round((p.price * p.totalLength) / 1.1);
+    return box ? box.toLocaleString('en-IN') : null;
+  });
 
   private readonly FAN_COLOR_HEX: Record<string, string> = {
     'White':  '#f0f0f0',
@@ -126,6 +156,30 @@ export class ProductCardComponent {
     }
     return items;
   });
+
+  /** Strip items for wires/cables: core size · number of cores · roll length. */
+  readonly wireVisualStrip = computed((): Array<{ type: 'text' | 'color'; value: string; hex?: string }> => {
+    if (!this.isWire()) return [];
+    const p = this.product() as any;
+    const items: Array<{ type: 'text' | 'color'; value: string; hex?: string }> = [];
+    if (p.color) items.push({ type: 'color', value: p.color, hex: this.WIRE_COLOR_HEX[p.color] ?? '#cccccc' });
+    if (p.size)  items.push({ type: 'text', value: p.size });
+    if (p.coreSize) items.push({ type: 'text', value: p.coreSize });
+    if (p.cores)    items.push({ type: 'text', value: p.cores });
+    if (p.totalLength) items.push({ type: 'text', value: `${p.totalLength}m roll` });
+    return items;
+  });
+
+  private readonly WIRE_COLOR_HEX: Record<string, string> = {
+    'Red':    '#ef4444',
+    'Black':  '#222222',
+    'Green':  '#22c55e',
+    'Yellow': '#eab308',
+    'Blue':   '#3b82f6',
+    'White':  '#f0f0f0',
+    'Grey':   '#9ca3af',
+    'Brown':  '#92400e',
+  };
 
   /** Full box price for rope light (totalLength × price × 90%). */
   readonly ropeBoxPrice = computed(() => {

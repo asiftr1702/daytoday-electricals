@@ -108,28 +108,31 @@
     </div>
   }
 
+  <!-- ── Wire attribute strip (core size · cores · roll length) ── -->
+  @if (wireVisualStrip().length > 0) {
+    <div class="fan-attr-strip" aria-label="Wire attributes">
+      @for (item of wireVisualStrip(); track item.value) {
+        @if (item.type === 'color') {
+          <span class="fan-attr-color">
+            <span class="fan-color-dot" [style.background]="item.hex" [attr.title]="item.value"></span>
+            <span>{{ item.value }}</span>
+          </span>
+        } @else {
+          <span class="fan-attr-chip">{{ item.value }}</span>
+        }
+      }
+    </div>
+  }
+
   <!-- ── Body ── -->
   <div class="card-body">
-    @if (!isFan() && !isLight()) {
-      <!-- Generic: brand + warranty row -->
-      <div class="card-top-row">
-        @if (product().brand) {
-          <span class="brand-tag">{{ product().brand }}</span>
-        }
-        @if (product().warranty) {
-          <span class="warranty-tag" [attr.title]="product().warranty + ' warranty'">{{ product().warranty }}</span>
-        } @else if ($any(product()).warrantyYears > 0) {
-          <span class="warranty-tag" [attr.title]="$any(product()).warrantyYears + ' year warranty'">{{ $any(product()).warrantyYears }}y</span>
-        }
-      </div>
-    }
-    <!-- Fan / Light: subcategory label + name + warranty on same row -->
-    @if ((isFan() || isLight()) && product().subcategory) {
+    <!-- Subcategory label + name + warranty (unified card layout) -->
+    @if (product().subcategory) {
       <span class="fan-subcat-label">{{ product().subcategory }}</span>
     }
     <div class="card-name-row">
       <h3 class="product-name">{{ product().name }}</h3>
-      @if (isFan() || isLight()) {
+      @if (!isWire()) {
         @if (product().warranty) {
           <span class="warranty-tag" [attr.title]="product().warranty + ' warranty'">{{ product().warranty }}</span>
         } @else if ($any(product()).warrantyYears > 0) {
@@ -139,8 +142,14 @@
     </div>
     @if (ropeBoxPrice()) {
       <div class="rope-box-tag">
-        <span class="rope-box-tag-price">Full box ₹{{ ropeBoxPrice() }}</span>
+        <span class="rope-box-tag-price">{{ priceDisplay() }} / m</span>
         <span class="rope-box-tag-discount">10% off</span>
+      </div>
+    }
+    @if (wireBoxPrice()) {
+      <div class="rope-box-tag">
+        <span class="rope-box-tag-price">{{ priceDisplay() }} / m</span>
+        <span class="rope-box-tag-discount">{{ $any(product()).totalLength }}m roll</span>
       </div>
     }
     @if (product().description) {
@@ -164,16 +173,26 @@
 
   <!-- ── Footer ── -->
   <div class="card-footer">
-    @if (isOffer()) {
+    @if (ropeBoxPrice()) {
+      <div class="price">
+        <span class="price-value">₹{{ ropeBoxPrice() }}</span>
+        <span class="price-unit">/ box</span>
+      </div>
+    } @else if (isWire() && wireBoxPrice()) {
+      <div class="price">
+        <span class="price-value">₹{{ wireBoxPrice() }}</span>
+        <span class="price-unit">/ roll</span>
+      </div>
+    } @else if (isOffer()) {
       <div class="price price-offer-block">
         <span class="price-mrp">{{ priceDisplay() }}</span>
         <span class="price-offer">{{ discountedPriceDisplay() }}</span>
-        <span class="price-unit">/ {{ (isLight() && $any(product()).totalLength) ? 'm' : ($any(product()).costUnit ?? product().unit) }}</span>
+        <span class="price-unit">/ {{ (((isLight() || isWire()) && $any(product()).totalLength) || (isWire() && $any(product()).pricePerMeter)) ? 'm' : ($any(product()).costUnit ?? product().unit) }}</span>
       </div>
     } @else if (priceDisplay()) {
       <div class="price">
         <span class="price-value">{{ priceDisplay() }}</span>
-        <span class="price-unit">/ {{ (isLight() && $any(product()).totalLength) ? 'm' : ($any(product()).costUnit ?? product().unit) }}</span>
+        <span class="price-unit">/ {{ (((isLight() || isWire()) && $any(product()).totalLength) || (isWire() && $any(product()).pricePerMeter)) ? 'm' : ($any(product()).costUnit ?? product().unit) }}</span>
       </div>
     } @else {
       <div class="price price-request">Price on request</div>
@@ -195,14 +214,14 @@
     <div class="cost-reveal" role="status">
       <span class="cost-label">Cost</span>
       <span class="cost-value">{{ costPriceDisplay() }}</span>
-      <span class="cost-unit">/ {{ $any(product()).costUnit ?? (isLight() && $any(product()).totalLength ? 'box' : product().unit) }}</span>
+      <span class="cost-unit">/ {{ wireBoxCost() != null ? 'box' : ($any(product()).costUnit ?? (isLight() && $any(product()).totalLength ? 'box' : product().unit)) }}</span>
     </div>
   }
 
   <!-- ── CTA bar ── -->
   <div class="card-cta-row">
-    <div class="card-cta" [attr.aria-label]="(isFan() || isLight()) ? product().brand : 'Visit store to buy ' + product().name">
-      @if ((isFan() || isLight()) && product().brand) {
+    <div class="card-cta" [attr.aria-label]="product().brand || ('Visit store to buy ' + product().name)">
+      @if (product().brand) {
         <span>{{ product().brand }}</span>
       } @else {
         <span>Visit Store</span>

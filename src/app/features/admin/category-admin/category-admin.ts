@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { FirebaseAdminService } from '../../../core/services/firebase-admin.service';
 import { CatalogueConfigService, DynamicCategory } from '../../../core/services/catalogue-config.service';
-import { CategoryFieldConfig, ProductField } from '../../../core/config/product-fields.config';
+import { CategoryFieldConfig, ProductField, wireSpecFields } from '../../../core/config/product-fields.config';
 import { AnyProduct } from '../../../core/models/any-product.model';
 import { compressImage } from '../../../core/utils/image.util';
 import { AdminNavComponent } from '../../../shared/admin-nav/admin-nav';
@@ -33,7 +33,13 @@ export class CategoryAdminComponent implements OnInit {
   readonly warrantyOptions = computed(() => this.fieldConfig()?.warrantyOptions ?? ['No warranty', '6 months', '1 year', '2 years', '3 years']);
   readonly bundleLengths = computed(() => this.fieldConfig()?.bundleLengths ?? [45, 90, 100, 180, 200, 500]);
   readonly stockUnits    = computed(() => this.fieldConfig()?.stockUnits ?? [{ value: 'bundle', label: 'Bundle / Coil' }, { value: 'm', label: 'Metres' }, { value: 'piece', label: 'Piece' }]);
-  readonly costUnits     = computed(() => this.fieldConfig()?.costUnits ?? [{ value: 'piece', label: '/ piece' }, { value: 'm', label: '/ meter' }, { value: 'box', label: '/ box' }]);
+  readonly costUnits     = computed(() => {
+    const cfg = this.fieldConfig()?.costUnits;
+    if (cfg?.length) return cfg;
+    return this.pricingMode() === 'length'
+      ? [{ value: 'box', label: '/ box' }, { value: 'm', label: '/ metre' }]
+      : [{ value: 'piece', label: '/ piece' }, { value: 'm', label: '/ meter' }, { value: 'box', label: '/ box' }];
+  });
   readonly unitOptions   = computed(() => this.fieldConfig()?.unitOptions ?? null);
 
   // ── Subcategory-aware field visibility ───────────────────────────────────
@@ -49,6 +55,13 @@ export class CategoryAdminComponent implements OnInit {
     !!this.fieldConfig()?.ropeSubcategory &&
     this.currentSubcat() === this.fieldConfig()!.ropeSubcategory
   );
+
+  /** Wires category using the standard pricing block → enable box-price ⇒ per-metre helper. */
+  readonly isWireStandard = computed(() => {
+    const cat = this.category();
+    if (!cat || this.pricingMode() === 'length') return false;
+    return /wire|cable/i.test(cat.id) || /wire|cable/i.test(cat.name ?? '');
+  });
 
   // ── Pill selections (single-select chips, not form controls) ─────────────
   readonly pills = signal<Record<string, string>>({});
@@ -69,8 +82,10 @@ export class CategoryAdminComponent implements OnInit {
   private _updatingPrice  = false;
   readonly pricePerMeter     = signal<number | null>(null); // length mode display
   readonly bundlePrice       = signal<number | null>(null); // length mode display
+  readonly costPerMeterDerived = signal<number | null>(null); // length mode: per-metre cost when entered per box
   readonly ropePerMeterPrice = signal<number | null>(null); // rope display
   readonly fullBoxPrice      = signal<number | null>(null); // rope display
+  readonly wirePerMeterPrice = signal<number | null>(null); // wire box→/m display
 
   // ── Product list ─────────────────────────────────────────────────────────
   readonly products        = signal<AnyProduct[]>([]);
@@ -95,12 +110,27 @@ export class CategoryAdminComponent implements OnInit {
     this.catalogueConfig.loadConfig().then(() => {
       const catId = this.route.snapshot.paramMap.get('id') ?? '';
       const found = this.catalogueConfig.categories().find(c => c.id === catId) ?? null;
-      this.category.set(found);
+      this.category.set(found ? this.ensureWireSpecFields(found) : null);
       if (!found) { this.router.navigate(['/admin']); return; }
       this.currentSubcat.set(found.subcategories[0] ?? '');
       this.buildForm();
       this.loadProducts();
     });
+  }
+
+  /**
+   * Guarantees wire/cable categories expose the size + colour spec fields, even when the
+   * stored Firestore config predates them. Only adds missing fields — pricing mode untouched.
+   */
+  private ensureWireSpecFields(cat: DynamicCategory): DynamicCategory {
+    const isWire = /wire|cable/i.test(cat.id) || /wire|cable/i.test(cat.name ?? '');
+    if (!isWire) return cat;
+    const fc = cat.fieldConfig ?? { pricingMode: 'standard' as const, fields: [] };
+    const fields = [...(fc.fields ?? [])];
+    for (const f of wireSpecFields()) {
+      if (!fields.some(existing => existing.key === f.key)) fields.push(f);
+    }
+    return { ...cat, fieldConfig: { ...fc, fields } };
   }
 
   // ── Field helpers ──────────────────────────────────────────────────────
@@ -136,6 +166,7 @@ export class CategoryAdminComponent implements OnInit {
 
     if (mode === 'length') {
       controls['costPerMeter']  = [null, [Validators.required, Validators.min(0)]];
+      controls['costUnit']      = [this.costUnits()[0]?.value ?? 'box'];
       controls['bundleLength']  = [this.bundleLengths()[1] ?? 90, [Validators.required, Validators.min(1)]];
       controls['pricePerMeter'] = [null, [Validators.required, Validators.min(0)]];
       controls['bundlePrice']   = [null, [Validators.required, Validators.min(0)]];
@@ -145,6 +176,9 @@ export class CategoryAdminComponent implements OnInit {
       controls['costPrice'] = [null, [Validators.required, Validators.min(0)]];
       controls['price']     = [null, [Validators.required, Validators.min(0)]];
       controls['marginInput'] = [null];
+      if (this.isWireStandard()) {
+        controls['rollLength'] = [null, [Validators.required, Validators.min(1)]];
+      }
       if (mode === 'unit-rope') {
         controls['costUnit']    = [this.costUnits()[0]?.value ?? 'piece'];
         controls['totalLength'] = [null, Validators.min(0)];
@@ -193,7 +227,7 @@ export class CategoryAdminComponent implements OnInit {
     });
 
     // Clamp negatives
-    ['costPrice', 'price', 'discountedPrice', 'stockQty', 'wattage', 'totalLength',
+    ['costPrice', 'price', 'discountedPrice', 'stockQty', 'wattage', 'totalLength', 'rollLength',
       'costPerMeter', 'pricePerMeter', 'bundlePrice', 'bundleLength'].forEach(field => {
       this.productForm.get(field)?.valueChanges.subscribe((val: number | null) => {
         if (val != null && val < 0) this.productForm.get(field)?.setValue(0, { emitEvent: false });
@@ -203,6 +237,23 @@ export class CategoryAdminComponent implements OnInit {
     if (this.pricingMode() === 'length') this.wireLengthPricing();
     else this.wireStandardMargin();
     if (this.pricingMode() === 'unit-rope') this.wireRope();
+    if (this.isWireStandard()) this.wireBoxPerMeter();
+  }
+
+  // ── Wire box price ⇒ per-metre (standard block) ──────────────────────────
+  // Per-metre selling price = (whole box/roll price ÷ roll length) × 110%.
+  private wireBoxPerMeter(): void {
+    const recalc = () => {
+      const box = this.productForm.get('price')?.value;
+      const len = this.productForm.get('rollLength')?.value;
+      if (box > 0 && len > 0) {
+        this.wirePerMeterPrice.set(Math.round((box / len) * 1.1));
+      } else {
+        this.wirePerMeterPrice.set(null);
+      }
+    };
+    this.productForm.get('price')?.valueChanges.subscribe(recalc);
+    this.productForm.get('rollLength')?.valueChanges.subscribe(recalc);
   }
 
   // ── Margin (standard / unit-rope) ────────────────────────────────────────
@@ -292,19 +343,39 @@ export class CategoryAdminComponent implements OnInit {
     });
     const recalcMargin = () => {
       if (this._updatingMargin) return;
-      this.calcMarginPerMeter(this.productForm.get('costPerMeter')?.value, this.productForm.get('pricePerMeter')?.value);
+      this.calcMarginPerMeter(this.effectiveCostPerMeter(), this.productForm.get('pricePerMeter')?.value);
     };
     this.productForm.get('costPerMeter')?.valueChanges.subscribe(recalcMargin);
     this.productForm.get('pricePerMeter')?.valueChanges.subscribe(recalcMargin);
+    this.productForm.get('costUnit')?.valueChanges.subscribe(recalcMargin);
+    this.productForm.get('bundleLength')?.valueChanges.subscribe(recalcMargin);
     this.productForm.get('marginInput')?.valueChanges.subscribe((pct: number | null) => {
       if (this._updatingMargin) return;
-      const cost = this.productForm.get('costPerMeter')?.value;
-      if (cost > 0 && pct != null) {
+      const cost = this.effectiveCostPerMeter();
+      if (cost != null && cost > 0 && pct != null) {
         this._updatingMargin = true;
         this.productForm.get('pricePerMeter')?.setValue(Math.round(cost * (1 + pct / 100) * 100) / 100);
         this._updatingMargin = false;
       }
     });
+  }
+
+  /**
+   * Cost per metre used for margin maths. When the cost is entered per box/coil it is
+   * divided by the bundle length; otherwise the entered value is already per metre.
+   * Also publishes `costPerMeterDerived` for the per-metre hint shown beside a box cost.
+   */
+  private effectiveCostPerMeter(): number | null {
+    const raw = this.productForm.get('costPerMeter')?.value;
+    if (raw == null || raw === '') { this.costPerMeterDerived.set(null); return null; }
+    if (this.productForm.get('costUnit')?.value === 'box') {
+      const len = this.productForm.get('bundleLength')?.value;
+      const perMeter = len > 0 ? raw / len : null;
+      this.costPerMeterDerived.set(perMeter != null ? Math.round(perMeter * 100) / 100 : null);
+      return perMeter;
+    }
+    this.costPerMeterDerived.set(null);
+    return raw;
   }
 
   private calcMarginPerMeter(cost?: number | null, sell?: number | null): void {
@@ -376,9 +447,20 @@ export class CategoryAdminComponent implements OnInit {
     };
 
     if (mode === 'length') {
+      const perMeterCost = product.costPerMeter ?? product.costPrice ?? null;
+      const bundleLen    = product.bundleLength ?? 90;
+      const hasUnit      = product.costUnit != null;
+      const costUnit     = product.costUnit ?? 'box';
+      // Re-derive the value the admin originally typed.
+      //  • New records (costUnit set, 'box'): costPrice is per-metre → multiply back to box cost.
+      //  • Legacy records (no costUnit): costPrice already holds the whole-box figure → use as-is.
+      const enteredCost  = hasUnit && costUnit === 'box' && perMeterCost != null
+        ? Math.round(perMeterCost * bundleLen * 100) / 100
+        : perMeterCost;
       Object.assign(common, {
-        costPerMeter:  product.costPerMeter  ?? product.costPrice ?? null,
-        bundleLength:  product.bundleLength  ?? 90,
+        costPerMeter:  enteredCost,
+        costUnit,
+        bundleLength:  bundleLen,
         pricePerMeter: product.pricePerMeter ?? product.price ?? null,
         bundlePrice:   product.bundlePrice   ?? null,
         stockUnit:     product.unit          ?? 'bundle',
@@ -392,6 +474,14 @@ export class CategoryAdminComponent implements OnInit {
         costPrice: product.costPrice ?? null,
         price:     editPrice,
       });
+      if (this.isWireStandard()) {
+        // Restore the whole box/roll price + roll length so per-metre re-derives.
+        const boxPrice = product.bundlePrice
+          ?? (product.price && product.totalLength
+            ? Math.round((product.price * product.totalLength) / 1.1)
+            : null);
+        Object.assign(common, { price: boxPrice, rollLength: product.totalLength ?? null });
+      }
       if (mode === 'unit-rope') {
         Object.assign(common, { costUnit: product.costUnit ?? 'piece', totalLength: product.totalLength ?? null });
       }
@@ -418,7 +508,7 @@ export class CategoryAdminComponent implements OnInit {
     this.generatedSku.set(product.sku ?? '');
 
     if (mode === 'length') {
-      this.calcMarginPerMeter(product.costPerMeter ?? product.costPrice, product.pricePerMeter ?? product.price);
+      this.calcMarginPerMeter(this.effectiveCostPerMeter(), this.productForm.get('pricePerMeter')?.value);
       this.pricePerMeter.set(product.pricePerMeter ?? product.price ?? null);
       this.bundlePrice.set(product.bundlePrice ?? null);
     } else {
@@ -545,8 +635,12 @@ export class CategoryAdminComponent implements OnInit {
     }
 
     if (mode === 'length') {
-      product.costPrice     = fv.costPerMeter ?? undefined;
-      product.costPerMeter  = fv.costPerMeter ?? undefined;
+      // Cost may be entered per box/coil — store the true per-metre cost so margin/profit
+      // (selling is per metre) stay correct, while remembering how it was entered.
+      const perMeterCost = this.effectiveCostPerMeter() ?? undefined;
+      product.costUnit      = fv.costUnit || 'box';
+      product.costPrice     = perMeterCost;
+      product.costPerMeter  = perMeterCost;
       product.price         = fv.pricePerMeter ?? undefined;
       product.pricePerMeter = fv.pricePerMeter ?? undefined;
       product.bundlePrice   = fv.bundlePrice ?? undefined;
@@ -561,8 +655,18 @@ export class CategoryAdminComponent implements OnInit {
       product.totalLength = isRope ? (fv.totalLength || undefined) : undefined;
     } else {
       product.costPrice = fv.costPrice ?? undefined;
-      product.price     = fv.price ?? undefined;
-      product.unit      = this.unitOptions() ? (fv.unit || 'Piece') : (this.fieldConfig()?.defaultUnit ?? 'Piece');
+      if (this.isWireStandard() && fv.price > 0 && fv.rollLength > 0) {
+        const perMeter = this.wirePerMeterPrice()
+          ?? Math.round((fv.price / fv.rollLength) * 1.1);
+        product.price         = perMeter;
+        product.pricePerMeter = perMeter;
+        product.bundlePrice   = fv.price;        // whole box / roll selling price
+        product.totalLength   = fv.rollLength;   // roll length in metres
+        product.unit          = 'm';
+      } else {
+        product.price     = fv.price ?? undefined;
+        product.unit      = this.unitOptions() ? (fv.unit || 'Piece') : (this.fieldConfig()?.defaultUnit ?? 'Piece');
+      }
     }
 
     return product;
@@ -576,7 +680,7 @@ export class CategoryAdminComponent implements OnInit {
       available: false,
       warranty: this.warrantyOptions()[0] ?? 'No warranty',
     };
-    if (mode === 'length') { base['bundleLength'] = this.bundleLengths()[1] ?? 90; base['stockUnit'] = this.stockUnits()[0]?.value ?? 'bundle'; }
+    if (mode === 'length') { base['bundleLength'] = this.bundleLengths()[1] ?? 90; base['stockUnit'] = this.stockUnits()[0]?.value ?? 'bundle'; base['costUnit'] = this.costUnits()[0]?.value ?? 'box'; }
     if (mode === 'unit-rope') base['costUnit'] = this.costUnits()[0]?.value ?? 'piece';
     if (this.unitOptions()) base['unit'] = this.unitOptions()![0] ?? 'Piece';
     this.productForm.reset(base);
@@ -586,8 +690,10 @@ export class CategoryAdminComponent implements OnInit {
     this.marginHint.set('');
     this.pricePerMeter.set(null);
     this.bundlePrice.set(null);
+    this.costPerMeterDerived.set(null);
     this.ropePerMeterPrice.set(null);
     this.fullBoxPrice.set(null);
+    this.wirePerMeterPrice.set(null);
     this.removeImage();
     this.errorMessage.set('');
     this.successMessage.set('');
