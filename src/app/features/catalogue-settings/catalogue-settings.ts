@@ -48,7 +48,13 @@ export class CatalogueSettingsComponent implements OnInit {
   readonly newFieldGroup   = signal<'specs' | 'pricing' | 'stock' | 'admin'>('specs');
   readonly newFieldOptions = signal('');
   readonly newFieldSubcats = signal<string[]>([]);
-  readonly fieldTypeOptions: ProductFieldType[] = ['text', 'number', 'textarea', 'select', 'pills', 'color-pills'];
+  readonly newFieldPrefix  = signal('');
+  readonly newFieldSuffix  = signal('');
+  readonly newFieldFormula = signal('');
+  readonly newFieldDecimals = signal(2);
+  /** Key of the field currently being edited (null = adding a new field). */
+  readonly editingFieldKey = signal<string | null>(null);
+  readonly fieldTypeOptions: ProductFieldType[] = ['text', 'number', 'textarea', 'select', 'pills', 'color-pills', 'computed'];
   readonly fieldSectionOptions: { value: 'specs' | 'pricing' | 'stock' | 'admin'; label: string }[] = [
     { value: 'specs',   label: 'Basic info' },
     { value: 'pricing', label: 'Pricing' },
@@ -225,6 +231,13 @@ export class CatalogueSettingsComponent implements OnInit {
         return [...all].join(', ');
       }
     }
+    if ((field.type === 'text' || field.type === 'number') && (field.prefix || field.suffix)) {
+      const sample = field.placeholder || 'value';
+      return `${field.prefix ?? ''}${sample}${field.suffix ?? ''}`.trim();
+    }
+    if (field.type === 'computed') {
+      return `= ${field.formula ?? ''}`;
+    }
     return '';
   }
 
@@ -267,19 +280,96 @@ export class CatalogueSettingsComponent implements OnInit {
     } else if (type === 'color-pills') {
       field.colorOptions = rawOptions.map(o => ({ label: o, hex: colorNameToHex(o) }));
     }
+    // Computed field formula
+    if (type === 'computed') {
+      const formula = this.newFieldFormula().trim();
+      if (!formula) return;
+      field.formula = formula;
+      field.decimals = Number(this.newFieldDecimals()) || 0;
+    }
+    // Prefix / suffix (text, number & computed fields)
+    if (type === 'text' || type === 'number' || type === 'computed') {
+      const prefix = this.newFieldPrefix().trim();
+      const suffix = this.newFieldSuffix().trim();
+      if (prefix) field.prefix = prefix;
+      if (suffix) field.suffix = suffix;
+    }
     // No subcategory selected → applies to all subcategories
     if (subcats.length) field.showForSubcategories = subcats;
 
-    this.mutateFieldConfig(catId, fields =>
-      fields.some(f => f.key === key) ? fields : [...fields, field]
+    const editingKey = this.editingFieldKey();
+    if (editingKey) {
+      // Update in place, preserving position
+      this.mutateFieldConfig(catId, fields =>
+        fields.map(f => (f.key === editingKey ? field : f))
+      );
+    } else {
+      this.mutateFieldConfig(catId, fields =>
+        fields.some(f => f.key === key) ? fields : [...fields, field]
+      );
+    }
+    this.resetFieldForm();
+    await this.persist();
+  }
+
+  /** Load an existing field into the editor for in-place editing. */
+  editField(field: ProductField): void {
+    this.editingFieldKey.set(field.key);
+    this.newFieldKey.set(field.key);
+    this.newFieldLabel.set(field.label);
+    this.newFieldType.set(field.type);
+    this.newFieldGroup.set(field.group ?? 'specs');
+    this.newFieldOptions.set(
+      field.type === 'color-pills'
+        ? (field.colorOptions ?? []).map(o => o.label).join(', ')
+        : (field.options ?? []).join(', ')
     );
+    this.newFieldSubcats.set(field.showForSubcategories ?? []);
+    this.newFieldPrefix.set(field.prefix ?? '');
+    this.newFieldSuffix.set(field.suffix ?? '');
+    this.newFieldFormula.set(field.formula ?? '');
+    this.newFieldDecimals.set(field.decimals ?? 2);
+  }
+
+  /** Cancel an in-progress field edit and clear the form. */
+  cancelFieldEdit(): void {
+    this.resetFieldForm();
+  }
+
+  private resetFieldForm(): void {
+    this.editingFieldKey.set(null);
     this.newFieldKey.set('');
     this.newFieldLabel.set('');
     this.newFieldType.set('text');
     this.newFieldGroup.set('specs');
     this.newFieldOptions.set('');
     this.newFieldSubcats.set([]);
-    await this.persist();
+    this.newFieldPrefix.set('');
+    this.newFieldSuffix.set('');
+    this.newFieldFormula.set('');
+    this.newFieldDecimals.set(2);
+  }
+
+  /** Append a {key} token to the formula being edited. */
+  insertFormulaKey(key: string): void {
+    this.newFieldFormula.update(f => `${f}{${key}}`);
+  }
+
+  /** Built-in numeric pricing/stock keys that can be referenced in formulas, by pricing mode. */
+  private builtInNumberKeys(cat: DynamicCategory): string[] {
+    const mode = this.pricingModeOf(cat);
+    const common = ['discountedPrice', 'stockQty'];
+    if (mode === 'length') return ['costPerMeter', 'pricePerMeter', 'bundlePrice', 'bundleLength', ...common];
+    if (mode === 'unit-rope') return ['costPrice', 'price', 'totalLength', ...common];
+    return ['costPrice', 'price', ...common];
+  }
+
+  /** Numeric/computed field keys that a formula may reference (custom fields + built-ins). */
+  formulaKeyOptions(cat: DynamicCategory): string[] {
+    const custom = this.fieldsOf(cat)
+      .filter(f => f.type === 'number' || f.type === 'computed')
+      .map(f => f.key);
+    return [...custom, ...this.builtInNumberKeys(cat)];
   }
 
   /** Toggle a subcategory in the new-field scope selector. */

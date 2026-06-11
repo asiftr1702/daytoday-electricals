@@ -167,6 +167,34 @@ select {
 }
 .currency-wrap input { padding-left: 22px; }
 
+/* ─── Prefix / suffix affix wrapper ──────────────────────────────── */
+.affix-wrap { display: flex; align-items: stretch; }
+.affix-wrap input { flex: 1 1 auto; min-width: 0; }
+.affix {
+  display: flex; align-items: center; padding: 0 12px;
+  background: #f0f4f8; color: #546E7A; font-weight: 600; font-size: .9rem;
+  border: 1px solid #cfd8dc; white-space: nowrap;
+}
+.affix-prefix { border-right: 0; border-radius: 8px 0 0 8px; }
+.affix-suffix { border-left: 0; border-radius: 0 8px 8px 0; }
+.affix-wrap input { border-radius: 0; }
+.affix-wrap > .affix-prefix + input { border-radius: 0; }
+.affix-wrap input:first-child { border-radius: 8px 0 0 8px; }
+.affix-wrap input:last-child { border-radius: 0 8px 8px 0; }
+
+/* ─── Computed (auto) field display ──────────────────────────────── */
+.computed-display {
+  display: flex; align-items: center; gap: 6px;
+  background: #f0f7ff; border: 1px dashed #90caf9; border-radius: 8px;
+  padding: 10px 12px; min-height: 42px;
+}
+.computed-value { font-weight: 700; color: #1565C0; font-size: 1rem; }
+.computed-auto-tag {
+  font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: #1976d2; background: #e3f2fd; padding: 1px 6px; border-radius: 6px;
+}
+.computed-placeholder { color: #90a4ae; font-size: .85rem; }
+
 /* ─── Cost + unit selector (unit-rope mode) ──────────────────────── */
 .cost-input-row { display: flex; gap: 8px; align-items: stretch; }
 .cost-unit-select { width: auto; min-width: 96px; flex-shrink: 0; }

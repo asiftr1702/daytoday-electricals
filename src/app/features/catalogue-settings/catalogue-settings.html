@@ -100,8 +100,8 @@
                 }
               </div>
               <div class="cs-card-acts">
-                <button class="cs-icon-btn" (click)="toggleSubs(cat.id)" title="Subcategories & Brands">
-                  📂 {{ cat.subcategories.length }} · 🏷️ {{ cat.brands.length }}
+                <button class="cs-icon-btn" (click)="toggleSubs(cat.id)" title="Subcategories, Brands & Fields">
+                  📂 {{ cat.subcategories.length }} · 🏷️ {{ cat.brands.length }} · 🧩 {{ fieldsOf(cat).length }}
                 </button>
                 <button class="cs-icon-btn" (click)="startEditCategory(cat)" title="Edit">✏️</button>
                 <button class="cs-icon-btn cs-icon-btn-danger" (click)="deleteCategory(cat.id)" title="Delete">🗑️</button>
@@ -197,6 +197,7 @@
                         @if (optionsText(f)) {
                           <span class="cs-field-opts">{{ optionsText(f) }}</span>
                         }
+                        <button class="cs-icon-btn" (click)="editField(f)" title="Edit">✏️</button>
                         <button class="cs-icon-btn cs-icon-btn-danger" (click)="removeField(cat.id, i)" title="Remove">🗑️</button>
                       </div>
                     }
@@ -208,8 +209,9 @@
                   <div class="cs-field-form">
                     <div class="cs-form-row">
                       <div class="cs-field cs-field-grow">
-                        <label>Field key <span class="cs-hint">(no spaces)</span></label>
+                        <label>Field key <span class="cs-hint">{{ editingFieldKey() ? '(cannot be changed)' : '(no spaces)' }}</span></label>
                         <input type="text" class="cs-input" [value]="newFieldKey()"
+                               [readonly]="!!editingFieldKey()"
                                (input)="newFieldKey.set($any($event.target).value)"
                                placeholder="e.g., wattage" />
                       </div>
@@ -262,8 +264,51 @@
                         }
                       </div>
                     </div>
+                    @if (newFieldType() === 'computed') {
+                      <div class="cs-form-row">
+                        <div class="cs-field cs-field-grow">
+                          <label>Formula
+                            <span class="cs-hint">(use {{ '{' }}key{{ '}' }} tokens · supports + - * / and ( ) · e.g. ({{ '{' }}boxPrice{{ '}' }} / {{ '{' }}totalLength{{ '}' }}) * 1.1 for 10% profit)</span>
+                          </label>
+                          <input type="text" class="cs-input" [value]="newFieldFormula()"
+                                 (input)="newFieldFormula.set($any($event.target).value)"
+                                 placeholder="e.g., ({boxPrice} / {totalLength}) * 1.1" />
+                          <div class="cs-scope-chips" style="margin-top:0.5rem">
+                            @for (k of formulaKeyOptions(cat); track k) {
+                              <button type="button" class="cs-scope-chip" (click)="insertFormulaKey(k)">+ {{ k }}</button>
+                            }
+                          </div>
+                        </div>
+                        <div class="cs-field cs-field-sm">
+                          <label>Decimals</label>
+                          <input type="number" class="cs-input" min="0" max="4" [value]="newFieldDecimals()"
+                                 (input)="newFieldDecimals.set($any($event.target).valueAsNumber)" />
+                        </div>
+                      </div>
+                    }
+                    @if (newFieldType() === 'text' || newFieldType() === 'number' || newFieldType() === 'computed') {
+                      <div class="cs-form-row">
+                        <div class="cs-field cs-field-sm">
+                          <label>Prefix <span class="cs-hint">(optional, e.g. ₹)</span></label>
+                          <input type="text" class="cs-input" [value]="newFieldPrefix()"
+                                 (input)="newFieldPrefix.set($any($event.target).value)"
+                                 placeholder="e.g., ₹" />
+                        </div>
+                        <div class="cs-field cs-field-sm">
+                          <label>Suffix <span class="cs-hint">(optional, e.g. mm)</span></label>
+                          <input type="text" class="cs-input" [value]="newFieldSuffix()"
+                                 (input)="newFieldSuffix.set($any($event.target).value)"
+                                 placeholder="e.g., mm" />
+                        </div>
+                      </div>
+                    }
                     <div class="cs-form-actions">
-                      <button class="cs-btn cs-btn-sm cs-btn-primary" (click)="addField(cat.id)">+ Add Field</button>
+                      @if (editingFieldKey()) {
+                        <button class="cs-btn cs-btn-sm cs-btn-outline" (click)="cancelFieldEdit()">Cancel</button>
+                      }
+                      <button class="cs-btn cs-btn-sm cs-btn-primary" (click)="addField(cat.id)">
+                        {{ editingFieldKey() ? '💾 Update Field' : '+ Add Field' }}
+                      </button>
                     </div>
                   </div>
                 }

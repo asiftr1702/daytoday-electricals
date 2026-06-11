@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { FirebaseAdminService } from '../../../core/services/firebase-admin.service';
 import { CatalogueConfigService, DynamicCategory } from '../../../core/services/catalogue-config.service';
-import { CategoryFieldConfig, ProductField, colorNameToHex, wireSpecFields } from '../../../core/config/product-fields.config';
+import { CategoryFieldConfig, ProductField, colorNameToHex, evaluateFormula } from '../../../core/config/product-fields.config';
 import { AnyProduct } from '../../../core/models/any-product.model';
 import { compressImage } from '../../../core/utils/image.util';
 import { AdminNavComponent } from '../../../shared/admin-nav/admin-nav';
@@ -59,17 +59,37 @@ export class CategoryAdminComponent implements OnInit {
   );
 
   /** Wires category using the standard pricing block → enable box-price ⇒ per-metre helper. */
-  readonly isWireStandard = computed(() => {
-    const cat = this.category();
-    if (!cat || this.pricingMode() === 'length') return false;
-    return /wire|cable/i.test(cat.id) || /wire|cable/i.test(cat.name ?? '');
-  });
+  readonly isWireStandard = computed(() => false);
 
   // ── Pill selections (single-select chips, not form controls) ─────────────
   readonly pills = signal<Record<string, string>>({});
   pill(key: string): string { return this.pills()[key] ?? ''; }
   togglePill(key: string, value: string): void {
     this.pills.update(p => ({ ...p, [key]: p[key] === value ? '' : value }));
+    this.recomputeComputed();
+  }
+
+  // ── Computed (auto-calculated) fields ─────────────────────────────────────
+  readonly computedValues = signal<Record<string, number | null>>({});
+  computedValue(key: string): number | null { return this.computedValues()[key] ?? null; }
+
+  /** Recalculates every computed field from the current form + pill values. */
+  private recomputeComputed(): void {
+    const fields = (this.fieldConfig()?.fields ?? []).filter(f => f.type === 'computed');
+    if (!fields.length) { this.computedValues.set({}); return; }
+    const values: Record<string, unknown> = { ...this.productForm?.getRawValue?.(), ...this.pills() };
+    const result: Record<string, number | null> = {};
+    for (const f of fields) {
+      let v = evaluateFormula(f.formula, values);
+      if (v != null) {
+        const dp = f.decimals ?? 2;
+        const factor = Math.pow(10, dp);
+        v = Math.round(v * factor) / factor;
+        values[f.key] = v; // allow later computed fields to reference this one
+      }
+      result[f.key] = v;
+    }
+    this.computedValues.set(result);
   }
 
   productForm!: FormGroup;
@@ -112,7 +132,7 @@ export class CategoryAdminComponent implements OnInit {
     this.catalogueConfig.loadConfig().then(() => {
       const catId = this.route.snapshot.paramMap.get('id') ?? '';
       const found = this.catalogueConfig.categories().find(c => c.id === catId) ?? null;
-      this.category.set(found ? this.ensureWireSpecFields(found) : null);
+      this.category.set(found ? this.forceWireStandardPricing(found) : null);
       if (!found) { this.router.navigate(['/admin']); return; }
       this.currentSubcat.set(found.subcategories[0] ?? '');
       this.buildForm();
@@ -121,18 +141,14 @@ export class CategoryAdminComponent implements OnInit {
   }
 
   /**
-   * Guarantees wire/cable categories expose the size + colour spec fields, even when the
-   * stored Firestore config predates them. Only adds missing fields — pricing mode untouched.
+   * Wire/cable categories use the plain standard pricing block (cost · selling · margin · discount).
+   * Overrides any legacy `length` pricing mode stored in Firestore for the admin form.
    */
-  private ensureWireSpecFields(cat: DynamicCategory): DynamicCategory {
+  private forceWireStandardPricing(cat: DynamicCategory): DynamicCategory {
     const isWire = /wire|cable/i.test(cat.id) || /wire|cable/i.test(cat.name ?? '');
-    if (!isWire) return cat;
+    if (!isWire || cat.fieldConfig?.pricingMode !== 'length') return cat;
     const fc = cat.fieldConfig ?? { pricingMode: 'standard' as const, fields: [] };
-    const fields = [...(fc.fields ?? [])];
-    for (const f of wireSpecFields()) {
-      if (!fields.some(existing => existing.key === f.key)) fields.push(f);
-    }
-    return { ...cat, fieldConfig: { ...fc, fields } };
+    return { ...cat, fieldConfig: { ...fc, pricingMode: 'standard' } };
   }
 
   // ── Field helpers ──────────────────────────────────────────────────────
@@ -145,6 +161,7 @@ export class CategoryAdminComponent implements OnInit {
     return f.options ?? [];
   }
   isPillField(f: ProductField): boolean { return f.type === 'pills' || f.type === 'color-pills'; }
+  isComputedField(f: ProductField): boolean { return f.type === 'computed'; }
   /** Resolve a swatch colour: use stored hex unless it's the grey placeholder, then derive from the label. */
   swatchHex(c: { label: string; hex?: string }): string {
     const hex = (c.hex ?? '').trim().toLowerCase();
@@ -152,7 +169,7 @@ export class CategoryAdminComponent implements OnInit {
     return colorNameToHex(c.label);
   }
   private controlSpecFields(): ProductField[] {
-    return (this.fieldConfig()?.fields ?? []).filter(f => !this.isPillField(f));
+    return (this.fieldConfig()?.fields ?? []).filter(f => !this.isPillField(f) && !this.isComputedField(f));
   }
 
   // ── Build the reactive form for the active pricing mode ──────────────────
@@ -203,9 +220,13 @@ export class CategoryAdminComponent implements OnInit {
 
     this.productForm = this.fb.group(controls);
     this.wireBehaviours();
+    this.recomputeComputed();
   }
 
   private wireBehaviours(): void {
+    // Recalculate auto-computed fields on any value change
+    this.productForm.valueChanges.subscribe(() => this.recomputeComputed());
+
     // SKU
     ['brand', 'subcategory', 'name'].forEach(f =>
       this.productForm.get(f)?.valueChanges.subscribe(() => this.generateSKU()));
@@ -640,6 +661,13 @@ export class CategoryAdminComponent implements OnInit {
     for (const f of this.controlSpecFields()) {
       const val = this.isFieldVisible(f) ? fv[f.key] : undefined;
       product[f.key] = (val === '' || val == null) ? undefined : val;
+    }
+    // Computed fields — store their latest calculated value
+    this.recomputeComputed();
+    for (const f of (this.fieldConfig()?.fields ?? [])) {
+      if (f.type !== 'computed') continue;
+      const val = this.isFieldVisible(f) ? this.computedValue(f.key) : null;
+      product[f.key] = val ?? undefined;
     }
 
     if (mode === 'length') {

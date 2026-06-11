@@ -15,7 +15,8 @@ export type ProductFieldType =
   | 'textarea'
   | 'select'
   | 'pills'
-  | 'color-pills';
+  | 'color-pills'
+  | 'computed';
 
 /** How the pricing block of the form behaves. */
 export type PricingMode =
@@ -46,7 +47,14 @@ export interface ProductField {
   showForSubcategories?: string[];              // only visible for these subcategories
   placeholder?: string;
   min?: number;
-  suffix?: string;                              // chip suffix in the inventory list (e.g. 'W')
+  prefix?: string;                              // text/number: shown before the input value (e.g. '₹')
+  suffix?: string;                              // chip suffix in the inventory list + after the input value (e.g. 'W')
+  /**
+   * computed: arithmetic formula that references other field keys with {key} tokens.
+   * Supports + - * / ( ) and decimal numbers. Example: ({boxPrice} / {totalLength}) * 1.1
+   */
+  formula?: string;
+  decimals?: number;                            // computed: rounding (decimal places, default 2)
 }
 
 export interface CategoryFieldConfig {
@@ -97,20 +105,6 @@ export function colorNameToHex(label: string): string {
   const v = (label ?? '').trim().toLowerCase();
   if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(v)) return v;
   return COLOR_NAME_HEX[v] ?? '#cccccc';
-}
-
-/** The size + colour spec fields shown when adding/editing a wire. Deep-cloned per call. */
-export function wireSpecFields(): ProductField[] {
-  return [
-    {
-      key: 'size', label: 'Wire size', type: 'pills', group: 'specs',
-      options: ['1 mm', '1.5 mm', '2.5 mm', '4 mm', '6 mm', '8 mm'],
-    },
-    {
-      key: 'color', label: 'Colour', type: 'color-pills', group: 'specs',
-      colorOptions: structuredClone(WIRE_COLOR_OPTIONS),
-    },
-  ];
 }
 
 
@@ -211,7 +205,8 @@ const LIGHT_CONFIG: CategoryFieldConfig = {
 
 // ── Wires & Cables ──────────────────────────────────────────────────────────
 const WIRE_CONFIG: CategoryFieldConfig = {
-  pricingMode: 'length',
+  pricingMode: 'standard',
+  defaultUnit: 'Piece',
   warrantyOptions: ['No warranty', '1 year', '2 years', '3 years', '5 years'],
   bundleLengths: [45, 90, 100, 180, 200, 500],
   stockUnits: [
@@ -238,7 +233,6 @@ const WIRE_CONFIG: CategoryFieldConfig = {
       key: 'cores', label: 'Number of cores', type: 'pills', group: 'specs',
       options: ['1 core', '2 core', '3 core', '4 core', '3.5 core'],
     },
-    ...wireSpecFields(),
   ],
 };
 
@@ -262,3 +256,94 @@ export function defaultFieldConfig(categoryId: string): CategoryFieldConfig {
   const base = DEFAULT_FIELD_CONFIGS[categoryId] ?? GENERIC_FIELD_CONFIG;
   return structuredClone(base);
 }
+
+// ── Computed-field formula evaluation ────────────────────────────────────────
+
+/** Safe arithmetic parser supporting + - * / ( ) and decimal numbers (no eval). */
+function evalArithmetic(expr: string): number {
+  if (!/^[\d\s.+\-*/()]*$/.test(expr)) throw new Error('invalid characters');
+  let pos = 0;
+  const s = expr;
+  const skipWs = () => { while (pos < s.length && s[pos] === ' ') pos++; };
+
+  const parseExpression = (): number => {
+    let value = parseTerm();
+    skipWs();
+    while (pos < s.length && (s[pos] === '+' || s[pos] === '-')) {
+      const op = s[pos++];
+      const rhs = parseTerm();
+      value = op === '+' ? value + rhs : value - rhs;
+      skipWs();
+    }
+    return value;
+  };
+  const parseTerm = (): number => {
+    let value = parseFactor();
+    skipWs();
+    while (pos < s.length && (s[pos] === '*' || s[pos] === '/')) {
+      const op = s[pos++];
+      const rhs = parseFactor();
+      value = op === '*' ? value * rhs : value / rhs;
+      skipWs();
+    }
+    return value;
+  };
+  const parseFactor = (): number => {
+    skipWs();
+    if (s[pos] === '+') { pos++; return parseFactor(); }
+    if (s[pos] === '-') { pos++; return -parseFactor(); }
+    if (s[pos] === '(') {
+      pos++;
+      const v = parseExpression();
+      skipWs();
+      if (s[pos] === ')') pos++; else throw new Error('missing )');
+      return v;
+    }
+    const start = pos;
+    while (pos < s.length && /[\d.]/.test(s[pos])) pos++;
+    if (pos === start) throw new Error('number expected');
+    const num = Number(s.slice(start, pos));
+    if (Number.isNaN(num)) throw new Error('bad number');
+    return num;
+  };
+
+  const result = parseExpression();
+  skipWs();
+  if (pos !== s.length) throw new Error('unexpected token');
+  return result;
+}
+
+/**
+ * Evaluates a computed-field `formula`, substituting {key} tokens with numeric values.
+ * Returns null when the formula is empty, a referenced value is missing/non-numeric,
+ * or the result is not finite (e.g. divide by zero).
+ */
+export function evaluateFormula(
+  formula: string | undefined,
+  values: Record<string, unknown>,
+): number | null {
+  if (!formula?.trim()) return null;
+  let missing = false;
+  const substituted = formula.replace(/\{([^}]+)\}/g, (_m, rawKey: string) => {
+    const v = values[rawKey.trim()];
+    const n = typeof v === 'number' ? v : Number(v);
+    if (v === null || v === undefined || v === '' || Number.isNaN(n)) { missing = true; return '0'; }
+    return `(${n})`;
+  });
+  if (missing) return null;
+  try {
+    const result = evalArithmetic(substituted);
+    return Number.isFinite(result) ? result : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Extracts the {key} references used in a formula. */
+export function formulaKeys(formula: string | undefined): string[] {
+  if (!formula) return [];
+  const keys = new Set<string>();
+  for (const m of formula.matchAll(/\{([^}]+)\}/g)) keys.add(m[1].trim());
+  return [...keys];
+}
+

@@ -92,6 +92,17 @@
                   <span class="pill-empty">No options for this subcategory</span>
                 }
               </div>
+            } @else if (f.type === 'computed') {
+              <div class="field">
+                <div class="computed-display">
+                  @if (computedValue(f.key) != null) {
+                    <span class="computed-value">{{ f.prefix }}{{ computedValue(f.key) | number:'1.0-' + (f.decimals ?? 2) }}{{ f.suffix ? ' ' + f.suffix : '' }}</span>
+                    <span class="computed-auto-tag">auto</span>
+                  } @else {
+                    <span class="computed-placeholder">Fill the referenced fields…</span>
+                  }
+                </div>
+              </div>
             } @else {
               <div class="field">
                 @if (f.type === 'select') {
@@ -100,8 +111,17 @@
                     @for (o of fieldOptions(f); track o) { <option [value]="o">{{ o }}</option> }
                   </select>
                 } @else {
-                  <input [type]="f.type === 'number' ? 'number' : 'text'" [formControlName]="f.key"
-                         [placeholder]="f.placeholder || ''" [attr.min]="f.min" />
+                  @if (f.prefix || f.suffix) {
+                    <div class="affix-wrap">
+                      @if (f.prefix) { <span class="affix affix-prefix">{{ f.prefix }}</span> }
+                      <input [type]="f.type === 'number' ? 'number' : 'text'" [formControlName]="f.key"
+                             [placeholder]="f.placeholder || ''" [attr.min]="f.min" />
+                      @if (f.suffix) { <span class="affix affix-suffix">{{ f.suffix }}</span> }
+                    </div>
+                  } @else {
+                    <input [type]="f.type === 'number' ? 'number' : 'text'" [formControlName]="f.key"
+                           [placeholder]="f.placeholder || ''" [attr.min]="f.min" />
+                  }
                 }
               </div>
             }
@@ -329,9 +349,27 @@
                       <option value="">—</option>
                       @for (o of fieldOptions(f); track o) { <option [value]="o">{{ o }}</option> }
                     </select>
+                  } @else if (f.type === 'computed') {
+                    <div class="computed-display">
+                      @if (computedValue(f.key) != null) {
+                        <span class="computed-value">{{ f.prefix }}{{ computedValue(f.key) | number:'1.0-' + (f.decimals ?? 2) }}{{ f.suffix ? ' ' + f.suffix : '' }}</span>
+                        <span class="computed-auto-tag">auto</span>
+                      } @else {
+                        <span class="computed-placeholder">Fill the referenced fields…</span>
+                      }
+                    </div>
                   } @else {
-                    <input [type]="f.type === 'number' ? 'number' : 'text'" [formControlName]="f.key"
-                           [placeholder]="f.placeholder || ''" [attr.min]="f.min" />
+                    @if (f.prefix || f.suffix) {
+                      <div class="affix-wrap">
+                        @if (f.prefix) { <span class="affix affix-prefix">{{ f.prefix }}</span> }
+                        <input [type]="f.type === 'number' ? 'number' : 'text'" [formControlName]="f.key"
+                               [placeholder]="f.placeholder || ''" [attr.min]="f.min" />
+                        @if (f.suffix) { <span class="affix affix-suffix">{{ f.suffix }}</span> }
+                      </div>
+                    } @else {
+                      <input [type]="f.type === 'number' ? 'number' : 'text'" [formControlName]="f.key"
+                             [placeholder]="f.placeholder || ''" [attr.min]="f.min" />
+                    }
                   }
                 </div>
               }
@@ -447,12 +485,9 @@
           }
         </div>
 
-      </form>
-    </section>
-    }
-
-    <!-- Reusable custom-field renderer (used by pricing & stock sections) -->
-    <ng-template #specField let-f>
+      <!-- Reusable custom-field renderer (used by pricing & stock sections).
+           Declared INSIDE the form so formControlName resolves the productForm FormGroup. -->
+      <ng-template #specField let-f>
       @if (f.type === 'color-pills') {
         <div class="pill-section-label">{{ f.label }}</div>
         <div class="pill-group" role="group" [attr.aria-label]="f.label">
@@ -481,6 +516,18 @@
             <span class="pill-empty">No options for this subcategory</span>
           }
         </div>
+      } @else if (f.type === 'computed') {
+        <div class="field">
+          <label>{{ f.label }}</label>
+          <div class="computed-display">
+            @if (computedValue(f.key) != null) {
+              <span class="computed-value">{{ f.prefix }}{{ computedValue(f.key) | number:'1.0-' + (f.decimals ?? 2) }}{{ f.suffix ? ' ' + f.suffix : '' }}</span>
+              <span class="computed-auto-tag">auto</span>
+            } @else {
+              <span class="computed-placeholder">Fill the referenced fields…</span>
+            }
+          </div>
+        </div>
       } @else {
         <div class="field">
           <label>{{ f.label }}</label>
@@ -492,12 +539,24 @@
           } @else if (f.type === 'textarea') {
             <textarea [formControlName]="f.key" rows="2" [placeholder]="f.placeholder || ''"></textarea>
           } @else {
-            <input [type]="f.type === 'number' ? 'number' : 'text'" [formControlName]="f.key"
-                   [placeholder]="f.placeholder || ''" [attr.min]="f.min" />
+            @if (f.prefix || f.suffix) {
+              <div class="affix-wrap">
+                @if (f.prefix) { <span class="affix affix-prefix">{{ f.prefix }}</span> }
+                <input [type]="f.type === 'number' ? 'number' : 'text'" [formControlName]="f.key"
+                       [placeholder]="f.placeholder || ''" [attr.min]="f.min" />
+                @if (f.suffix) { <span class="affix affix-suffix">{{ f.suffix }}</span> }
+              </div>
+            } @else {
+              <input [type]="f.type === 'number' ? 'number' : 'text'" [formControlName]="f.key"
+                     [placeholder]="f.placeholder || ''" [attr.min]="f.min" />
+            }
           }
         </div>
       }
-    </ng-template>
+      </ng-template>
+      </form>
+    </section>
+    }
 
     <!-- ════════ INVENTORY ════════ -->
     <section class="product-sheet">
