@@ -20,13 +20,13 @@
   box-shadow: 0 2px 12px rgba(102, 126, 234, 0.35);
 }
 .admin-header h1 {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #fff;
   margin: 0;
 }
 .admin-header p {
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.7);
   margin: 0;
   display: none;
@@ -43,7 +43,7 @@
 }
 
 .admin-hub-sub {
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   color: #888;
   margin: 0 0 1.25rem;
 }
@@ -97,11 +97,11 @@
 }
 .hub-card-name {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: #1a1a2e;
 }
 .hub-card-desc {
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   color: #888;
 }
 

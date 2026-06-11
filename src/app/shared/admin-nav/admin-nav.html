@@ -1,0 +1,68 @@
+<!-- ── Hamburger trigger button (rendered inside parent header) ── -->
+<button class="anav-trigger" type="button" (click)="toggle()" aria-label="Open admin menu" [attr.aria-expanded]="isOpen()">
+  <span class="anav-trigger-bar"></span>
+  <span class="anav-trigger-bar"></span>
+  <span class="anav-trigger-bar"></span>
+</button>
+
+<!-- ── Backdrop ── -->
+@if (isOpen()) {
+  <div class="anav-backdrop" (click)="close()" aria-hidden="true"></div>
+}
+
+<!-- ── Slide-in drawer ── -->
+<div class="anav-drawer" [class.anav-drawer-open]="isOpen()" role="navigation" aria-label="Admin sections">
+
+  <div class="anav-drawer-header">
+    <span class="anav-drawer-title">📦 Admin Menu</span>
+    <button class="anav-close-btn" type="button" (click)="close()" aria-label="Close menu">✕</button>
+  </div>
+
+  <div class="anav-section-label">Categories</div>
+
+  <nav class="anav-list">
+    @for (cat of config.categories(); track cat.id) {
+      <a class="anav-item"
+         [class.anav-item-active]="isActive(cat.id)"
+         [routerLink]="getLinkCommands(cat.id)"
+         (click)="close()">
+        <span class="anav-item-icon" [style.background]="cat.color">{{ cat.icon }}</span>
+        <div class="anav-item-text">
+          <span class="anav-item-name">{{ cat.name }}</span>
+          @if (cat.description) {
+            <span class="anav-item-desc">{{ cat.description }}</span>
+          }
+        </div>
+        @if (isActive(cat.id)) {
+          <span class="anav-active-dot" aria-hidden="true"></span>
+        }
+      </a>
+    }
+  </nav>
+
+  <div class="anav-divider"></div>
+  <div class="anav-section-label">Settings</div>
+
+  <nav class="anav-list">
+    <a class="anav-item"
+       [class.anav-item-active]="isCatalogueSettingsActive()"
+       routerLink="/catalogue-settings"
+       (click)="close()">
+      <span class="anav-item-icon anav-item-icon-grey">📂</span>
+      <div class="anav-item-text">
+        <span class="anav-item-name">Catalogue Settings</span>
+        <span class="anav-item-desc">Categories, brands, units</span>
+      </div>
+      @if (isCatalogueSettingsActive()) {
+        <span class="anav-active-dot" aria-hidden="true"></span>
+      }
+    </a>
+  </nav>
+
+  <div class="anav-footer">
+    <a class="anav-hub-link" routerLink="/admin" (click)="close()">
+      ← Back to Admin Hub
+    </a>
+  </div>
+
+</div>

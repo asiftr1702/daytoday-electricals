@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { FirebaseAdminService } from '../../../core/services/firebase-admin.service';
 import { CatalogueConfigService } from '../../../core/services/catalogue-config.service';
 import { LightProduct } from '../../../core/models/light-product.model';
+import { AdminNavComponent } from '../../../shared/admin-nav/admin-nav';
 
 const LIGHT_BRANDS = ['Philips', 'Syska', 'Havells', 'Wipro', 'Bajaj', 'Crompton'];
 const LIGHT_SUBCATEGORIES = [
@@ -35,7 +36,7 @@ const SUBCAT_CODE: Record<string, string> = {
 @Component({
   selector: 'app-light-admin',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AdminNavComponent],
   templateUrl: './light-admin.html',
   styleUrls: ['./light-admin.css'],
 })

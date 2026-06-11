@@ -63,7 +63,7 @@
   50%       { filter: drop-shadow(0 0 10px rgba(255,255,160,.95)); }
 }
 .header-title h1 {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #fff;
   margin: 0;
@@ -72,7 +72,7 @@
   text-overflow: ellipsis;
 }
 .header-title p {
-  font-size: .82rem;
+  font-size: .875rem;
   color: rgba(255,255,255,.7);
   margin: 0;
   white-space: nowrap;
@@ -80,7 +80,7 @@
   text-overflow: ellipsis;
 }
 .header-count {
-  font-size: .88rem;
+  font-size: .925rem;
   font-weight: 700;
   color: #fff;
   background: rgba(255,255,255,.18);
@@ -128,7 +128,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: .78rem;
+  font-size: .85rem;
   font-weight: 800;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -143,7 +143,7 @@
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
-  font-size: .85rem;
+  font-size: .9rem;
   color: #9CA3AF;
 }
 
@@ -182,7 +182,7 @@
 
 /* ─── Field ──────────────────────────────────────────────────────── */
 .field { display: flex; flex-direction: column; gap: 5px; }
-label  { font-size: .88rem; font-weight: 600; color: #6B7280; letter-spacing: .01em; }
+label  { font-size: .925rem; font-weight: 600; color: #6B7280; letter-spacing: .01em; }
 .req   { color: #e53935; margin-left: 2px; }
 
 input, select, textarea {
@@ -281,7 +281,7 @@ select {
 .pill {
   display: inline-flex;
   align-items: center;
-  font-size: .9rem;
+  font-size: .95rem;
   font-weight: 500;
   font-family: inherit;
   padding: 7px 16px;
@@ -314,7 +314,7 @@ select {
   border: 1px solid rgba(0,0,0,.08);
 }
 .kelvin-tag {
-  font-size: .82rem;
+  font-size: .875rem;
   font-weight: 600;
   opacity: .7;
   margin-left: 2px;
@@ -517,7 +517,7 @@ select {
   background: #fff;
   border-radius: 16px;
   border: 1px solid #e4e6ef;
-  overflow: hidden;
+  overflow: clip;
   box-shadow: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
 }
 
@@ -716,6 +716,13 @@ select {
   white-space: nowrap;
   border-bottom: 1.5px solid #e4e6ef;
 }
+.sheet-table thead .col-actions {
+  position: sticky;
+  right: 0;
+  background: #fffaf7;
+  z-index: 3;
+  box-shadow: -3px 0 8px rgba(0,0,0,0.07);
+}
 .sheet-table td {
   padding: 11px 14px;
   border-bottom: 1px solid #f5f7fa;
@@ -732,5 +739,14 @@ select {
 .col-specs   { min-width: 240px; max-width: 300px; }
 .spec-chips-row { display: flex; flex-wrap: wrap; gap: 3px; }
 .col-price   { white-space: nowrap; }
-.col-actions { white-space: nowrap; }
+.col-actions {
+  position: sticky;
+  right: 0;
+  background: #fff;
+  white-space: nowrap;
+  box-shadow: -3px 0 8px rgba(0,0,0,0.07);
+  z-index: 2;
+}
+.sheet-table tbody tr:hover .col-actions { background: #fffcfa; }
+.sheet-table tbody tr.row-deleting .col-actions { background: #fff; }
 .col-actions .btn-icon { display: inline-flex; }

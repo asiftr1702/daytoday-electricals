@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { FirebaseAdminService } from '../../../core/services/firebase-admin.service';
 import { CatalogueConfigService } from '../../../core/services/catalogue-config.service';
 import { FanProduct } from '../../../core/models/fan-product.model';
+import { AdminNavComponent } from '../../../shared/admin-nav/admin-nav';
 
 const FAN_BRANDS = ['Havells', 'Bajaj', 'Crompton', 'Orient', 'Usha', 'V-Guard'];
 const FAN_SUBCATEGORIES = ['Ceiling Fan', 'Pedestal Fan', 'Wall Fan', 'Exhaust Fan', 'Table Fan', 'AP Fan'];
@@ -36,7 +37,7 @@ const SUBCAT_CODE: Record<string, string> = {
 @Component({
   selector: 'app-fan-admin',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AdminNavComponent],
   templateUrl: './fan-admin.html',
   styleUrls: ['./fan-admin.css'],
 })

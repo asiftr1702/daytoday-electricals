@@ -5,11 +5,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FirebaseAdminService } from '../../../core/services/firebase-admin.service';
 import { CatalogueConfigService, DynamicCategory } from '../../../core/services/catalogue-config.service';
 import { Product } from '../../../core/models/product.model';
+import { AdminNavComponent } from '../../../shared/admin-nav/admin-nav';
 
 @Component({
   selector: 'app-category-admin',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AdminNavComponent],
   templateUrl: './category-admin.html',
   styleUrls: ['./category-admin.css'],
 })
