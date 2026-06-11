@@ -73,8 +73,8 @@
                           [class.active]="pill(f.key) === c.label"
                           (click)="togglePill(f.key, c.label)"
                           [attr.aria-pressed]="pill(f.key) === c.label">
-                    <span class="color-dot" [style.background]="c.hex"
-                          [style.border-color]="c.hex === '#ffffff' ? '#ccc' : 'transparent'" aria-hidden="true"></span>
+                    <span class="color-dot" [style.background]="swatchHex(c)"
+                          [style.border-color]="swatchHex(c) === '#ffffff' ? '#ccc' : 'transparent'" aria-hidden="true"></span>
                     {{ c.label }}
                     @if (c.tag) { <span class="kelvin-tag">{{ c.tag }}</span> }
                   </button>
@@ -261,6 +261,17 @@
           </div>
         }
 
+        <!-- Custom pricing fields -->
+        @if (pricingSpecFields().length) {
+          <div class="form-card">
+            <div class="field-grid">
+              @for (f of pricingSpecFields(); track f.key) {
+                <ng-container [ngTemplateOutlet]="specField" [ngTemplateOutletContext]="{ $implicit: f }"></ng-container>
+              }
+            </div>
+          </div>
+        }
+
         <!-- ════════ STOCK ════════ -->
         <div class="section-label">📦 Stock</div>
         <div class="form-card">
@@ -285,6 +296,16 @@
               </div>
             }
           </div>
+
+          <!-- Custom stock fields -->
+          @if (stockSpecFields().length) {
+            <div class="field-grid">
+              @for (f of stockSpecFields(); track f.key) {
+                <ng-container [ngTemplateOutlet]="specField" [ngTemplateOutletContext]="{ $implicit: f }"></ng-container>
+              }
+            </div>
+          }
+
           <div class="toggle-row">
             <button type="button" class="toggle"
                     [class.on]="productForm.get('available')?.value"
@@ -429,6 +450,54 @@
       </form>
     </section>
     }
+
+    <!-- Reusable custom-field renderer (used by pricing & stock sections) -->
+    <ng-template #specField let-f>
+      @if (f.type === 'color-pills') {
+        <div class="pill-section-label">{{ f.label }}</div>
+        <div class="pill-group" role="group" [attr.aria-label]="f.label">
+          @for (c of f.colorOptions; track c.label) {
+            <button type="button" class="pill color-pill"
+                    [class.active]="pill(f.key) === c.label"
+                    (click)="togglePill(f.key, c.label)"
+                    [attr.aria-pressed]="pill(f.key) === c.label">
+              <span class="color-dot" [style.background]="swatchHex(c)"
+                    [style.border-color]="swatchHex(c) === '#ffffff' ? '#ccc' : 'transparent'" aria-hidden="true"></span>
+              {{ c.label }}
+              @if (c.tag) { <span class="kelvin-tag">{{ c.tag }}</span> }
+            </button>
+          }
+        </div>
+      } @else if (f.type === 'pills') {
+        <div class="pill-section-label">{{ f.label }}</div>
+        <div class="pill-group" role="group" [attr.aria-label]="f.label">
+          @for (opt of fieldOptions(f); track opt) {
+            <button type="button" class="pill"
+                    [class.active]="pill(f.key) === opt"
+                    (click)="togglePill(f.key, opt)"
+                    [attr.aria-pressed]="pill(f.key) === opt">{{ opt }}</button>
+          }
+          @if (fieldOptions(f).length === 0) {
+            <span class="pill-empty">No options for this subcategory</span>
+          }
+        </div>
+      } @else {
+        <div class="field">
+          <label>{{ f.label }}</label>
+          @if (f.type === 'select') {
+            <select [formControlName]="f.key">
+              <option value="">—</option>
+              @for (o of fieldOptions(f); track o) { <option [value]="o">{{ o }}</option> }
+            </select>
+          } @else if (f.type === 'textarea') {
+            <textarea [formControlName]="f.key" rows="2" [placeholder]="f.placeholder || ''"></textarea>
+          } @else {
+            <input [type]="f.type === 'number' ? 'number' : 'text'" [formControlName]="f.key"
+                   [placeholder]="f.placeholder || ''" [attr.min]="f.min" />
+          }
+        </div>
+      }
+    </ng-template>
 
     <!-- ════════ INVENTORY ════════ -->
     <section class="product-sheet">

@@ -5,6 +5,7 @@ import {
   PricingMode,
   ProductField,
   ProductFieldType,
+  colorNameToHex,
   defaultFieldConfig,
 } from '../../core/config/product-fields.config';
 
@@ -44,9 +45,16 @@ export class CatalogueSettingsComponent implements OnInit {
   readonly newFieldKey     = signal('');
   readonly newFieldLabel   = signal('');
   readonly newFieldType    = signal<ProductFieldType>('text');
-  readonly newFieldGroup   = signal<'specs' | 'admin'>('specs');
+  readonly newFieldGroup   = signal<'specs' | 'pricing' | 'stock' | 'admin'>('specs');
   readonly newFieldOptions = signal('');
+  readonly newFieldSubcats = signal<string[]>([]);
   readonly fieldTypeOptions: ProductFieldType[] = ['text', 'number', 'textarea', 'select', 'pills', 'color-pills'];
+  readonly fieldSectionOptions: { value: 'specs' | 'pricing' | 'stock' | 'admin'; label: string }[] = [
+    { value: 'specs',   label: 'Basic info' },
+    { value: 'pricing', label: 'Pricing' },
+    { value: 'stock',   label: 'Stock' },
+    { value: 'admin',   label: 'Additional info' },
+  ];
   readonly pricingModeOptions: PricingMode[] = ['standard', 'unit-rope', 'length'];
 
   // Units
@@ -249,6 +257,7 @@ export class CatalogueSettingsComponent implements OnInit {
     const type = this.newFieldType();
     const group = this.newFieldGroup();
     const rawOptions = this.newFieldOptions().split(',').map(o => o.trim()).filter(Boolean);
+    const subcats = this.newFieldSubcats().filter(Boolean);
 
     const field: ProductField = { key, label, type, group };
     if (type === 'pills') {
@@ -256,8 +265,10 @@ export class CatalogueSettingsComponent implements OnInit {
     } else if (type === 'select') {
       field.options = rawOptions;
     } else if (type === 'color-pills') {
-      field.colorOptions = rawOptions.map(o => ({ label: o, hex: '#cccccc' }));
+      field.colorOptions = rawOptions.map(o => ({ label: o, hex: colorNameToHex(o) }));
     }
+    // No subcategory selected → applies to all subcategories
+    if (subcats.length) field.showForSubcategories = subcats;
 
     this.mutateFieldConfig(catId, fields =>
       fields.some(f => f.key === key) ? fields : [...fields, field]
@@ -267,7 +278,26 @@ export class CatalogueSettingsComponent implements OnInit {
     this.newFieldType.set('text');
     this.newFieldGroup.set('specs');
     this.newFieldOptions.set('');
+    this.newFieldSubcats.set([]);
     await this.persist();
+  }
+
+  /** Toggle a subcategory in the new-field scope selector. */
+  toggleNewFieldSubcat(subcat: string): void {
+    this.newFieldSubcats.update(list =>
+      list.includes(subcat) ? list.filter(s => s !== subcat) : [...list, subcat]
+    );
+  }
+
+  /** Human-readable section + subcategory scope summary for the field list. */
+  sectionLabel(group?: string): string {
+    return this.fieldSectionOptions.find(s => s.value === (group ?? 'specs'))?.label ?? 'Basic info';
+  }
+
+  scopeText(field: ProductField): string {
+    return field.showForSubcategories?.length
+      ? field.showForSubcategories.join(', ')
+      : 'All subcategories';
   }
 
   async removeField(catId: string, index: number): Promise<void> {

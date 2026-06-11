@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { FirebaseAdminService } from '../../../core/services/firebase-admin.service';
 import { CatalogueConfigService, DynamicCategory } from '../../../core/services/catalogue-config.service';
-import { CategoryFieldConfig, ProductField, wireSpecFields } from '../../../core/config/product-fields.config';
+import { CategoryFieldConfig, ProductField, colorNameToHex, wireSpecFields } from '../../../core/config/product-fields.config';
 import { AnyProduct } from '../../../core/models/any-product.model';
 import { compressImage } from '../../../core/utils/image.util';
 import { AdminNavComponent } from '../../../shared/admin-nav/admin-nav';
@@ -48,6 +48,8 @@ export class CategoryAdminComponent implements OnInit {
     (this.fieldConfig()?.fields ?? []).filter(f => this.isFieldVisible(f))
   );
   readonly basicSpecFields = computed(() => this.visibleSpecFields().filter(f => (f.group ?? 'specs') === 'specs'));
+  readonly pricingSpecFields = computed(() => this.visibleSpecFields().filter(f => f.group === 'pricing'));
+  readonly stockSpecFields = computed(() => this.visibleSpecFields().filter(f => f.group === 'stock'));
   readonly adminSpecFields = computed(() => this.visibleSpecFields().filter(f => f.group === 'admin'));
 
   readonly isRope = computed(() =>
@@ -143,6 +145,12 @@ export class CategoryAdminComponent implements OnInit {
     return f.options ?? [];
   }
   isPillField(f: ProductField): boolean { return f.type === 'pills' || f.type === 'color-pills'; }
+  /** Resolve a swatch colour: use stored hex unless it's the grey placeholder, then derive from the label. */
+  swatchHex(c: { label: string; hex?: string }): string {
+    const hex = (c.hex ?? '').trim().toLowerCase();
+    if (hex && hex !== '#cccccc' && hex !== '#ccc') return hex;
+    return colorNameToHex(c.label);
+  }
   private controlSpecFields(): ProductField[] {
     return (this.fieldConfig()?.fields ?? []).filter(f => !this.isPillField(f));
   }

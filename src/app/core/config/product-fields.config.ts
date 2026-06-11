@@ -38,7 +38,7 @@ export interface ProductField {
   key: string;                                  // form control + product property
   label: string;
   type: ProductFieldType;
-  group?: 'specs' | 'admin';                    // where it renders (default 'specs')
+  group?: 'specs' | 'pricing' | 'stock' | 'admin';  // which form section it renders in (default 'specs' = Basic info)
   required?: boolean;
   options?: string[];                           // select / pills
   colorOptions?: ColorOption[];                 // color-pills
@@ -79,6 +79,25 @@ export const WIRE_COLOR_OPTIONS: ColorOption[] = [
   { label: 'Grey',   hex: '#9ca3af' },
   { label: 'Brown',  hex: '#92400e' },
 ];
+
+/** Common colour-name → hex lookup used to resolve a swatch for user-entered colours. */
+const COLOR_NAME_HEX: Record<string, string> = {
+  red: '#ef4444', crimson: '#dc143c', maroon: '#800000', pink: '#f472b6',
+  orange: '#f97316', amber: '#f59e0b', yellow: '#eab308', gold: '#b8860b',
+  green: '#22c55e', olive: '#808000', teal: '#14b8a6', cyan: '#06b6d4',
+  blue: '#3b82f6', navy: '#1e3a8a', indigo: '#6366f1', purple: '#a855f7',
+  violet: '#8b5cf6', magenta: '#d946ef', brown: '#92400e', beige: '#f5f5dc',
+  black: '#222222', white: '#f0f0f0', grey: '#9ca3af', gray: '#9ca3af',
+  silver: '#c0c0c0', copper: '#e07b55', bronze: '#cd7f32', ivory: '#fffff0',
+  cream: '#fffdd0',
+};
+
+/** Resolve a hex swatch for a colour label. Accepts hex (#rgb/#rrggbb) or a known name. */
+export function colorNameToHex(label: string): string {
+  const v = (label ?? '').trim().toLowerCase();
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(v)) return v;
+  return COLOR_NAME_HEX[v] ?? '#cccccc';
+}
 
 /** The size + colour spec fields shown when adding/editing a wire. Deep-cloned per call. */
 export function wireSpecFields(): ProductField[] {

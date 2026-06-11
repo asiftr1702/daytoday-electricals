@@ -303,10 +303,35 @@
 }
 .cs-field-type { background: #E3F2FD; color: #1565C0; }
 .cs-field-group { background: #F3E5F5; color: #6A1B9A; }
+.cs-field-scope {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.12rem 0.45rem;
+  border-radius: 6px;
+  background: #E8F5E9;
+  color: #2E7D32;
+}
 .cs-field-opts {
   flex: 1 1 100%;
   font-size: 0.78rem;
   color: #607D8B;
+}
+.cs-scope-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.cs-scope-chip {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid #cfd8dc;
+  background: #fff;
+  color: #455A64;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.cs-scope-chip:hover { border-color: #1565C0; }
+.cs-scope-chip.active {
+  background: #1565C0;
+  border-color: #1565C0;
+  color: #fff;
 }
 .cs-field-form {
   border-top: 1px dashed #d6deeb;

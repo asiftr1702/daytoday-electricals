@@ -191,7 +191,8 @@
                           <span class="cs-field-label">{{ f.label }}</span>
                           <span class="cs-field-key">{{ f.key }}</span>
                           <span class="cs-field-type">{{ f.type }}</span>
-                          <span class="cs-field-group">{{ f.group || 'specs' }}</span>
+                          <span class="cs-field-group">{{ sectionLabel(f.group) }}</span>
+                          <span class="cs-field-scope">{{ scopeText(f) }}</span>
                         </div>
                         @if (optionsText(f)) {
                           <span class="cs-field-opts">{{ optionsText(f) }}</span>
@@ -230,11 +231,12 @@
                         </select>
                       </div>
                       <div class="cs-field cs-field-sm">
-                        <label>Group</label>
+                        <label>Section</label>
                         <select class="cs-input" [value]="newFieldGroup()"
                                 (change)="newFieldGroup.set($any($event.target).value)">
-                          <option value="specs">specs</option>
-                          <option value="admin">admin</option>
+                          @for (s of fieldSectionOptions; track s.value) {
+                            <option [value]="s.value">{{ s.label }}</option>
+                          }
                         </select>
                       </div>
                       <div class="cs-field cs-field-grow">
@@ -242,6 +244,22 @@
                         <input type="text" class="cs-input" [value]="newFieldOptions()"
                                (input)="newFieldOptions.set($any($event.target).value)"
                                placeholder="e.g., Red, Blue, Green" />
+                      </div>
+                    </div>
+                    <div class="cs-form-row">
+                      <div class="cs-field cs-field-grow">
+                        <label>Show for subcategories <span class="cs-hint">(none selected = all)</span></label>
+                        @if (cat.subcategories.length) {
+                          <div class="cs-scope-chips">
+                            @for (sub of cat.subcategories; track sub) {
+                              <button type="button" class="cs-scope-chip"
+                                      [class.active]="newFieldSubcats().includes(sub)"
+                                      (click)="toggleNewFieldSubcat(sub)">{{ sub }}</button>
+                            }
+                          </div>
+                        } @else {
+                          <span class="cs-empty-hint">No subcategories — field will apply to all</span>
+                        }
                       </div>
                     </div>
                     <div class="cs-form-actions">
