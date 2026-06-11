@@ -26,7 +26,6 @@
           <span class="header-bill-badge">{{ billService.itemCount() }}</span>
         }
       </a>
-      <a routerLink="/catalogue-settings" routerLinkActive="active" class="admin-link" title="Catalogue settings">📂 Catalogue</a>
       <a routerLink="/change-password" routerLinkActive="active" class="admin-link" title="Settings">⚙️ Settings</a>
       <button type="button" class="btn-admin-logout" (click)="logout()" title="Logout">🔒 Logout</button>
     </nav>
@@ -71,9 +70,6 @@
         @if (billService.itemCount() > 0) {
           <span class="header-bill-badge">{{ billService.itemCount() }}</span>
         }
-      </a>
-      <a routerLink="/catalogue-settings" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
-        <span aria-hidden="true">📂</span> Catalogue
       </a>
       <a routerLink="/change-password" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
         <span aria-hidden="true">⚙️</span> Settings

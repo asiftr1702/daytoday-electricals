@@ -41,7 +41,7 @@
               <label for="fa-brand">Brand <span class="req" aria-hidden="true">*</span></label>
               <select id="fa-brand" formControlName="brand">
                 <option value="">Select brand</option>
-                @for (b of BRANDS; track b) {
+                @for (b of fanBrands(); track b) {
                   <option [value]="b">{{ b }}</option>
                 }
               </select>

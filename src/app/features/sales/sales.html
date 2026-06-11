@@ -106,7 +106,7 @@
                       }
                     </tbody>
                     <tfoot>
-                      @if ((bill.discountAmount ?? 0) > 0) {
+                      @if (bill.discountAmount > 0) {
                         <tr>
                           <td colspan="3">Subtotal</td>
                           <td>{{ formatCurrency(bill.totalAmount) }}</td>
@@ -118,7 +118,7 @@
                       }
                       <tr>
                         <td colspan="3"><strong>Amount Paid</strong></td>
-                        <td><strong>{{ formatCurrency(bill.finalAmount ?? bill.totalAmount) }}</strong></td>
+                        <td><strong>{{ formatCurrency(bill.finalAmount) }}</strong></td>
                       </tr>
                     </tfoot>
                   </table>

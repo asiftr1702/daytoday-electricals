@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FirebaseAdminService } from '../../../core/services/firebase-admin.service';
+import { CatalogueConfigService } from '../../../core/services/catalogue-config.service';
 import { FanProduct } from '../../../core/models/fan-product.model';
 
 const FAN_BRANDS = ['Havells', 'Bajaj', 'Crompton', 'Orient', 'Usha', 'V-Guard'];
@@ -43,8 +44,13 @@ export class FanAdminComponent implements OnInit {
   private readonly fb             = inject(FormBuilder);
   private readonly firebaseAdmin  = inject(FirebaseAdminService);
   private readonly router         = inject(Router);
+  private readonly catalogueConfig = inject(CatalogueConfigService);
 
-  readonly BRANDS          = FAN_BRANDS;
+  readonly fanBrands = computed(() => {
+    const cat = this.catalogueConfig.categories().find(c => c.id === 'fans');
+    return cat?.brands?.length ? cat.brands : FAN_BRANDS;
+  });
+
   readonly SUBCATEGORIES   = FAN_SUBCATEGORIES;
   readonly BLADE_MATERIALS = FAN_BLADE_MATERIALS;
   readonly COLORS          = FAN_COLORS;
@@ -100,10 +106,12 @@ export class FanAdminComponent implements OnInit {
   private readonly JPEG_QUALITY  = 0.80;
 
   ngOnInit(): void {
+    this.catalogueConfig.loadConfig();
     this.initForm();
     this.loadProducts();
     this.setupSKUGeneration();
     this.setupMarginCalculation();
+    this.setupStockBehavior();
   }
 
   private initForm(): void {
@@ -116,7 +124,7 @@ export class FanAdminComponent implements OnInit {
       price:            [null, [Validators.required, Validators.min(0)]],
       discountedPrice:  [null, Validators.min(0)],
       stockQty:         [null, [Validators.required, Validators.min(0)]],
-      available:        [true],
+      available:        [false],
       wattage:          [null],
       rpm:              [null],
       speedSettings:    [''],
@@ -148,6 +156,22 @@ export class FanAdminComponent implements OnInit {
     ['costPrice', 'price'].forEach(f =>
       this.fanForm.get(f)?.valueChanges.subscribe(() => this.calcMargin())
     );
+  }
+
+  private setupStockBehavior(): void {
+    // Auto-toggle availability based on stock quantity
+    this.fanForm.get('stockQty')?.valueChanges.subscribe((qty: number | null) => {
+      const hasStock = qty != null && qty > 0;
+      this.fanForm.get('available')?.setValue(hasStock, { emitEvent: false });
+    });
+    // Clamp negative values to 0
+    ['costPrice', 'price', 'discountedPrice', 'stockQty'].forEach(field => {
+      this.fanForm.get(field)?.valueChanges.subscribe((val: number | null) => {
+        if (val != null && val < 0) {
+          this.fanForm.get(field)?.setValue(0, { emitEvent: false });
+        }
+      });
+    });
   }
 
   private generateSKU(): void {
@@ -380,7 +404,7 @@ export class FanAdminComponent implements OnInit {
 
   resetForm(): void {
     this.skuCounters = {};
-    this.fanForm.reset({ subcategory: 'Ceiling Fan', available: true, warranty: 'No warranty' });
+    this.fanForm.reset({ subcategory: 'Ceiling Fan', available: false, warranty: 'No warranty' });
     this.currentSubcat.set('Ceiling Fan');
     this.selectedBladeSize.set('');
     this.selectedBladeMaterial.set('');

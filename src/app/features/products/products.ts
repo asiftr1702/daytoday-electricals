@@ -9,7 +9,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map, startWith, catchError, distinctUntilChanged } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
-import { CATEGORIES, getCategoryById } from '../../core/config/categories.config';
+import { CatalogueConfigService } from '../../core/services/catalogue-config.service';
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
 import { BillService } from '../../core/services/bill.service';
 import { Product } from '../../core/models/product.model';
@@ -33,15 +33,20 @@ export class ProductsComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly billService = inject(BillService);
+  private readonly catalogueConfig = inject(CatalogueConfigService);
 
-  readonly categories = CATEGORIES;
+  constructor() {
+    this.catalogueConfig.loadConfig();
+  }
+
+  readonly categories = this.catalogueConfig.categories;
   readonly searchQuery = signal('');
   readonly selectedSubcategory = signal<string>('all');
 
   private readonly queryParams$ = this.route.queryParamMap;
 
   private readonly categoryId$ = this.queryParams$.pipe(
-    map(params => params.get('category') || CATEGORIES[0].id),
+    map(params => params.get('category') || this.catalogueConfig.categories()[0]?.id || ''),
   );
 
   readonly offersOnly = toSignal(
@@ -50,24 +55,28 @@ export class ProductsComponent {
   );
 
   readonly selectedCategoryId = toSignal(this.categoryId$, {
-    initialValue: CATEGORIES[0].id,
+    initialValue: this.catalogueConfig.categories()[0]?.id || '',
   });
 
   readonly selectedCategory = computed(
-    () => getCategoryById(this.selectedCategoryId()) ?? CATEGORIES[0],
+    () => {
+      const id = this.selectedCategoryId();
+      return this.catalogueConfig.categories().find(c => c.id === id)
+        ?? this.catalogueConfig.categories()[0];
+    },
   );
 
   private readonly state$ = this.queryParams$.pipe(
     map(params => ({
       isOffers: params.get('offers') === 'true',
-      categoryId: params.get('category') || CATEGORIES[0].id,
+      categoryId: params.get('category') || this.catalogueConfig.categories()[0]?.id || '',
     })),
     distinctUntilChanged((a, b) => a.isOffers === b.isOffers && a.categoryId === b.categoryId),
     switchMap(({ isOffers, categoryId }) => {
       if (isOffers) {
         // Load all categories in parallel, merge into one flat list
         return forkJoin(
-          CATEGORIES.map(cat => this.firebaseAdmin.getProductsByCategory(cat.id)),
+          this.catalogueConfig.categories().map(cat => this.firebaseAdmin.getProductsByCategory(cat.id)),
         ).pipe(
           map(results => ({
             products: results.flat(),
@@ -132,12 +141,27 @@ export class ProductsComponent {
     }
 
     if (!q) return products;
-    return products.filter(
-      p =>
+    return products.filter(p => {
+      const fp = p as any; // covers FanProduct extra fields
+      return (
         p.name.toLowerCase().includes(q) ||
+        p.sku?.toLowerCase().includes(q) ||
+        p.brand?.toLowerCase().includes(q) ||
+        p.subcategory?.toLowerCase().includes(q) ||
         p.description?.toLowerCase().includes(q) ||
-        (p.brand?.toLowerCase().includes(q) ?? false),
-    );
+        p.location?.toLowerCase().includes(q) ||
+        p.remarks?.toLowerCase().includes(q) ||
+        p.warranty?.toLowerCase().includes(q) ||
+        fp.color?.toLowerCase().includes(q) ||
+        fp.bladeSize?.toLowerCase().includes(q) ||
+        fp.bladeMaterial?.toLowerCase().includes(q) ||
+        fp.speedSettings?.toLowerCase().includes(q) ||
+        fp.wattage?.toString().includes(q) ||
+        fp.rpm?.toString().includes(q) ||
+        p.price?.toString().includes(q) ||
+        p.stockQty?.toString().includes(q)
+      );
+    });
   });
 
   selectCategory(id: string): void {

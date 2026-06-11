@@ -1,4 +1,5 @@
 import { Component, inject, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { CatalogueConfigService, DynamicCategory } from '../../core/services/catalogue-config.service';
 
 @Component({
@@ -10,27 +11,28 @@ import { CatalogueConfigService, DynamicCategory } from '../../core/services/cat
   styleUrl: './catalogue-settings.css',
 })
 export class CatalogueSettingsComponent implements OnInit {
-  readonly config = inject(CatalogueConfigService);
+  readonly config  = inject(CatalogueConfigService);
+  private readonly router = inject(Router);
 
-  readonly section = signal<'categories' | 'units' | 'warranty'>('categories');
-  readonly saving = signal(false);
+  readonly section     = signal<'categories' | 'units' | 'warranty'>('categories');
+  readonly saving      = signal(false);
   readonly saveSuccess = signal(false);
-  readonly saveError = signal('');
+  readonly saveError   = signal('');
 
   // Category form
-  readonly showCatForm = signal(false);
-  readonly editingCatId = signal<string | null>(null);
-  readonly catFormName = signal('');
-  readonly catFormDesc = signal('');
-  readonly catFormIcon = signal('📦');
-  readonly catFormColor = signal('#E3F2FD');
+  readonly showCatForm    = signal(false);
+  readonly editingCatId   = signal<string | null>(null);
+  readonly catFormName    = signal('');
+  readonly catFormDesc    = signal('');
+  readonly catFormIcon    = signal('📦');
+  readonly catFormColor   = signal('#E3F2FD');
   readonly catFormSheetName = signal('');
 
-  // Subcategory + brand panel (shared expand)
-  readonly expandedCatId = signal<string | null>(null);
-  readonly expandedTab = signal<'subs' | 'brands'>('subs');
+  // Subcategory + brand panel
+  readonly expandedCatId  = signal<string | null>(null);
+  readonly expandedTab    = signal<'subs' | 'brands'>('subs');
   readonly newSubcatValue = signal('');
-  readonly newBrandValue = signal('');
+  readonly newBrandValue  = signal('');
 
   // Units
   readonly newUnit = signal('');
@@ -42,6 +44,8 @@ export class CatalogueSettingsComponent implements OnInit {
   ngOnInit(): void {
     this.config.loadConfig();
   }
+
+  goBack(): void { this.router.navigate(['/admin']); }
 
   private async persist(): Promise<void> {
     this.saving.set(true);

@@ -9,7 +9,7 @@
 <!-- ─── CATEGORY TABS ────────────────────────────────────────────────── -->
 <nav class="category-tabs-wrapper" aria-label="Product categories">
   <div class="category-tabs-scroll">
-    @for (cat of categories; track cat.id) {
+    @for (cat of categories(); track cat.id) {
       <button
         type="button"
         class="cat-tab"

@@ -345,7 +345,7 @@
               <span class="bill-items-count">{{ billTotalItems(bill) }} item(s)</span>
             </div>
             <div class="past-bill-right">
-              <span class="past-bill-total">{{ formatCurrency(bill.finalAmount ?? bill.totalAmount) }}</span>
+              <span class="past-bill-total">{{ formatCurrency(bill.finalAmount) }}</span>
               <span class="expand-icon">{{ expandedBillId() === bill.id ? '▲' : '▼' }}</span>
             </div>
           </div>

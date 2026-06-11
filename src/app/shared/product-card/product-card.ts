@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, afterNextRender, computed, effect, input, signal, viewChild, ElementRef, inject } from '@angular/core';
-import { isPlatformBrowser, DecimalPipe } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Product } from '../../core/models/product.model';
@@ -10,7 +10,7 @@ import { BillService } from '../../core/services/bill.service';
 @Component({
   selector: 'app-product-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, DecimalPipe],
+  imports: [FormsModule],
   templateUrl: './product-card.html',
   styleUrl: './product-card.css',
 })
