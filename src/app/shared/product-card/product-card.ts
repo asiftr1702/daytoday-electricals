@@ -53,8 +53,9 @@ export class ProductCardComponent {
     this.costVisible.update(v => !v);
   }
 
-  // ── Fan-specific specs ────────────────────────────────────────────────────
-  readonly isFan = computed(() => (this.product() as any)['category'] === 'fans');
+  // ── Category detection ──────────────────────────────────────────────────────
+  readonly isFan   = computed(() => (this.product() as any)['category'] === 'fans');
+  readonly isLight = computed(() => (this.product() as any)['category'] === 'lights');
 
   private readonly FAN_COLOR_HEX: Record<string, string> = {
     'White':  '#f0f0f0',
@@ -84,6 +85,7 @@ export class ProductCardComponent {
 
   /** Remaining fan spec chips shown in the card body: wattage, RPM, speed. */
   readonly fanSpecs = computed((): { value: string }[] => {
+    if (!this.isFan()) return [];
     const p = this.product() as any;
     return [
       p.wattage       ? { value: `${p.wattage}W` }    : null,
@@ -91,6 +93,49 @@ export class ProductCardComponent {
       p.speedSettings ? { value: p.speedSettings }    : null,
     ].filter(Boolean) as { value: string }[];
   });
+
+  // ── Light-specific specs ──────────────────────────────────────────────────
+  private readonly LIGHT_COLOR_TEMP_HEX: Record<string, string> = {
+    'Warm White':    '#ffcc66',
+    'Natural White': '#ffe9a0',
+    'Cool White':    '#dbeafe',
+    'Daylight':      '#e0f2fe',
+    'Blue':          '#3b82f6',
+    'Pink':          '#f472b6',
+    'Red':           '#ef4444',
+    'Green':         '#22c55e',
+  };
+
+  /** Strip items shown between image and body: color temperature dot + size + wattage chip. */
+  readonly lightVisualStrip = computed((): Array<{ type: 'text' | 'color'; value: string; hex?: string }> => {
+    if (!this.isLight()) return [];
+    const p = this.product() as any;
+    const items: Array<{ type: 'text' | 'color'; value: string; hex?: string }> = [];
+    if (p.colorTemp) {
+      items.push({ type: 'color', value: p.colorTemp, hex: this.LIGHT_COLOR_TEMP_HEX[p.colorTemp] ?? '#fffde7' });
+    }
+    if (p.size) {
+      items.push({ type: 'text', value: p.size });
+    }
+    if (p.totalLength) {
+      items.push({ type: 'text', value: `${p.totalLength}m roll` });
+    }
+    if (p.wattage) {
+      items.push({ type: 'text', value: `${p.wattage}W` });
+    }
+    return items;
+  });
+
+  /** Full box price for rope light (totalLength × price × 90%). */
+  readonly ropeBoxPrice = computed(() => {
+    if (!this.isLight()) return null;
+    const p = this.product() as any;
+    if (!p.totalLength || !p.price) return null;
+    return Math.round(p.totalLength * p.price * 0.9);
+  });
+
+  /** Light spec chips shown in the card body (empty — specs shown in strip). */
+  readonly lightSpecs = computed((): { value: string }[] => []);
   private readonly firebaseAdmin = inject(FirebaseAdminService);
   readonly imageUploading = signal(false);
   readonly imageUploadError = signal<string | null>(null);

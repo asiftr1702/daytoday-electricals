@@ -1,0 +1,268 @@
+<div class="ca-container">
+
+  <!-- ── Sticky Header ── -->
+  <div class="ca-header">
+    <button class="ca-back-btn" type="button" (click)="goBack()">←</button>
+    <div class="ca-header-title">
+      <span class="ca-header-icon" aria-hidden="true">{{ category()?.icon }}</span>
+      <div>
+        <h1>{{ category()?.name }} Admin</h1>
+        <p>Add · Edit · Delete products</p>
+      </div>
+    </div>
+    <span class="ca-header-count">{{ products().length }} items</span>
+  </div>
+
+  <div class="ca-content">
+
+    <!-- ── Form ── -->
+    <section class="ca-form-section">
+      <h2 class="ca-form-title">
+        {{ editingProduct() ? '✏️ Edit: ' + editingProduct()!.name : 'Add Product' }}
+      </h2>
+
+      @if (successMessage()) {
+        <div class="ca-alert ca-alert-success">{{ successMessage() }}</div>
+      }
+      @if (errorMessage()) {
+        <div class="ca-alert ca-alert-error">{{ errorMessage() }}</div>
+      }
+
+      <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+
+        <!-- ── Basic Info ── -->
+        <div class="ca-section-label">📋 Basic info</div>
+        <div class="ca-card">
+          <div class="ca-row-two">
+            <div class="ca-field">
+              <label for="ca-sku">SKU <span class="ca-req">*</span></label>
+              <input id="ca-sku" type="text" formControlName="sku" placeholder="e.g., LGT-001" autocomplete="off" />
+            </div>
+            <div class="ca-field">
+              <label for="ca-name">Product name <span class="ca-req">*</span></label>
+              <input id="ca-name" type="text" formControlName="name" placeholder="e.g., Havells LED Bulb 9W" autocomplete="off" />
+            </div>
+          </div>
+
+          <div class="ca-row-two">
+            <div class="ca-field">
+              <label for="ca-brand">Brand</label>
+              <input id="ca-brand" type="text" formControlName="brand" placeholder="e.g., Havells"
+                     list="ca-brand-list" autocomplete="off" />
+              <datalist id="ca-brand-list">
+                @for (b of brands(); track b) {
+                  <option [value]="b">{{ b }}</option>
+                }
+              </datalist>
+            </div>
+            <div class="ca-field">
+              <label for="ca-subcat">Subcategory</label>
+              <select id="ca-subcat" formControlName="subcategory">
+                <option value="">— none —</option>
+                @for (s of subcategories(); track s) {
+                  <option [value]="s">{{ s }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="ca-field">
+            <label for="ca-desc">Description</label>
+            <textarea id="ca-desc" formControlName="description" rows="2"
+                      placeholder="Brief description…"></textarea>
+          </div>
+        </div>
+
+        <!-- ── Pricing & Stock ── -->
+        <div class="ca-section-label">₹ Pricing &amp; stock</div>
+        <div class="ca-card">
+          <div class="ca-row-three">
+            <div class="ca-field">
+              <label for="ca-cost">Cost price <span class="ca-req">*</span></label>
+              <div class="ca-currency-wrap">
+                <span class="ca-currency-sym">₹</span>
+                <input id="ca-cost" type="number" formControlName="costPrice" placeholder="0" min="0" />
+              </div>
+            </div>
+            <div class="ca-field">
+              <label for="ca-price">Selling price <span class="ca-req">*</span></label>
+              <div class="ca-currency-wrap">
+                <span class="ca-currency-sym">₹</span>
+                <input id="ca-price" type="number" formControlName="price" placeholder="0" min="0" />
+              </div>
+            </div>
+            <div class="ca-field">
+              <label for="ca-disc">Discounted price</label>
+              <div class="ca-currency-wrap">
+                <span class="ca-currency-sym">₹</span>
+                <input id="ca-disc" type="number" formControlName="discountedPrice" placeholder="0" min="0" />
+              </div>
+            </div>
+          </div>
+
+          <div class="ca-row-three">
+            <div class="ca-field">
+              <label for="ca-qty">Stock qty <span class="ca-req">*</span></label>
+              <input id="ca-qty" type="number" formControlName="stockQty" placeholder="0" min="0" />
+            </div>
+            <div class="ca-field">
+              <label for="ca-unit">Unit <span class="ca-req">*</span></label>
+              <select id="ca-unit" formControlName="unit">
+                @for (u of ['Piece','Box','Pack','Roll','Bundle','Meter','Set']; track u) {
+                  <option [value]="u">{{ u }}</option>
+                }
+              </select>
+            </div>
+            <div class="ca-field ca-field-center">
+              <label>Availability</label>
+              <div class="ca-toggle-row">
+                <button type="button" class="ca-toggle"
+                        [class.on]="productForm.get('available')?.value"
+                        (click)="productForm.get('available')?.setValue(!productForm.get('available')?.value)"
+                        [attr.aria-checked]="productForm.get('available')?.value"
+                        role="switch" aria-label="In stock toggle">
+                </button>
+                <span class="ca-toggle-label">
+                  {{ productForm.get('available')?.value ? 'In stock' : 'Out of stock' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Additional Info ── -->
+        <div class="ca-section-label">ℹ️ Additional info <span class="ca-label-note">(optional)</span></div>
+        <div class="ca-card">
+          <div class="ca-row-two">
+            <div class="ca-field">
+              <label for="ca-warranty">Warranty</label>
+              <input id="ca-warranty" type="text" formControlName="warranty" placeholder="e.g., 1 year" />
+            </div>
+            <div class="ca-field">
+              <label for="ca-location">Location / Rack</label>
+              <input id="ca-location" type="text" formControlName="location" placeholder="e.g., Rack-B" />
+            </div>
+          </div>
+          <div class="ca-field">
+            <label for="ca-remarks">Remarks</label>
+            <textarea id="ca-remarks" formControlName="remarks" rows="2" placeholder="Any notes…"></textarea>
+          </div>
+        </div>
+
+        <!-- ── Image ── -->
+        <div class="ca-section-label">🖼️ Product image <span class="ca-label-note">(optional)</span></div>
+        <div class="ca-card">
+          @if (!imagePreview()) {
+            <div class="ca-image-row">
+              <label class="ca-image-btn" tabindex="0">
+                📷 Camera
+                <input type="file" accept="image/*" capture="environment" class="ca-file-input" (change)="onImageSelected($event)" />
+              </label>
+              <label class="ca-image-btn" tabindex="0">
+                🖼️ Gallery
+                <input type="file" accept="image/jpeg,image/png,image/webp" class="ca-file-input" (change)="onImageSelected($event)" />
+              </label>
+            </div>
+            <p class="ca-hint-text">Max 10 MB · will be compressed</p>
+          } @else {
+            <div class="ca-preview-wrap">
+              <img [src]="imagePreview()" alt="Preview" class="ca-preview-img" />
+              <div class="ca-preview-actions">
+                <label class="ca-image-btn ca-image-btn-sm">
+                  📷 Replace
+                  <input type="file" accept="image/*" class="ca-file-input" (change)="onImageSelected($event)" />
+                </label>
+                <button type="button" class="ca-image-btn ca-image-btn-danger ca-image-btn-sm" (click)="removeImage()">🗑️ Remove</button>
+              </div>
+            </div>
+          }
+          @if (imageError()) {
+            <p class="ca-error">{{ imageError() }}</p>
+          }
+        </div>
+
+        <!-- ── Actions ── -->
+        <div class="ca-form-actions">
+          <button type="submit" class="ca-btn ca-btn-primary"
+                  [disabled]="isLoading() || productForm.invalid">
+            @if (isLoading()) { ⏳ Saving… }
+            @else if (editingProduct()) { 💾 Update Product }
+            @else { ➕ Add Product }
+          </button>
+          @if (editingProduct()) {
+            <button type="button" class="ca-btn ca-btn-outline" (click)="cancelEdit()">Cancel</button>
+          } @else {
+            <button type="button" class="ca-btn ca-btn-outline" (click)="resetForm()">Reset</button>
+          }
+        </div>
+
+      </form>
+    </section>
+
+    <!-- ── Product list ── -->
+    <section class="ca-list-section">
+      <div class="ca-list-header">
+        <h2>📋 {{ category()?.name }} Products</h2>
+        <span class="ca-list-count">{{ products().length }} item{{ products().length !== 1 ? 's' : '' }}</span>
+      </div>
+
+      @if (productsLoading()) {
+        <p class="ca-loading">Loading…</p>
+      } @else if (products().length === 0) {
+        <p class="ca-empty">No products yet. Add one above.</p>
+      } @else {
+        <div class="ca-product-list">
+          @for (p of products(); track p.id) {
+            <div class="ca-product-card" [class.ca-deleting]="deletingId() === p.id">
+              @if (p.imageUrl) {
+                <img [src]="p.imageUrl" [alt]="p.name" class="ca-product-thumb" />
+              } @else {
+                <span class="ca-product-thumb-placeholder">📦</span>
+              }
+              <div class="ca-product-info">
+                <div class="ca-product-name">{{ p.name }}</div>
+                <div class="ca-product-meta">
+                  @if (p.sku) { <span class="ca-tag ca-tag-sku">{{ p.sku }}</span> }
+                  @if (p.brand) { <span class="ca-tag">{{ p.brand }}</span> }
+                  @if (p.subcategory) { <span class="ca-tag">{{ p.subcategory }}</span> }
+                </div>
+                <div class="ca-product-price">
+                  @if (p.discountedPrice) {
+                    <span class="ca-price-strike">₹{{ p.price }}</span>
+                    <span class="ca-price-offer">₹{{ p.discountedPrice }}</span>
+                  } @else if (p.price) {
+                    <span>₹{{ p.price }}</span>
+                  }
+                  <span class="ca-avail-badge" [class.ca-avail-yes]="p.available && (p.stockQty ?? 0) > 0"
+                        [class.ca-avail-no]="!p.available || (p.stockQty ?? 0) <= 0">
+                    {{ p.available && (p.stockQty ?? 0) > 0 ? 'In stock' : 'Out' }}
+                  </span>
+                  @if (p.stockQty != null) {
+                    <span class="ca-tag">Qty: {{ p.stockQty }}</span>
+                  }
+                </div>
+              </div>
+              <div class="ca-product-acts">
+                @if (confirmDeleteId() === p.id) {
+                  <span class="ca-confirm-prompt">Delete?</span>
+                  <button type="button" class="ca-act-btn ca-act-yes" (click)="confirmDelete(p.id!)">✓</button>
+                  <button type="button" class="ca-act-btn ca-act-no"  (click)="cancelDelete()">✕</button>
+                } @else {
+                  <button type="button" class="ca-act-btn ca-act-edit"
+                          [disabled]="deletingId() === p.id"
+                          (click)="startEdit(p)">✏️</button>
+                  <button type="button" class="ca-act-btn ca-act-delete"
+                          [disabled]="deletingId() === p.id"
+                          (click)="requestDelete(p.id!)">
+                    {{ deletingId() === p.id ? '⏳' : '🗑️' }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+  </div><!-- /ca-content -->
+</div>

@@ -45,6 +45,18 @@ export const routes: Routes = [
         title: 'Fans Admin — DayToDay Electricals',
       },
       {
+        path: 'admin/lights',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/admin/light-admin/light-admin').then(m => m.LightAdminComponent),
+        title: 'Lights Admin — DayToDay Electricals',
+      },
+      {
+        path: 'admin/category/:id',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/admin/category-admin/category-admin').then(m => m.CategoryAdminComponent),
+        title: 'Category Admin — DayToDay Electricals',
+      },
+      {
         path: 'sales',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/sales/sales').then(m => m.SalesComponent),

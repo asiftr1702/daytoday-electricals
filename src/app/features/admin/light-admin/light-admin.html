@@ -1,0 +1,500 @@
+<div class="light-admin-container">
+
+  <!-- ── Header ── -->
+  <div class="light-admin-header">
+    <button class="back-btn" type="button" (click)="goBack()" aria-label="Back to Admin">
+      ←
+    </button>
+    <div class="header-title">
+      <span class="header-icon" aria-hidden="true">💡</span>
+      <div>
+        <h1>Lights Admin</h1>
+        <p>Add · Edit · Delete light products</p>
+      </div>
+    </div>
+    <span class="header-count">{{ products().length }} items</span>
+  </div>
+
+  <div class="light-admin-content">
+
+    <!-- ── Form ── -->
+    <section class="light-form-section">
+      <h2 class="form-title">
+        {{ editingProduct() ? '✏️ Edit: ' + editingProduct()!.name : 'Add Light Product' }}
+      </h2>
+
+      @if (successMessage()) {
+        <div class="alert alert-success" role="status">{{ successMessage() }}</div>
+      }
+      @if (errorMessage()) {
+        <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
+      }
+
+      <form [formGroup]="lightForm" (ngSubmit)="onSubmit()">
+
+        <!-- ── Basic Info ── -->
+        <div class="section-label">⚙️ Basic info</div>
+        <div class="form-card">
+
+          <div class="row-two">
+            <div class="field">
+              <label for="la-brand">Brand <span class="req" aria-hidden="true">*</span></label>
+              <select id="la-brand" formControlName="brand">
+                <option value="">Select brand</option>
+                @for (b of lightBrands(); track b) {
+                  <option [value]="b">{{ b }}</option>
+                }
+              </select>
+            </div>
+            <div class="field">
+              <label for="la-subcat">Subcategory <span class="req" aria-hidden="true">*</span></label>
+              <select id="la-subcat" formControlName="subcategory">
+                @for (s of lightSubcategories(); track s) {
+                  <option [value]="s">{{ s }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="row-two">
+            <div class="field">
+              <label for="la-name">Product name <span class="req" aria-hidden="true">*</span></label>
+              <input id="la-name" type="text" formControlName="name"
+                     placeholder="e.g. Stellar, Lumio, Brillo" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label>SKU <span class="label-note">(auto-generated)</span></label>
+              <div class="sku-box">
+                <input type="text" formControlName="sku" readonly
+                       class="sku-input" placeholder="Fill fields above…" />
+                @if (generatedSku()) {
+                  <span class="sku-badge">Auto</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Color Temperature ── -->
+          <div class="divider"></div>
+          <div class="pill-section-label">Color temperature</div>
+          <div class="pill-group" role="group" aria-label="Select color temperature">
+            @for (ct of COLOR_TEMPS; track ct.label) {
+              <button type="button" class="pill color-temp-pill"
+                      [class.active]="selectedColorTemp() === ct.label"
+                      (click)="selectedColorTemp.set(selectedColorTemp() === ct.label ? '' : ct.label)"
+                      [attr.aria-pressed]="selectedColorTemp() === ct.label">
+                <span class="color-temp-dot"
+                      [style.background]="ct.hex"
+                      aria-hidden="true"></span>
+                {{ ct.label }}
+                @if (ct.kelvin) {
+                  <span class="kelvin-tag">{{ ct.kelvin }}</span>
+                }
+              </button>
+            }
+          </div>
+
+          <!-- ── Strip Size (Strip Light only) ── -->
+          @if (showSize()) {
+            <div class="divider"></div>
+            <div class="pill-section-label">Strip size</div>
+            <div class="pill-group" role="group" aria-label="Select strip size">
+              @for (sz of STRIP_SIZES; track sz) {
+                <button type="button" class="pill"
+                        [class.active]="selectedSize() === sz"
+                        (click)="selectedSize.set(selectedSize() === sz ? '' : sz)"
+                        [attr.aria-pressed]="selectedSize() === sz">
+                  {{ sz }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- ── Pricing & Stock ── -->
+        <div class="section-label">₹ Pricing &amp; stock</div>
+        <div class="form-card">
+
+          <div class="row-three">
+            <div class="field">
+              <label for="la-cost">
+                {{ showRopeFields() ? 'Total box cost' : 'Cost price' }}
+                <span class="req" aria-hidden="true">*</span>
+              </label>
+              <div class="cost-input-row">
+                <div class="currency-wrap" style="flex:1">
+                  <span class="currency-sym" aria-hidden="true">₹</span>
+                  <input id="la-cost" type="number" formControlName="costPrice" placeholder="0" min="0" />
+                </div>
+                <select class="cost-unit-select" formControlName="costUnit" aria-label="Cost unit">
+                  <option value="piece">/ piece</option>
+                  <option value="m">/ meter</option>
+                  <option value="box">/ box</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="la-sell">
+                {{ showRopeFields() ? 'Total box selling price' : 'Selling price' }}
+                <span class="req" aria-hidden="true">*</span>
+              </label>
+              <div class="currency-wrap">
+                <span class="currency-sym" aria-hidden="true">₹</span>
+                <input id="la-sell" type="number" formControlName="price" placeholder="0" min="0" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="la-margin">Margin (%)</label>
+              <div class="currency-wrap">
+                <input id="la-margin" type="number" formControlName="marginInput"
+                       placeholder="e.g. 20" class="margin-input" />
+                <span class="currency-sym" style="left:auto;right:10px" aria-hidden="true">%</span>
+              </div>
+              @if (marginHint()) {
+                <div class="hint" aria-live="polite">{{ marginHint() }}</div>
+              }
+            </div>
+          </div>
+
+          <div class="row-two">
+            <div class="field">
+              <label for="la-disc">Discounted price <span class="label-note">(optional)</span></label>
+              <div class="currency-wrap">
+                <span class="currency-sym" aria-hidden="true">₹</span>
+                <input id="la-disc" type="number" formControlName="discountedPrice" placeholder="0" min="0" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="la-qty">Stock qty <span class="req" aria-hidden="true">*</span></label>
+              <input id="la-qty" type="number" formControlName="stockQty" placeholder="0" min="0" />
+            </div>
+          </div>
+
+          <div class="toggle-row">
+            <button type="button"
+                    class="toggle"
+                    [class.on]="lightForm.get('available')?.value"
+                    (click)="lightForm.get('available')?.setValue(!lightForm.get('available')?.value)"
+                    [attr.aria-checked]="lightForm.get('available')?.value"
+                    role="switch"
+                    aria-label="In stock toggle">
+            </button>
+            <span class="toggle-label">
+              {{ lightForm.get('available')?.value ? 'In stock' : 'Out of stock' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- ── Additional Info ── -->
+        <div class="section-label">💡 Additional info <span class="label-note">(all optional)</span></div>
+        <div class="form-card">
+
+          <div class="row-two">
+            <div class="field">
+              <label for="la-watt">Wattage (W)</label>
+              <input id="la-watt" type="number" formControlName="wattage" placeholder="e.g. 9" min="0" />
+            </div>
+            <div class="field">
+              <label for="la-warranty">Warranty</label>
+              <select id="la-warranty" formControlName="warranty">
+                @for (w of WARRANTY_OPTIONS; track w) {
+                  <option [value]="w">{{ w }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          @if (showRopeFields()) {
+            <div class="divider"></div>
+            <div class="pill-section-label">🪢 Rope light details</div>
+            <div class="row-two">
+              <div class="field">
+                <label for="la-total-len">Total roll length (m) <span class="label-note">(e.g. 100)</span></label>
+                <input id="la-total-len" type="number" formControlName="totalLength" placeholder="e.g. 100" min="0" />
+              </div>
+              <div class="field">
+                <label>Per metre price <span class="label-note">(auto)</span></label>
+                <div class="box-price-display">
+                  @if (ropePerMeterPrice()) {
+                    <span class="box-price-value">₹{{ ropePerMeterPrice() }} / m</span>
+                    <span class="box-price-calc">₹{{ lightForm.get('price')?.value }} ÷ {{ lightForm.get('totalLength')?.value }}m × 110%</span>
+                  } @else {
+                    <span class="box-price-placeholder">Fill length &amp; selling price above…</span>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="row-two">
+              <div class="field">
+                <label>Full box discount price <span class="label-note">(auto)</span></label>
+                <div class="box-price-display">
+                  @if (fullBoxPrice()) {
+                    <span class="box-price-value">₹{{ fullBoxPrice() }}</span>
+                    <span class="box-price-calc">₹{{ lightForm.get('price')?.value }} × 90% (10% off full box)</span>
+                  } @else {
+                    <span class="box-price-placeholder">Fill selling price above…</span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="row-two">
+            <div class="field">
+              <label for="la-date">Purchase date</label>
+              <input id="la-date" type="date" formControlName="purchaseDate" />
+            </div>
+            <div class="field">
+              <label for="la-loc">Location / rack</label>
+              <input id="la-loc" type="text" formControlName="location" placeholder="e.g. Rack-B, Shelf-2" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="la-remarks">Remarks</label>
+            <textarea id="la-remarks" formControlName="remarks" rows="2" placeholder="Any notes…"></textarea>
+          </div>
+        </div>
+
+        <!-- ── Product Image ── -->
+        <div class="section-label">🖼️ Product image</div>
+        <div class="form-card">
+          @if (!imagePreview()) {
+            <div class="image-upload-area">
+              <div class="image-source-row">
+                <label class="image-source-btn">
+                  <span>📷</span> Camera
+                  <input type="file" accept="image/*" capture="environment"
+                         class="image-file-input" (change)="onImageSelected($event)" />
+                </label>
+                <label class="image-source-btn">
+                  <span>🖼️</span> Gallery
+                  <input type="file" accept="image/jpeg,image/png,image/webp"
+                         class="image-file-input" (change)="onImageSelected($event)" />
+                </label>
+              </div>
+              <p class="image-upload-sub">JPEG · PNG · WebP &nbsp;·&nbsp; max 10 MB &nbsp;·&nbsp; auto-compressed</p>
+            </div>
+          } @else {
+            <div class="image-preview-container">
+              <img [src]="imagePreview()" alt="Light product preview" class="image-preview" />
+              <div class="image-preview-actions">
+                <label class="btn btn-ghost btn-sm">
+                  📷 Camera
+                  <input type="file" accept="image/*" capture="environment"
+                         class="image-file-input" (change)="onImageSelected($event)" />
+                </label>
+                <label class="btn btn-ghost btn-sm">
+                  🖼️ Gallery
+                  <input type="file" accept="image/jpeg,image/png,image/webp"
+                         class="image-file-input" (change)="onImageSelected($event)" />
+                </label>
+                <button type="button" class="btn btn-danger btn-sm" (click)="removeImage()">
+                  🗑️ Remove
+                </button>
+              </div>
+            </div>
+          }
+          @if (imageError()) {
+            <p class="error" role="alert">{{ imageError() }}</p>
+          }
+        </div>
+
+        <!-- ── Actions ── -->
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary"
+                  [disabled]="isLoading() || lightForm.invalid">
+            @if (isLoading()) { <span>⏳ Saving…</span> }
+            @else if (editingProduct()) { <span>💾 Update Light</span> }
+            @else { <span>Save Light Product</span> }
+          </button>
+          @if (editingProduct()) {
+            <button type="button" class="btn btn-ghost" (click)="cancelEdit()">Cancel</button>
+          } @else {
+            <button type="button" class="btn btn-ghost" (click)="resetForm()">Reset</button>
+          }
+        </div>
+
+      </form>
+    </section>
+
+    <!-- ── Inventory Sheet ── -->
+    <section class="product-sheet">
+      <div class="sheet-header">
+        <h2>💡 Light inventory</h2>
+        <span class="sheet-count">
+          {{ products().length }} item{{ products().length !== 1 ? 's' : '' }}
+        </span>
+      </div>
+
+      @if (productsLoading()) {
+        <p class="sheet-loading">Loading…</p>
+      } @else if (products().length === 0) {
+        <p class="sheet-empty">No lights yet — add one above.</p>
+      } @else {
+
+        <!-- Mobile cards -->
+        <div class="sheet-card-list">
+          @for (p of products(); track p.id) {
+            <div class="sheet-card" [class.row-deleting]="deletingId() === p.id">
+
+              <div class="sheet-card-thumb">
+                @if (p.imageUrl) {
+                  <img [src]="p.imageUrl" [alt]="p.name" class="sheet-thumb" />
+                } @else {
+                  <span class="sheet-thumb-placeholder" aria-hidden="true">💡</span>
+                }
+              </div>
+
+              <div class="sheet-card-info">
+                <div class="sheet-card-name">{{ p.name }}</div>
+                <div class="sheet-card-meta">
+                  @if (p.sku)         { <span class="sheet-card-sku">{{ p.sku }}</span> }
+                  @if (p.brand)       { <span class="sheet-card-brand">{{ p.brand }}</span> }
+                  @if (p.subcategory) { <span class="sheet-card-sub">{{ p.subcategory }}</span> }
+                </div>
+                <!-- Light-specific specs -->
+                <div class="sheet-card-specs">
+                  @if (p.colorTemp)    { <span class="spec-chip ct-chip">{{ p.colorTemp }}</span> }
+                  @if (p.size)         { <span class="spec-chip">{{ p.size }}</span> }
+                  @if (p.totalLength)  { <span class="spec-chip">{{ p.totalLength }}m roll</span> }
+                  @if (p.wattage)      { <span class="spec-chip">{{ p.wattage }}W</span> }
+                </div>
+                @if (p.price) {
+                  <div class="sheet-card-price">
+                    @if (p.discountedPrice) {
+                      <span class="price-strike">₹{{ p.price }}</span>
+                      <span class="price-offer">₹{{ p.discountedPrice }}</span>
+                    } @else {
+                      ₹{{ p.price }}
+                    }
+                    <span class="sheet-card-unit"> / Piece</span>
+                  </div>
+                }
+                <div class="sheet-card-badges">
+                  <span class="avail-badge"
+                        [class.avail-yes]="p.available && (p.stockQty ?? 1) > 0"
+                        [class.avail-no]="!p.available || (p.stockQty ?? 1) <= 0">
+                    {{ p.available && (p.stockQty ?? 1) > 0 ? 'In Stock' : 'Out' }}
+                  </span>
+                  @if (p.stockQty != null) {
+                    <span class="sheet-card-stock">Qty: {{ p.stockQty }}</span>
+                  }
+                  @if (p.warranty && p.warranty !== 'No warranty') {
+                    <span class="sheet-card-warranty">{{ p.warranty }}</span>
+                  }
+                </div>
+              </div>
+
+              <div class="sheet-card-actions">
+                @if (confirmDeleteId() === p.id) {
+                  <div class="confirm-group">
+                    <span class="confirm-prompt">Delete?</span>
+                    <button type="button" class="btn-icon btn-confirm-yes"
+                            (click)="confirmDelete(p.id!)" aria-label="Confirm delete">✓</button>
+                    <button type="button" class="btn-icon btn-confirm-no"
+                            (click)="cancelDelete()" aria-label="Cancel">✕</button>
+                  </div>
+                } @else {
+                  <button type="button" class="btn-icon btn-edit"
+                          [disabled]="deletingId() === p.id"
+                          (click)="startEdit(p)"
+                          [attr.aria-label]="'Edit ' + p.name">✏️</button>
+                  <button type="button" class="btn-icon btn-delete"
+                          [disabled]="deletingId() === p.id"
+                          (click)="requestDelete(p.id!)"
+                          [attr.aria-label]="'Delete ' + p.name">
+                    {{ deletingId() === p.id ? '⏳' : '🗑️' }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Desktop table -->
+        <div class="sheet-table-wrap">
+          <table class="sheet-table" aria-label="Lights inventory">
+            <thead>
+              <tr>
+                <th class="col-thumb"></th>
+                <th>SKU</th>
+                <th>Name</th>
+                <th>Brand</th>
+                <th>Type</th>
+                <th>Specs</th>
+                <th>Cost (₹)</th>
+                <th>Price (₹)</th>
+                <th>Stock</th>
+                <th>Available</th>
+                <th aria-label="Actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of products(); track p.id) {
+                <tr [class.row-deleting]="deletingId() === p.id">
+                  <td class="col-thumb">
+                    @if (p.imageUrl) {
+                      <img [src]="p.imageUrl" [alt]="p.name" class="sheet-thumb" />
+                    } @else {
+                      <span class="sheet-thumb-placeholder" aria-hidden="true">💡</span>
+                    }
+                  </td>
+                  <td class="col-sku">{{ p.sku || '—' }}</td>
+                  <td class="col-name">{{ p.name }}</td>
+                  <td>{{ p.brand || '—' }}</td>
+                  <td>{{ p.subcategory || '—' }}</td>
+                  <td class="col-specs">
+                    <div class="spec-chips-row">
+                      @if (p.colorTemp)   { <span class="spec-chip sm ct-chip">{{ p.colorTemp }}</span> }
+                      @if (p.size)        { <span class="spec-chip sm">{{ p.size }}</span> }
+                      @if (p.totalLength) { <span class="spec-chip sm">{{ p.totalLength }}m roll</span> }
+                      @if (p.wattage)     { <span class="spec-chip sm">{{ p.wattage }}W</span> }
+                    </div>
+                  </td>
+                  <td>{{ p.costPrice ?? '—' }}{{ p.costPrice && p.costUnit ? ' / ' + p.costUnit : '' }}</td>
+                  <td class="col-price">
+                    @if (p.discountedPrice) {
+                      <span class="price-strike">{{ p.price }}</span>
+                      <span class="price-offer">{{ p.discountedPrice }}</span>
+                    } @else { {{ p.price ?? '—' }} }
+                  </td>
+                  <td>{{ p.stockQty ?? '—' }}</td>
+                  <td>
+                    <span class="avail-badge"
+                          [class.avail-yes]="p.available && (p.stockQty ?? 1) > 0"
+                          [class.avail-no]="!p.available || (p.stockQty ?? 1) <= 0">
+                      {{ p.available && (p.stockQty ?? 1) > 0 ? 'Yes' : 'No' }}
+                    </span>
+                  </td>
+                  <td class="col-actions">
+                    @if (confirmDeleteId() === p.id) {
+                      <span class="confirm-prompt">Delete?</span>
+                      <button type="button" class="btn-icon btn-confirm-yes"
+                              (click)="confirmDelete(p.id!)" aria-label="Confirm delete">✓</button>
+                      <button type="button" class="btn-icon btn-confirm-no"
+                              (click)="cancelDelete()" aria-label="Cancel">✕</button>
+                    } @else {
+                      <button type="button" class="btn-icon btn-edit"
+                              [disabled]="deletingId() === p.id"
+                              (click)="startEdit(p)"
+                              [attr.aria-label]="'Edit ' + p.name">✏️</button>
+                      <button type="button" class="btn-icon btn-delete"
+                              [disabled]="deletingId() === p.id"
+                              (click)="requestDelete(p.id!)"
+                              [attr.aria-label]="'Delete ' + p.name">
+                        {{ deletingId() === p.id ? '⏳' : '🗑️' }}
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+      }
+    </section>
+
+  </div><!-- /light-admin-content -->
+</div>
