@@ -245,3 +245,70 @@
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Field editor ───────────────────────────────────────────── */
+.cs-field-pricing {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+}
+.cs-field-pricing label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #37474F;
+}
+.cs-field-pricing select { max-width: 180px; }
+
+.cs-fields-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.cs-field-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  background: #f7f9fc;
+  border: 1px solid #e3e8f0;
+  border-radius: 10px;
+}
+.cs-field-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+.cs-field-label { font-weight: 600; color: #1A237E; font-size: 0.88rem; }
+.cs-field-key {
+  font-family: monospace;
+  font-size: 0.74rem;
+  color: #546E7A;
+  background: #eceff1;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+}
+.cs-field-type,
+.cs-field-group {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.12rem 0.45rem;
+  border-radius: 6px;
+}
+.cs-field-type { background: #E3F2FD; color: #1565C0; }
+.cs-field-group { background: #F3E5F5; color: #6A1B9A; }
+.cs-field-opts {
+  flex: 1 1 100%;
+  font-size: 0.78rem;
+  color: #607D8B;
+}
+.cs-field-form {
+  border-top: 1px dashed #d6deeb;
+  padding-top: 0.85rem;
+}

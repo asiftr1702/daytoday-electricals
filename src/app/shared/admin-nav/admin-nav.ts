@@ -18,16 +18,11 @@ export class AdminNavComponent {
   close()  { this.isOpen.set(false); }
 
   getLinkCommands(catId: string): string[] {
-    if (catId === 'fans')   return ['/admin/fans'];
-    if (catId === 'lights') return ['/admin/lights'];
     return ['/admin/category', catId];
   }
 
   isActive(catId: string): boolean {
-    const url = this.router.url;
-    if (catId === 'fans')   return url === '/admin/fans';
-    if (catId === 'lights') return url === '/admin/lights';
-    return url === '/admin/category/' + catId;
+    return this.router.url === '/admin/category/' + catId;
   }
 
   isCatalogueSettingsActive(): boolean {

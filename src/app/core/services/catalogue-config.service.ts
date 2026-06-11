@@ -2,6 +2,7 @@ import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
 import { CATEGORIES, UNITS, WARRANTY_OPTIONS } from '../config/categories.config';
+import { CategoryFieldConfig, defaultFieldConfig } from '../config/product-fields.config';
 
 export interface DynamicCategory {
   id: string;
@@ -12,6 +13,13 @@ export interface DynamicCategory {
   color: string;
   subcategories: string[];
   brands: string[];
+  /** Drives the dynamic product-admin form (pricing mode + spec fields). */
+  fieldConfig?: CategoryFieldConfig;
+}
+
+/** Ensures every category has a `fieldConfig`, falling back to per-category defaults. */
+function withFieldConfig(cat: DynamicCategory): DynamicCategory {
+  return { ...cat, fieldConfig: cat.fieldConfig ?? defaultFieldConfig(cat.id) };
 }
 
 export interface DynamicWarrantyOption {
@@ -25,7 +33,7 @@ export class CatalogueConfigService {
   private readonly platformId = inject(PLATFORM_ID);
 
   readonly categories = signal<DynamicCategory[]>(
-    CATEGORIES.map(c => ({ ...c, subcategories: [...c.subcategories], brands: [] }))
+    CATEGORIES.map(c => withFieldConfig({ ...c, subcategories: [...c.subcategories], brands: [] }))
   );
   readonly units = signal<string[]>([...UNITS]);
   readonly warrantyOptions = signal<DynamicWarrantyOption[]>([...WARRANTY_OPTIONS]);
@@ -39,8 +47,9 @@ export class CatalogueConfigService {
       if (snap.exists()) {
         const data = snap.data();
         if (Array.isArray(data['categories']) && data['categories'].length) {
-          // ensure legacy entries without brands field get an empty array
-          this.categories.set(data['categories'].map((c: DynamicCategory) => ({ ...c, brands: c.brands ?? [] })));
+          // ensure legacy entries without brands / fieldConfig get sensible defaults
+          this.categories.set(data['categories'].map((c: DynamicCategory) =>
+            withFieldConfig({ ...c, brands: c.brands ?? [] })));
         }
         if (Array.isArray(data['units']) && data['units'].length) {
           this.units.set(data['units']);

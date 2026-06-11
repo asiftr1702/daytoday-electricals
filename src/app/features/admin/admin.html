@@ -13,34 +13,14 @@
     <div class="admin-hub-grid">
 
       @for (cat of catalogueConfig.categories(); track cat.id) {
-        @if (cat.id === 'fans') {
-          <a class="admin-hub-card" routerLink="/admin/fans">
-            <span class="hub-card-icon">{{ cat.icon }}</span>
-            <div class="hub-card-info">
-              <span class="hub-card-name">{{ cat.name }}</span>
-              <span class="hub-card-desc">{{ cat.description }}</span>
-            </div>
-            <span class="hub-card-arrow">→</span>
-          </a>
-        } @else if (cat.id === 'lights') {
-          <a class="admin-hub-card" routerLink="/admin/lights">
-            <span class="hub-card-icon">{{ cat.icon }}</span>
-            <div class="hub-card-info">
-              <span class="hub-card-name">{{ cat.name }}</span>
-              <span class="hub-card-desc">{{ cat.description }}</span>
-            </div>
-            <span class="hub-card-arrow">→</span>
-          </a>
-        } @else {
-          <a class="admin-hub-card" [routerLink]="['/admin/category', cat.id]">
-            <span class="hub-card-icon">{{ cat.icon }}</span>
-            <div class="hub-card-info">
-              <span class="hub-card-name">{{ cat.name }}</span>
-              <span class="hub-card-desc">{{ cat.description }}</span>
-            </div>
-            <span class="hub-card-arrow">→</span>
-          </a>
-        }
+        <a class="admin-hub-card" [routerLink]="['/admin/category', cat.id]">
+          <span class="hub-card-icon">{{ cat.icon }}</span>
+          <div class="hub-card-info">
+            <span class="hub-card-name">{{ cat.name }}</span>
+            <span class="hub-card-desc">{{ cat.description }}</span>
+          </div>
+          <span class="hub-card-arrow">→</span>
+        </a>
       }
 
       <a class="admin-hub-card" routerLink="/catalogue-settings">

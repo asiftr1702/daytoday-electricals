@@ -1,6 +1,12 @@
 import { Component, inject, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CatalogueConfigService, DynamicCategory } from '../../core/services/catalogue-config.service';
+import {
+  PricingMode,
+  ProductField,
+  ProductFieldType,
+  defaultFieldConfig,
+} from '../../core/config/product-fields.config';
 
 @Component({
   selector: 'app-catalogue-settings',
@@ -30,9 +36,18 @@ export class CatalogueSettingsComponent implements OnInit {
 
   // Subcategory + brand panel
   readonly expandedCatId  = signal<string | null>(null);
-  readonly expandedTab    = signal<'subs' | 'brands'>('subs');
+  readonly expandedTab    = signal<'subs' | 'brands' | 'fields'>('subs');
   readonly newSubcatValue = signal('');
   readonly newBrandValue  = signal('');
+
+  // Field editor
+  readonly newFieldKey     = signal('');
+  readonly newFieldLabel   = signal('');
+  readonly newFieldType    = signal<ProductFieldType>('text');
+  readonly newFieldGroup   = signal<'specs' | 'admin'>('specs');
+  readonly newFieldOptions = signal('');
+  readonly fieldTypeOptions: ProductFieldType[] = ['text', 'number', 'textarea', 'select', 'pills', 'color-pills'];
+  readonly pricingModeOptions: PricingMode[] = ['standard', 'unit-rope', 'length'];
 
   // Units
   readonly newUnit = signal('');
@@ -172,6 +187,91 @@ export class CatalogueSettingsComponent implements OnInit {
     this.config.categories.update(cats =>
       cats.map(c => c.id === catId ? { ...c, brands: c.brands.filter((_, i) => i !== index) } : c)
     );
+    await this.persist();
+  }
+
+  // ── Field editor ───────────────────────────────────────────────────────
+
+  /** Returns the field list for a category, ensuring a fieldConfig exists. */
+  fieldsOf(cat: DynamicCategory): ProductField[] {
+    return cat.fieldConfig?.fields ?? [];
+  }
+
+  pricingModeOf(cat: DynamicCategory): PricingMode {
+    return cat.fieldConfig?.pricingMode ?? 'standard';
+  }
+
+  /** Human-readable summary of a field's options for the editor list. */
+  optionsText(field: ProductField): string {
+    if (field.type === 'color-pills' && field.colorOptions) {
+      return field.colorOptions.map(o => o.label).join(', ');
+    }
+    if (field.type === 'select' && field.options) {
+      return field.options.join(', ');
+    }
+    if (field.type === 'pills') {
+      if (field.options) return field.options.join(', ');
+      if (field.optionsBySubcategory) {
+        const all = new Set<string>();
+        Object.values(field.optionsBySubcategory).forEach(arr => arr.forEach(v => all.add(v)));
+        return [...all].join(', ');
+      }
+    }
+    return '';
+  }
+
+  private mutateFieldConfig(catId: string, mutate: (fields: ProductField[]) => ProductField[], modeFn?: (m: PricingMode) => PricingMode): void {
+    this.config.categories.update(cats =>
+      cats.map(c => {
+        if (c.id !== catId) return c;
+        const base = c.fieldConfig ?? defaultFieldConfig(c.id);
+        return {
+          ...c,
+          fieldConfig: {
+            ...base,
+            pricingMode: modeFn ? modeFn(base.pricingMode) : base.pricingMode,
+            fields: mutate(base.fields),
+          },
+        };
+      })
+    );
+  }
+
+  async changePricingMode(catId: string, mode: PricingMode): Promise<void> {
+    this.mutateFieldConfig(catId, f => f, () => mode);
+    await this.persist();
+  }
+
+  async addField(catId: string): Promise<void> {
+    const key = this.newFieldKey().trim();
+    const label = this.newFieldLabel().trim();
+    if (!key || !label) return;
+    const type = this.newFieldType();
+    const group = this.newFieldGroup();
+    const rawOptions = this.newFieldOptions().split(',').map(o => o.trim()).filter(Boolean);
+
+    const field: ProductField = { key, label, type, group };
+    if (type === 'pills') {
+      field.options = rawOptions;
+    } else if (type === 'select') {
+      field.options = rawOptions;
+    } else if (type === 'color-pills') {
+      field.colorOptions = rawOptions.map(o => ({ label: o, hex: '#cccccc' }));
+    }
+
+    this.mutateFieldConfig(catId, fields =>
+      fields.some(f => f.key === key) ? fields : [...fields, field]
+    );
+    this.newFieldKey.set('');
+    this.newFieldLabel.set('');
+    this.newFieldType.set('text');
+    this.newFieldGroup.set('specs');
+    this.newFieldOptions.set('');
+    await this.persist();
+  }
+
+  async removeField(catId: string, index: number): Promise<void> {
+    this.mutateFieldConfig(catId, fields => fields.filter((_, i) => i !== index));
     await this.persist();
   }
 

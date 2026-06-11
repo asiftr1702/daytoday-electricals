@@ -1,260 +1,468 @@
-<div class="ca-container">
+<div class="ca-admin-container">
 
-  <!-- ── Sticky Header ── -->
-  <div class="ca-header">
-    <button class="ca-back-btn" type="button" (click)="goBack()">←</button>
+  <!-- ── Header ── -->
+  <div class="ca-admin-header">
+    <button class="back-btn" type="button" (click)="goBack()" aria-label="Back to Admin">←</button>
     <app-admin-nav></app-admin-nav>
-    <div class="ca-header-title">
-      <span class="ca-header-icon" aria-hidden="true">{{ category()?.icon }}</span>
+    <div class="header-title">
+      <span class="header-icon" aria-hidden="true">{{ category()?.icon || '📦' }}</span>
       <div>
-        <h1>{{ category()?.name }} Admin</h1>
+        <h1>{{ category()?.name || 'Products' }} Admin</h1>
         <p>Add · Edit · Delete products</p>
       </div>
     </div>
-    <span class="ca-header-count">{{ products().length }} items</span>
+    <span class="header-count">{{ products().length }} items</span>
   </div>
 
-  <div class="ca-content">
+  <div class="ca-admin-content">
 
+    @if (productForm) {
     <!-- ── Form ── -->
     <section class="ca-form-section">
-      <h2 class="ca-form-title">
-        {{ editingProduct() ? '✏️ Edit: ' + editingProduct()!.name : 'Add Product' }}
+      <h2 class="form-title">
+        {{ editingProduct() ? '✏️ Edit: ' + editingProduct()!.name : 'Add ' + (category()?.name || 'Product') }}
       </h2>
 
-      @if (successMessage()) {
-        <div class="ca-alert ca-alert-success">{{ successMessage() }}</div>
-      }
-      @if (errorMessage()) {
-        <div class="ca-alert ca-alert-error">{{ errorMessage() }}</div>
-      }
+      @if (successMessage()) { <div class="alert alert-success" role="status">{{ successMessage() }}</div> }
+      @if (errorMessage())   { <div class="alert alert-error" role="alert">{{ errorMessage() }}</div> }
 
       <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
 
         <!-- ── Basic Info ── -->
-        <div class="ca-section-label">📋 Basic info</div>
-        <div class="ca-card">
-          <div class="ca-row-two">
-            <div class="ca-field">
-              <label for="ca-sku">SKU <span class="ca-req">*</span></label>
-              <input id="ca-sku" type="text" formControlName="sku" placeholder="e.g., LGT-001" autocomplete="off" />
-            </div>
-            <div class="ca-field">
-              <label for="ca-name">Product name <span class="ca-req">*</span></label>
-              <input id="ca-name" type="text" formControlName="name" placeholder="e.g., Havells LED Bulb 9W" autocomplete="off" />
-            </div>
-          </div>
+        <div class="section-label">⚙️ Basic info</div>
+        <div class="form-card">
 
-          <div class="ca-row-two">
-            <div class="ca-field">
-              <label for="ca-brand">Brand</label>
-              <input id="ca-brand" type="text" formControlName="brand" placeholder="e.g., Havells"
-                     list="ca-brand-list" autocomplete="off" />
-              <datalist id="ca-brand-list">
-                @for (b of brands(); track b) {
-                  <option [value]="b">{{ b }}</option>
-                }
-              </datalist>
+          <div class="row-two">
+            <div class="field">
+              <label for="ca-brand">Brand <span class="req" aria-hidden="true">*</span></label>
+              <select id="ca-brand" formControlName="brand">
+                <option value="">Select brand</option>
+                @for (b of brands(); track b) { <option [value]="b">{{ b }}</option> }
+              </select>
             </div>
-            <div class="ca-field">
-              <label for="ca-subcat">Subcategory</label>
+            <div class="field">
+              <label for="ca-subcat">Subcategory <span class="req" aria-hidden="true">*</span></label>
               <select id="ca-subcat" formControlName="subcategory">
-                <option value="">— none —</option>
-                @for (s of subcategories(); track s) {
-                  <option [value]="s">{{ s }}</option>
-                }
+                @for (s of subcategories(); track s) { <option [value]="s">{{ s }}</option> }
               </select>
             </div>
           </div>
 
-          <div class="ca-field">
-            <label for="ca-desc">Description</label>
-            <textarea id="ca-desc" formControlName="description" rows="2"
-                      placeholder="Brief description…"></textarea>
+          <div class="row-two">
+            <div class="field">
+              <label for="ca-name">Product name <span class="req" aria-hidden="true">*</span></label>
+              <input id="ca-name" type="text" formControlName="name" placeholder="e.g. model / variant" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label>SKU <span class="label-note">(auto-generated)</span></label>
+              <div class="sku-box">
+                <input type="text" formControlName="sku" readonly class="sku-input" placeholder="Fill fields above…" />
+                @if (generatedSku()) { <span class="sku-badge">Auto</span> }
+              </div>
+            </div>
           </div>
+
+          <!-- Dynamic spec fields (pills / colours / selects) -->
+          @for (f of basicSpecFields(); track f.key) {
+            <div class="divider"></div>
+            <div class="pill-section-label">{{ f.label }}</div>
+            @if (f.type === 'color-pills') {
+              <div class="pill-group" role="group" [attr.aria-label]="f.label">
+                @for (c of f.colorOptions; track c.label) {
+                  <button type="button" class="pill color-pill"
+                          [class.active]="pill(f.key) === c.label"
+                          (click)="togglePill(f.key, c.label)"
+                          [attr.aria-pressed]="pill(f.key) === c.label">
+                    <span class="color-dot" [style.background]="c.hex"
+                          [style.border-color]="c.hex === '#ffffff' ? '#ccc' : 'transparent'" aria-hidden="true"></span>
+                    {{ c.label }}
+                    @if (c.tag) { <span class="kelvin-tag">{{ c.tag }}</span> }
+                  </button>
+                }
+              </div>
+            } @else if (f.type === 'pills') {
+              <div class="pill-group" role="group" [attr.aria-label]="f.label">
+                @for (opt of fieldOptions(f); track opt) {
+                  <button type="button" class="pill"
+                          [class.active]="pill(f.key) === opt"
+                          (click)="togglePill(f.key, opt)"
+                          [attr.aria-pressed]="pill(f.key) === opt">{{ opt }}</button>
+                }
+                @if (fieldOptions(f).length === 0) {
+                  <span class="pill-empty">No options for this subcategory</span>
+                }
+              </div>
+            } @else {
+              <div class="field">
+                @if (f.type === 'select') {
+                  <select [formControlName]="f.key">
+                    <option value="">—</option>
+                    @for (o of fieldOptions(f); track o) { <option [value]="o">{{ o }}</option> }
+                  </select>
+                } @else {
+                  <input [type]="f.type === 'number' ? 'number' : 'text'" [formControlName]="f.key"
+                         [placeholder]="f.placeholder || ''" [attr.min]="f.min" />
+                }
+              </div>
+            }
+          }
         </div>
 
-        <!-- ── Pricing & Stock ── -->
-        <div class="ca-section-label">₹ Pricing &amp; stock</div>
-        <div class="ca-card">
-          <div class="ca-row-three">
-            <div class="ca-field">
-              <label for="ca-cost">Cost price <span class="ca-req">*</span></label>
-              <div class="ca-currency-wrap">
-                <span class="ca-currency-sym">₹</span>
-                <input id="ca-cost" type="number" formControlName="costPrice" placeholder="0" min="0" />
+        <!-- ════════ PRICING ════════ -->
+        @if (pricingMode() === 'length') {
+          <!-- WIRE-STYLE per-metre / bundle pricing -->
+          <div class="section-label">💰 Pricing</div>
+          <div class="form-card">
+            <div class="row-two">
+              <div class="field">
+                <label for="ca-bundle-len">Bundle / Coil length (m) <span class="req">*</span></label>
+                <div class="pill-group" style="margin-bottom:0.5rem">
+                  @for (bl of bundleLengths(); track bl) {
+                    <button type="button" class="pill pill-sm"
+                            [class.active]="productForm.get('bundleLength')?.value === bl"
+                            (click)="productForm.get('bundleLength')?.setValue(bl)">{{ bl }} m</button>
+                  }
+                </div>
+                <input id="ca-bundle-len" type="number" formControlName="bundleLength" placeholder="Custom length in metres" min="1" />
+              </div>
+              <div class="field">
+                <label for="ca-cost-m">Cost price / metre (₹) <span class="req">*</span></label>
+                <div class="currency-wrap">
+                  <span class="currency-sym">₹</span>
+                  <input id="ca-cost-m" type="number" formControlName="costPerMeter" placeholder="0.00" min="0" step="0.01" />
+                </div>
               </div>
             </div>
-            <div class="ca-field">
-              <label for="ca-price">Selling price <span class="ca-req">*</span></label>
-              <div class="ca-currency-wrap">
-                <span class="ca-currency-sym">₹</span>
-                <input id="ca-price" type="number" formControlName="price" placeholder="0" min="0" />
+
+            <div class="divider"></div>
+            <p class="price-sync-note">⇄ Enter either selling price — the other auto-calculates from the bundle length above</p>
+            <div class="row-two">
+              <div class="field">
+                <label for="ca-ppm">Selling price / metre (₹) <span class="req">*</span></label>
+                <div class="currency-wrap">
+                  <span class="currency-sym">₹</span>
+                  <input id="ca-ppm" type="number" formControlName="pricePerMeter" placeholder="e.g. 12.50" min="0" step="0.01" />
+                </div>
+                @if (pricePerMeter() != null) {
+                  <span class="price-hint price-hint-m">💲 ₹{{ pricePerMeter() | number:'1.2-2' }} / m</span>
+                }
+              </div>
+              <div class="field">
+                <label for="ca-bundle-price">Bundle / Coil price (₹) <span class="req">*</span></label>
+                <div class="currency-wrap">
+                  <span class="currency-sym">₹</span>
+                  <input id="ca-bundle-price" type="number" formControlName="bundlePrice" placeholder="e.g. 1125" min="0" step="1" />
+                </div>
+                @if (bundlePrice() != null) {
+                  <span class="price-hint price-hint-bundle">📦 ₹{{ bundlePrice() | number:'1.0-0' }} for {{ productForm.get('bundleLength')?.value || '?' }} m</span>
+                }
               </div>
             </div>
-            <div class="ca-field">
-              <label for="ca-disc">Discounted price</label>
-              <div class="ca-currency-wrap">
-                <span class="ca-currency-sym">₹</span>
+
+            <div class="divider"></div>
+            <div class="row-two">
+              <div class="field">
+                <label for="ca-margin">Margin % <span class="label-note">(on cost / m)</span></label>
+                <input id="ca-margin" type="number" formControlName="marginInput" placeholder="e.g. 20" step="0.5" class="margin-input" />
+                @if (marginHint()) { <span class="hint">{{ marginHint() }}</span> }
+              </div>
+              <div class="field">
+                <label for="ca-disc">Discounted price / m <span class="label-note">(optional)</span></label>
+                <div class="currency-wrap">
+                  <span class="currency-sym">₹</span>
+                  <input id="ca-disc" type="number" formControlName="discountedPrice" placeholder="0.00" min="0" step="0.01" />
+                </div>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <!-- STANDARD / UNIT-ROPE pricing -->
+          <div class="section-label">₹ Pricing</div>
+          <div class="form-card">
+            <div class="row-three">
+              <div class="field">
+                <label for="ca-cost">
+                  {{ isRope() ? 'Total box cost' : 'Cost price' }} <span class="req" aria-hidden="true">*</span>
+                </label>
+                @if (pricingMode() === 'unit-rope') {
+                  <div class="cost-input-row">
+                    <div class="currency-wrap" style="flex:1">
+                      <span class="currency-sym" aria-hidden="true">₹</span>
+                      <input id="ca-cost" type="number" formControlName="costPrice" placeholder="0" min="0" />
+                    </div>
+                    <select class="cost-unit-select" formControlName="costUnit" aria-label="Cost unit">
+                      @for (cu of costUnits(); track cu.value) { <option [value]="cu.value">{{ cu.label }}</option> }
+                    </select>
+                  </div>
+                } @else {
+                  <div class="currency-wrap">
+                    <span class="currency-sym" aria-hidden="true">₹</span>
+                    <input id="ca-cost" type="number" formControlName="costPrice" placeholder="0" min="0" />
+                  </div>
+                }
+              </div>
+              <div class="field">
+                <label for="ca-sell">
+                  {{ isRope() ? 'Total box selling price' : 'Selling price' }} <span class="req" aria-hidden="true">*</span>
+                </label>
+                <div class="currency-wrap">
+                  <span class="currency-sym" aria-hidden="true">₹</span>
+                  <input id="ca-sell" type="number" formControlName="price" placeholder="0" min="0" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="ca-margin">Margin (%)</label>
+                <div class="currency-wrap">
+                  <input id="ca-margin" type="number" formControlName="marginInput" placeholder="e.g. 20" class="margin-input" />
+                  <span class="currency-sym" style="left:auto;right:10px" aria-hidden="true">%</span>
+                </div>
+                @if (marginHint()) { <div class="hint" aria-live="polite">{{ marginHint() }}</div> }
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="ca-disc">Discounted price <span class="label-note">(optional)</span></label>
+              <div class="currency-wrap">
+                <span class="currency-sym" aria-hidden="true">₹</span>
                 <input id="ca-disc" type="number" formControlName="discountedPrice" placeholder="0" min="0" />
               </div>
             </div>
           </div>
+        }
 
-          <div class="ca-row-three">
-            <div class="ca-field">
-              <label for="ca-qty">Stock qty <span class="ca-req">*</span></label>
+        <!-- ════════ STOCK ════════ -->
+        <div class="section-label">📦 Stock</div>
+        <div class="form-card">
+          <div class="row-two">
+            <div class="field">
+              <label for="ca-qty">Stock qty <span class="req" aria-hidden="true">*</span></label>
               <input id="ca-qty" type="number" formControlName="stockQty" placeholder="0" min="0" />
             </div>
-            <div class="ca-field">
-              <label for="ca-unit">Unit <span class="ca-req">*</span></label>
-              <select id="ca-unit" formControlName="unit">
-                @for (u of ['Piece','Box','Pack','Roll','Bundle','Meter','Set']; track u) {
-                  <option [value]="u">{{ u }}</option>
-                }
-              </select>
-            </div>
-            <div class="ca-field ca-field-center">
-              <label>Availability</label>
-              <div class="ca-toggle-row">
-                <button type="button" class="ca-toggle"
-                        [class.on]="productForm.get('available')?.value"
-                        (click)="productForm.get('available')?.setValue(!productForm.get('available')?.value)"
-                        [attr.aria-checked]="productForm.get('available')?.value"
-                        role="switch" aria-label="In stock toggle">
-                </button>
-                <span class="ca-toggle-label">
-                  {{ productForm.get('available')?.value ? 'In stock' : 'Out of stock' }}
-                </span>
+            @if (pricingMode() === 'length') {
+              <div class="field">
+                <label for="ca-unit">Stock unit</label>
+                <select id="ca-unit" formControlName="stockUnit">
+                  @for (u of stockUnits(); track u.value) { <option [value]="u.value">{{ u.label }}</option> }
+                </select>
               </div>
-            </div>
+            } @else if (unitOptions()) {
+              <div class="field">
+                <label for="ca-unit">Unit</label>
+                <select id="ca-unit" formControlName="unit">
+                  @for (u of unitOptions(); track u) { <option [value]="u">{{ u }}</option> }
+                </select>
+              </div>
+            }
+          </div>
+          <div class="toggle-row">
+            <button type="button" class="toggle"
+                    [class.on]="productForm.get('available')?.value"
+                    (click)="productForm.get('available')?.setValue(!productForm.get('available')?.value)"
+                    [attr.aria-checked]="productForm.get('available')?.value" role="switch" aria-label="In stock toggle"></button>
+            <span class="toggle-label">{{ productForm.get('available')?.value ? 'In stock' : 'Out of stock' }}</span>
           </div>
         </div>
 
-        <!-- ── Additional Info ── -->
-        <div class="ca-section-label">ℹ️ Additional info <span class="ca-label-note">(optional)</span></div>
-        <div class="ca-card">
-          <div class="ca-row-two">
-            <div class="ca-field">
-              <label for="ca-warranty">Warranty</label>
-              <input id="ca-warranty" type="text" formControlName="warranty" placeholder="e.g., 1 year" />
+        <!-- ════════ ADDITIONAL INFO ════════ -->
+        <div class="section-label">ℹ️ Additional info <span class="label-note">(all optional)</span></div>
+        <div class="form-card">
+
+          @if (adminSpecFields().length || true) {
+            <div class="field-grid">
+              @for (f of adminSpecFields(); track f.key) {
+                <div class="field">
+                  <label>{{ f.label }}</label>
+                  @if (f.type === 'select') {
+                    <select [formControlName]="f.key">
+                      <option value="">—</option>
+                      @for (o of fieldOptions(f); track o) { <option [value]="o">{{ o }}</option> }
+                    </select>
+                  } @else {
+                    <input [type]="f.type === 'number' ? 'number' : 'text'" [formControlName]="f.key"
+                           [placeholder]="f.placeholder || ''" [attr.min]="f.min" />
+                  }
+                </div>
+              }
+              <div class="field">
+                <label for="ca-warranty">Warranty</label>
+                <select id="ca-warranty" formControlName="warranty">
+                  @for (w of warrantyOptions(); track w) { <option [value]="w">{{ w }}</option> }
+                </select>
+              </div>
             </div>
-            <div class="ca-field">
-              <label for="ca-location">Location / Rack</label>
-              <input id="ca-location" type="text" formControlName="location" placeholder="e.g., Rack-B" />
+          }
+
+          <!-- Rope-light helper (unit-rope mode only) -->
+          @if (isRope()) {
+            <div class="divider"></div>
+            <div class="pill-section-label">🪢 Rope light details</div>
+            <div class="row-two">
+              <div class="field">
+                <label for="ca-total-len">Total roll length (m) <span class="label-note">(e.g. 100)</span></label>
+                <input id="ca-total-len" type="number" formControlName="totalLength" placeholder="e.g. 100" min="0" />
+              </div>
+              <div class="field">
+                <label>Per metre price <span class="label-note">(auto)</span></label>
+                <div class="box-price-display">
+                  @if (ropePerMeterPrice()) {
+                    <span class="box-price-value">₹{{ ropePerMeterPrice() }} / m</span>
+                    <span class="box-price-calc">₹{{ productForm.get('price')?.value }} ÷ {{ productForm.get('totalLength')?.value }}m × 110%</span>
+                  } @else {
+                    <span class="box-price-placeholder">Fill length &amp; selling price above…</span>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="row-two">
+              <div class="field">
+                <label>Full box discount price <span class="label-note">(auto)</span></label>
+                <div class="box-price-display">
+                  @if (fullBoxPrice()) {
+                    <span class="box-price-value">₹{{ fullBoxPrice() }}</span>
+                    <span class="box-price-calc">₹{{ productForm.get('price')?.value }} × 90% (10% off full box)</span>
+                  } @else {
+                    <span class="box-price-placeholder">Fill selling price above…</span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="row-two">
+            <div class="field">
+              <label for="ca-date">Purchase date</label>
+              <input id="ca-date" type="date" formControlName="purchaseDate" />
+            </div>
+            <div class="field">
+              <label for="ca-loc">Location / rack</label>
+              <input id="ca-loc" type="text" formControlName="location" placeholder="e.g. Rack-A, Shelf-1" />
             </div>
           </div>
-          <div class="ca-field">
+
+          <div class="field">
             <label for="ca-remarks">Remarks</label>
             <textarea id="ca-remarks" formControlName="remarks" rows="2" placeholder="Any notes…"></textarea>
           </div>
         </div>
 
-        <!-- ── Image ── -->
-        <div class="ca-section-label">🖼️ Product image <span class="ca-label-note">(optional)</span></div>
-        <div class="ca-card">
+        <!-- ════════ IMAGE ════════ -->
+        <div class="section-label">🖼️ Product image</div>
+        <div class="form-card">
           @if (!imagePreview()) {
-            <div class="ca-image-row">
-              <label class="ca-image-btn" tabindex="0">
-                📷 Camera
-                <input type="file" accept="image/*" capture="environment" class="ca-file-input" (change)="onImageSelected($event)" />
-              </label>
-              <label class="ca-image-btn" tabindex="0">
-                🖼️ Gallery
-                <input type="file" accept="image/jpeg,image/png,image/webp" class="ca-file-input" (change)="onImageSelected($event)" />
-              </label>
-            </div>
-            <p class="ca-hint-text">Max 10 MB · will be compressed</p>
-          } @else {
-            <div class="ca-preview-wrap">
-              <img [src]="imagePreview()" alt="Preview" class="ca-preview-img" />
-              <div class="ca-preview-actions">
-                <label class="ca-image-btn ca-image-btn-sm">
-                  📷 Replace
-                  <input type="file" accept="image/*" class="ca-file-input" (change)="onImageSelected($event)" />
+            <div class="image-upload-area">
+              <div class="image-source-row">
+                <label class="image-source-btn">
+                  <span>📷</span> Camera
+                  <input type="file" accept="image/*" capture="environment" class="image-file-input" (change)="onImageSelected($event)" />
                 </label>
-                <button type="button" class="ca-image-btn ca-image-btn-danger ca-image-btn-sm" (click)="removeImage()">🗑️ Remove</button>
+                <label class="image-source-btn">
+                  <span>🖼️</span> Gallery
+                  <input type="file" accept="image/jpeg,image/png,image/webp" class="image-file-input" (change)="onImageSelected($event)" />
+                </label>
+              </div>
+              <p class="image-upload-sub">JPEG · PNG · WebP &nbsp;·&nbsp; max 10 MB &nbsp;·&nbsp; auto-compressed</p>
+            </div>
+          } @else {
+            <div class="image-preview-container">
+              <img [src]="imagePreview()" alt="Product preview" class="image-preview" />
+              <div class="image-preview-actions">
+                <label class="btn btn-ghost btn-sm">
+                  📷 Camera
+                  <input type="file" accept="image/*" capture="environment" class="image-file-input" (change)="onImageSelected($event)" />
+                </label>
+                <label class="btn btn-ghost btn-sm">
+                  🖼️ Gallery
+                  <input type="file" accept="image/jpeg,image/png,image/webp" class="image-file-input" (change)="onImageSelected($event)" />
+                </label>
+                <button type="button" class="btn btn-danger btn-sm" (click)="removeImage()">🗑️ Remove</button>
               </div>
             </div>
           }
-          @if (imageError()) {
-            <p class="ca-error">{{ imageError() }}</p>
-          }
+          @if (imageError()) { <p class="error" role="alert">{{ imageError() }}</p> }
         </div>
 
-        <!-- ── Actions ── -->
-        <div class="ca-form-actions">
-          <button type="submit" class="ca-btn ca-btn-primary"
-                  [disabled]="isLoading() || productForm.invalid">
-            @if (isLoading()) { ⏳ Saving… }
-            @else if (editingProduct()) { 💾 Update Product }
-            @else { ➕ Add Product }
+        <!-- ════════ ACTIONS ════════ -->
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="isLoading() || productForm.invalid">
+            @if (isLoading()) { <span>⏳ Saving…</span> }
+            @else if (editingProduct()) { <span>💾 Update</span> }
+            @else { <span>Save Product</span> }
           </button>
           @if (editingProduct()) {
-            <button type="button" class="ca-btn ca-btn-outline" (click)="cancelEdit()">Cancel</button>
+            <button type="button" class="btn btn-ghost" (click)="cancelEdit()">Cancel</button>
           } @else {
-            <button type="button" class="ca-btn ca-btn-outline" (click)="resetForm()">Reset</button>
+            <button type="button" class="btn btn-ghost" (click)="resetForm()">Reset</button>
           }
         </div>
 
       </form>
     </section>
+    }
 
-    <!-- ── Product list ── -->
-    <section class="ca-list-section">
-      <div class="ca-list-header">
-        <h2>📋 {{ category()?.name }} Products</h2>
-        <span class="ca-list-count">{{ products().length }} item{{ products().length !== 1 ? 's' : '' }}</span>
+    <!-- ════════ INVENTORY ════════ -->
+    <section class="product-sheet">
+      <div class="sheet-header">
+        <h2>{{ category()?.icon || '📦' }} {{ category()?.name || 'Product' }} inventory</h2>
+        <span class="sheet-count">{{ products().length }} item{{ products().length !== 1 ? 's' : '' }}</span>
       </div>
 
       @if (productsLoading()) {
-        <p class="ca-loading">Loading…</p>
+        <p class="sheet-loading">Loading…</p>
       } @else if (products().length === 0) {
-        <p class="ca-empty">No products yet. Add one above.</p>
+        <p class="sheet-empty">No items yet — add one above.</p>
       } @else {
-        <div class="ca-product-list">
+
+        <!-- Mobile cards -->
+        <div class="sheet-card-list">
           @for (p of products(); track p.id) {
-            <div class="ca-product-card" [class.ca-deleting]="deletingId() === p.id">
-              @if (p.imageUrl) {
-                <img [src]="p.imageUrl" [alt]="p.name" class="ca-product-thumb" />
-              } @else {
-                <span class="ca-product-thumb-placeholder">📦</span>
-              }
-              <div class="ca-product-info">
-                <div class="ca-product-name">{{ p.name }}</div>
-                <div class="ca-product-meta">
-                  @if (p.sku) { <span class="ca-tag ca-tag-sku">{{ p.sku }}</span> }
-                  @if (p.brand) { <span class="ca-tag">{{ p.brand }}</span> }
-                  @if (p.subcategory) { <span class="ca-tag">{{ p.subcategory }}</span> }
+            <div class="sheet-card" [class.row-deleting]="deletingId() === p.id">
+              <div class="sheet-card-thumb">
+                @if (p.imageUrl) { <img [src]="p.imageUrl" [alt]="p.name" class="sheet-thumb" /> }
+                @else { <span class="sheet-thumb-placeholder" aria-hidden="true">{{ category()?.icon || '📦' }}</span> }
+              </div>
+              <div class="sheet-card-info">
+                <div class="sheet-card-name">{{ p.name }}</div>
+                <div class="sheet-card-meta">
+                  @if (p.sku)         { <span class="sheet-card-sku">{{ p.sku }}</span> }
+                  @if (p.brand)       { <span class="sheet-card-brand">{{ p.brand }}</span> }
+                  @if (p.subcategory) { <span class="sheet-card-sub">{{ p.subcategory }}</span> }
                 </div>
-                <div class="ca-product-price">
-                  @if (p.discountedPrice) {
-                    <span class="ca-price-strike">₹{{ p.price }}</span>
-                    <span class="ca-price-offer">₹{{ p.discountedPrice }}</span>
-                  } @else if (p.price) {
-                    <span>₹{{ p.price }}</span>
+                <div class="sheet-card-specs">
+                  @for (f of fieldConfig()?.fields || []; track f.key) {
+                    @if (p[f.key]) {
+                      <span class="spec-chip">{{ p[f.key] }}{{ f.suffix ? ' ' + f.suffix : '' }}</span>
+                    }
                   }
-                  <span class="ca-avail-badge" [class.ca-avail-yes]="p.available && (p.stockQty ?? 0) > 0"
-                        [class.ca-avail-no]="!p.available || (p.stockQty ?? 0) <= 0">
-                    {{ p.available && (p.stockQty ?? 0) > 0 ? 'In stock' : 'Out' }}
+                </div>
+                @if (p.price != null) {
+                  <div class="sheet-card-price">
+                    @if (p.discountedPrice) {
+                      <span class="price-strike">₹{{ p.price }}</span>
+                      <span class="price-offer">₹{{ p.discountedPrice }}</span>
+                    } @else { ₹{{ p.price }} }
+                    <span class="sheet-card-unit"> / {{ p.unit }}</span>
+                  </div>
+                }
+                <div class="sheet-card-badges">
+                  <span class="avail-badge"
+                        [class.avail-yes]="p.available && (p.stockQty ?? 1) > 0"
+                        [class.avail-no]="!p.available || (p.stockQty ?? 1) <= 0">
+                    {{ p.available && (p.stockQty ?? 1) > 0 ? 'In Stock' : 'Out' }}
                   </span>
-                  @if (p.stockQty != null) {
-                    <span class="ca-tag">Qty: {{ p.stockQty }}</span>
-                  }
+                  @if (p.stockQty != null) { <span class="sheet-card-stock">Qty: {{ p.stockQty }}</span> }
+                  @if (p.warranty && p.warranty !== 'No warranty') { <span class="sheet-card-warranty">{{ p.warranty }}</span> }
                 </div>
               </div>
-              <div class="ca-product-acts">
+              <div class="sheet-card-actions">
                 @if (confirmDeleteId() === p.id) {
-                  <span class="ca-confirm-prompt">Delete?</span>
-                  <button type="button" class="ca-act-btn ca-act-yes" (click)="confirmDelete(p.id!)">✓</button>
-                  <button type="button" class="ca-act-btn ca-act-no"  (click)="cancelDelete()">✕</button>
+                  <div class="confirm-group">
+                    <span class="confirm-prompt">Delete?</span>
+                    <button type="button" class="btn-icon btn-confirm-yes" (click)="confirmDelete(p.id!)" aria-label="Confirm delete">✓</button>
+                    <button type="button" class="btn-icon btn-confirm-no" (click)="cancelDelete()" aria-label="Cancel">✕</button>
+                  </div>
                 } @else {
-                  <button type="button" class="ca-act-btn ca-act-edit"
-                          [disabled]="deletingId() === p.id"
-                          (click)="startEdit(p)">✏️</button>
-                  <button type="button" class="ca-act-btn ca-act-delete"
-                          [disabled]="deletingId() === p.id"
-                          (click)="requestDelete(p.id!)">
+                  <button type="button" class="btn-icon btn-edit" [disabled]="deletingId() === p.id" (click)="startEdit(p)" [attr.aria-label]="'Edit ' + p.name">✏️</button>
+                  <button type="button" class="btn-icon btn-delete" [disabled]="deletingId() === p.id" (click)="requestDelete(p.id!)" [attr.aria-label]="'Delete ' + p.name">
                     {{ deletingId() === p.id ? '⏳' : '🗑️' }}
                   </button>
                 }
@@ -262,8 +470,77 @@
             </div>
           }
         </div>
+
+        <!-- Desktop table -->
+        <div class="sheet-table-wrap">
+          <table class="sheet-table" [attr.aria-label]="(category()?.name || 'Product') + ' inventory'">
+            <thead>
+              <tr>
+                <th class="col-thumb"></th>
+                <th>SKU</th>
+                <th>Name</th>
+                <th>Brand</th>
+                <th>Type</th>
+                <th>Specs</th>
+                <th>Cost (₹)</th>
+                <th>Price (₹)</th>
+                <th>Stock</th>
+                <th>Available</th>
+                <th aria-label="Actions" class="col-actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of products(); track p.id) {
+                <tr [class.row-deleting]="deletingId() === p.id">
+                  <td class="col-thumb">
+                    @if (p.imageUrl) { <img [src]="p.imageUrl" [alt]="p.name" class="sheet-thumb" /> }
+                    @else { <span class="sheet-thumb-placeholder" aria-hidden="true">{{ category()?.icon || '📦' }}</span> }
+                  </td>
+                  <td class="col-sku">{{ p.sku || '—' }}</td>
+                  <td class="col-name">{{ p.name }}</td>
+                  <td>{{ p.brand || '—' }}</td>
+                  <td>{{ p.subcategory || '—' }}</td>
+                  <td class="col-specs">
+                    <div class="spec-chips-row">
+                      @for (f of fieldConfig()?.fields || []; track f.key) {
+                        @if (p[f.key]) { <span class="spec-chip sm">{{ p[f.key] }}{{ f.suffix ? ' ' + f.suffix : '' }}</span> }
+                      }
+                    </div>
+                  </td>
+                  <td>{{ p.costPrice ?? '—' }}</td>
+                  <td class="col-price">
+                    @if (p.discountedPrice) {
+                      <span class="price-strike">{{ p.price }}</span>
+                      <span class="price-offer">{{ p.discountedPrice }}</span>
+                    } @else { {{ p.price ?? '—' }} }
+                  </td>
+                  <td>{{ p.stockQty ?? '—' }}</td>
+                  <td>
+                    <span class="avail-badge"
+                          [class.avail-yes]="p.available && (p.stockQty ?? 1) > 0"
+                          [class.avail-no]="!p.available || (p.stockQty ?? 1) <= 0">
+                      {{ p.available && (p.stockQty ?? 1) > 0 ? 'Yes' : 'No' }}
+                    </span>
+                  </td>
+                  <td class="col-actions">
+                    @if (confirmDeleteId() === p.id) {
+                      <span class="confirm-prompt">Delete?</span>
+                      <button type="button" class="btn-icon btn-confirm-yes" (click)="confirmDelete(p.id!)" aria-label="Confirm delete">✓</button>
+                      <button type="button" class="btn-icon btn-confirm-no" (click)="cancelDelete()" aria-label="Cancel">✕</button>
+                    } @else {
+                      <button type="button" class="btn-icon btn-edit" [disabled]="deletingId() === p.id" (click)="startEdit(p)" [attr.aria-label]="'Edit ' + p.name">✏️</button>
+                      <button type="button" class="btn-icon btn-delete" [disabled]="deletingId() === p.id" (click)="requestDelete(p.id!)" [attr.aria-label]="'Delete ' + p.name">
+                        {{ deletingId() === p.id ? '⏳' : '🗑️' }}
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </section>
 
-  </div><!-- /ca-content -->
+  </div><!-- /ca-admin-content -->
 </div>
