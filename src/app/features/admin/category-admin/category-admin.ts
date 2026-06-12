@@ -27,7 +27,10 @@ export class CategoryAdminComponent implements OnInit {
   // ── Category + schema ────────────────────────────────────────────────────
   readonly category    = signal<DynamicCategory | null>(null);
   readonly fieldConfig = computed<CategoryFieldConfig | null>(() => this.category()?.fieldConfig ?? null);
-  readonly pricingMode = computed(() => this.fieldConfig()?.pricingMode ?? 'standard');
+  // Pricing mode is temporarily forced to 'standard' for every category — the
+  // unit-rope / length pricing experiences are disabled until reworked. The
+  // mode-specific code below is retained so it can be re-enabled later.
+  readonly pricingMode = computed<'standard' | 'unit-rope' | 'length'>(() => 'standard');
 
   readonly subcategories = computed(() => this.category()?.subcategories ?? []);
   readonly brands        = computed(() => this.category()?.brands ?? []);

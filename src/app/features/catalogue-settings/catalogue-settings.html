@@ -174,16 +174,6 @@
                 }
 
                 @if (expandedTab() === 'fields') {
-                  <div class="cs-field-pricing">
-                    <label>Pricing mode</label>
-                    <select class="cs-input" [value]="pricingModeOf(cat)"
-                            (change)="changePricingMode(cat.id, $any($event.target).value)">
-                      @for (m of pricingModeOptions; track m) {
-                        <option [value]="m">{{ m }}</option>
-                      }
-                    </select>
-                  </div>
-
                   <div class="cs-fields-list">
                     @for (sec of fieldSections(cat); track sec.value) {
                       <div class="cs-field-section">
