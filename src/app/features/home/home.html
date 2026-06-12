@@ -61,7 +61,7 @@
     </div>
 
     <div class="categories-grid">
-      @for (cat of categories; track cat.id) {
+      @for (cat of categories(); track cat.id) {
         <a
           class="cat-card"
           [routerLink]="['/products']"

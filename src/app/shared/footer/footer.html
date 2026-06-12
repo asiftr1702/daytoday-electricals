@@ -27,11 +27,9 @@
       <div class="footer-categories">
         <h3>Categories</h3>
         <ul>
-          <li><a routerLink="/products" [queryParams]="{ category: 'fans' }">Fans</a></li>
-          <li><a routerLink="/products" [queryParams]="{ category: 'lights' }">Lights</a></li>
-          <li><a routerLink="/products" [queryParams]="{ category: 'wires' }">Wires &amp; Cables</a></li>
-          <li><a routerLink="/products" [queryParams]="{ category: 'modular' }">Modular Accessories</a></li>
-          <li><a routerLink="/products" [queryParams]="{ category: 'kids-science' }">Kids Science</a></li>
+          @for (cat of categories(); track cat.id) {
+            <li><a routerLink="/products" [queryParams]="{ category: cat.id }">{{ cat.name }}</a></li>
+          }
         </ul>
       </div>
 

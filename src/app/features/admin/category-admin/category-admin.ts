@@ -1,7 +1,8 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FirebaseAdminService } from '../../../core/services/firebase-admin.service';
 import { CatalogueConfigService, DynamicCategory } from '../../../core/services/catalogue-config.service';
 import { CategoryFieldConfig, ProductField, colorNameToHex, evaluateFormula } from '../../../core/config/product-fields.config';
@@ -13,7 +14,7 @@ import { AdminNavComponent } from '../../../shared/admin-nav/admin-nav';
 @Component({
   selector: 'app-category-admin',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AdminNavComponent],
+  imports: [CommonModule, ReactiveFormsModule, AdminNavComponent, RouterLink],
   templateUrl: './category-admin.html',
   styleUrls: ['./category-admin.css', './category-admin-sheet.css'],
 })
@@ -23,9 +24,12 @@ export class CategoryAdminComponent implements OnInit {
   private readonly catalogueConfig = inject(CatalogueConfigService);
   private readonly route           = inject(ActivatedRoute);
   private readonly router          = inject(Router);
+  private readonly destroyRef      = inject(DestroyRef);
 
   // ── Category + schema ────────────────────────────────────────────────────
   readonly category    = signal<DynamicCategory | null>(null);
+  /** All catalogue categories — drives the desktop horizontal nav bar. */
+  readonly allCategories = this.catalogueConfig.categories;
   readonly fieldConfig = computed<CategoryFieldConfig | null>(() => this.category()?.fieldConfig ?? null);
   // Pricing mode is temporarily forced to 'standard' for every category — the
   // unit-rope / length pricing experiences are disabled until reworked. The
@@ -166,15 +170,27 @@ export class CategoryAdminComponent implements OnInit {
   private readonly JPEG_QUALITY  = 0.80;
 
   ngOnInit(): void {
-    this.catalogueConfig.loadConfig().then(() => {
-      const catId = this.route.snapshot.paramMap.get('id') ?? '';
-      const found = this.catalogueConfig.categories().find(c => c.id === catId) ?? null;
-      this.category.set(found ? this.forceWireStandardPricing(found) : null);
-      if (!found) { this.router.navigate(['/admin']); return; }
-      this.currentSubcat.set(found.subcategories[0] ?? '');
-      this.buildForm();
-      this.loadProducts();
-    });
+    // React to param changes so navigating between categories (via the admin
+    // menu) reloads the page instead of reusing the previous category's data.
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const catId = params.get('id') ?? '';
+        this.catalogueConfig.loadConfig().then(() => this.loadCategory(catId));
+      });
+  }
+
+  private loadCategory(catId: string): void {
+    const found = this.catalogueConfig.categories().find(c => c.id === catId) ?? null;
+    if (!found) { this.router.navigate(['/admin']); return; }
+    this.editingProduct.set(null);
+    this.successMessage.set('');
+    this.errorMessage.set('');
+    this.skuCounters = {};
+    this.category.set(this.forceWireStandardPricing(found));
+    this.currentSubcat.set(found.subcategories[0] ?? '');
+    this.buildForm();
+    this.loadProducts();
   }
 
   /**

@@ -217,3 +217,13 @@
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+/* On large screens the page shows a horizontal category bar instead,
+   so hide the hamburger trigger and its drawer. */
+@media (min-width: 768px) {
+  .anav-trigger,
+  .anav-backdrop,
+  .anav-drawer {
+    display: none;
+  }
+}

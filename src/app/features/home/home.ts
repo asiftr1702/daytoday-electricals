@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CATEGORIES } from '../../core/config/categories.config';
+import { CatalogueConfigService } from '../../core/services/catalogue-config.service';
 
 @Component({
   selector: 'app-home',
@@ -10,5 +10,14 @@ import { CATEGORIES } from '../../core/config/categories.config';
   styleUrl: './home.css',
 })
 export class HomeComponent {
-  readonly categories = CATEGORIES;
+  private readonly catalogueConfig = inject(CatalogueConfigService);
+
+  constructor() {
+    this.catalogueConfig.loadConfig();
+  }
+
+  /** Categories sourced from the live catalogue config so ids/names match the
+   *  products page and Firestore collections (the hardcoded CATEGORIES ids can
+   *  drift from the admin-customised config, e.g. `wires` vs `wires-cables`). */
+  readonly categories = this.catalogueConfig.categories;
 }

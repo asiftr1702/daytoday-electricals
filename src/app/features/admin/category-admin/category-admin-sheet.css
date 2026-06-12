@@ -116,5 +116,49 @@
   box-shadow: -3px 0 8px rgba(0,0,0,0.07); z-index: 2;
 }
 .sheet-table tbody tr:hover .col-actions { background: #fafbff; }
+
+/* ─── Desktop category nav bar (replaces hamburger on large screens) ── */
+.ca-cat-nav { display: none; }
+@media (min-width: 768px) {
+  .ca-cat-nav {
+    display: block;
+    position: sticky;
+    top: 56px;
+    z-index: 25;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  }
+}
+.ca-cat-nav-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 8px 1.25rem;
+  scrollbar-width: thin;
+}
+.ca-cat-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: .85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.ca-cat-tab:hover { background: #e5e7eb; color: #111827; }
+.ca-cat-tab.active {
+  background: #EFF6FF;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+.ca-cat-tab-icon { font-size: 1rem; }
 .sheet-table tbody tr.row-deleting .col-actions { background: #fff; }
 .col-actions .btn-icon { display: inline-flex; }

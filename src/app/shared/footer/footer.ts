@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { CatalogueConfigService } from '../../core/services/catalogue-config.service';
 
 @Component({
   selector: 'app-footer',
@@ -9,5 +10,13 @@ import { RouterLink } from '@angular/router';
   styleUrl: './footer.css',
 })
 export class FooterComponent {
+  private readonly catalogueConfig = inject(CatalogueConfigService);
+
+  constructor() {
+    this.catalogueConfig.loadConfig();
+  }
+
+  /** First few categories from the live config so ids match the products page. */
+  readonly categories = computed(() => this.catalogueConfig.categories().slice(0, 5));
   readonly currentYear = new Date().getFullYear();
 }

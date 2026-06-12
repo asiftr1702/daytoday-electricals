@@ -14,6 +14,21 @@
     <span class="header-count">{{ products().length }} items</span>
   </div>
 
+  <!-- ── Desktop category nav (hamburger drawer is used on small screens) ── -->
+  <nav class="ca-cat-nav" aria-label="Admin categories">
+    <div class="ca-cat-nav-scroll">
+      @for (cat of allCategories(); track cat.id) {
+        <a class="ca-cat-tab"
+           [class.active]="category()?.id === cat.id"
+           [routerLink]="['/admin/category', cat.id]"
+           [attr.aria-current]="category()?.id === cat.id ? 'page' : null">
+          <span class="ca-cat-tab-icon" aria-hidden="true">{{ cat.icon }}</span>
+          <span>{{ cat.name }}</span>
+        </a>
+      }
+    </div>
+  </nav>
+
   <div class="ca-admin-content">
 
     @if (productForm) {

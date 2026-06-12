@@ -110,9 +110,6 @@ export const CATEGORIES: readonly Category[] = [
   },
 ] as const;
 
-export const getCategoryById = (id: string): Category | undefined =>
-  CATEGORIES.find(c => c.id === id);
-
 export const UNITS: readonly string[] = [
   'Piece',
   'Roll',

@@ -8,7 +8,7 @@ import { FirebaseAdminService } from '../../core/services/firebase-admin.service
 import { SaleEntry } from '../../core/models/sale.model';
 import { Bill } from '../../core/models/bill.model';
 import { Product } from '../../core/models/product.model';
-import { CATEGORIES } from '../../core/config/categories.config';
+import { CatalogueConfigService } from '../../core/services/catalogue-config.service';
 
 @Component({
   selector: 'app-sales',
@@ -22,6 +22,7 @@ export class SalesComponent implements OnInit {
   private readonly salesService = inject(SalesService);
   private readonly billService = inject(BillService);
   private readonly firebaseAdmin = inject(FirebaseAdminService);
+  private readonly catalogueConfig = inject(CatalogueConfigService);
 
   saleForm!: FormGroup;
 
@@ -57,7 +58,7 @@ export class SalesComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
-    this.loadProducts();
+    this.catalogueConfig.loadConfig().then(() => this.loadProducts());
     this.loadEntries();
     this.loadBills();
   }
@@ -74,7 +75,7 @@ export class SalesComponent implements OnInit {
   }
 
   private loadProducts(): void {
-    this.firebaseAdmin.getAllProducts(CATEGORIES.map(c => c.id)).subscribe({
+    this.firebaseAdmin.getAllProducts(this.catalogueConfig.categories().map(c => c.id)).subscribe({
       next: prods => this.allProducts.set(prods.sort((a, b) => a.name.localeCompare(b.name))),
       error: () => {},
     });
