@@ -16,6 +16,8 @@ export interface Product {
   remarks?: string;
   imageUrl?: string;
   warranty?: string;
+  /** Whether the warranty tag is shown on the storefront product card (defaults to true). */
+  showWarranty?: boolean;
   /** Per-product placement of spec/custom fields on the product card. */
   cardLayout?: CardLayoutField[];
 }

@@ -257,6 +257,7 @@ select {
 
 /* ─── Stock toggle ───────────────────────────────────────────────── */
 .toggle-row { display: flex; align-items: center; gap: 11px; padding: 4px 0; margin-top: 4px; }
+.warranty-toggle-row { margin-top: 8px; margin-bottom: 18px; }
 .toggle {
   width: 42px; height: 24px; border-radius: 12px; background: #CBD5E1;
   position: relative; cursor: pointer; flex-shrink: 0; transition: background .22s; border: none; outline: none;

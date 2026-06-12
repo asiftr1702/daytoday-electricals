@@ -80,6 +80,9 @@ export class ProductCardComponent {
   readonly isLight = computed(() => (this.product() as any)['category'] === 'lights');
   readonly isWire  = computed(() => /wire|cable/i.test(String((this.product() as any)['category'] ?? '')));
 
+  /** Whether the warranty tag should appear on the card (admin toggle, defaults to true). */
+  readonly showWarranty = computed(() => (this.product() as any).showWarranty !== false);
+
   /** Whole roll/box price for a per-metre wire (shown as a tag on the card). */
   readonly wireBoxPrice = computed(() => {
     if (!this.isWire()) return null;

@@ -385,6 +385,13 @@
                 </select>
               </div>
             </div>
+            <div class="toggle-row warranty-toggle-row">
+              <button type="button" class="toggle"
+                      [class.on]="productForm.get('showWarranty')?.value"
+                      (click)="productForm.get('showWarranty')?.setValue(!productForm.get('showWarranty')?.value)"
+                      [attr.aria-checked]="productForm.get('showWarranty')?.value" role="switch" aria-label="Show warranty tag toggle"></button>
+              <span class="toggle-label">{{ productForm.get('showWarranty')?.value ? 'Show warranty tag on card' : 'Hide warranty tag on card' }}</span>
+            </div>
           }
 
           <!-- Rope-light helper (unit-rope mode only) -->
