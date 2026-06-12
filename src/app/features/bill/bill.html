@@ -177,9 +177,19 @@
             <tr>
               <td class="col-num">{{ $index + 1 }}</td>
               <td class="col-name">
-                <div class="item-name">{{ itemLabel(item) }}</div>
                 @if (item.brand) {
-                  <span class="brand-tag">{{ item.brand }}</span>
+                  <span class="brand-name">{{ item.brand }}</span>
+                }
+                <span class="item-name">{{ itemLabel(item) }}</span>
+                @if (item.subcategory) {
+                  <span class="sub-name">{{ item.subcategory }}</span>
+                }
+                @if (item.billFields?.length) {
+                  <span class="item-fields">
+                    @for (f of item.billFields; track f.label) {
+                      <span class="item-field">{{ f.value }}</span>
+                    }
+                  </span>
                 }
               </td>
 
@@ -242,16 +252,44 @@
           }
           <tr class="bill-discount-row no-print">
             <td colspan="4" class="total-label discount-label">
-              Discount
-              <input
-                type="number"
-                class="discount-input"
-                min="0"
-                [max]="billTotal()"
-                placeholder="0"
-                [value]="discount()"
-                (input)="discount.set(Math.max(0, Math.min(billTotal(), +$any($event.target).value || 0)))"
-              />
+              <div class="discount-controls">
+                <label class="dc-field">
+                  <span class="dc-cap">Discount %</span>
+                  <input
+                    type="number"
+                    class="discount-input"
+                    min="0"
+                    max="100"
+                    placeholder="0"
+                    [value]="discountPercentValue()"
+                    (input)="onDiscountPercent(+$any($event.target).value)"
+                  />
+                </label>
+                <label class="dc-field">
+                  <span class="dc-cap">Amount Received</span>
+                  <input
+                    type="number"
+                    class="discount-input"
+                    min="0"
+                    [max]="billTotal()"
+                    placeholder="0"
+                    [value]="amountReceivedValue()"
+                    (input)="onAmountReceived(+$any($event.target).value)"
+                  />
+                </label>
+                <label class="dc-field">
+                  <span class="dc-cap">Discount ₹</span>
+                  <input
+                    type="number"
+                    class="discount-input"
+                    min="0"
+                    [max]="billTotal()"
+                    placeholder="0"
+                    [value]="discount()"
+                    (input)="onDiscountAmount(+$any($event.target).value)"
+                  />
+                </label>
+              </div>
             </td>
             <td class="total-amount discount-amount">
               @if (discount() > 0) { − {{ formatCurrency(discount()) }} }

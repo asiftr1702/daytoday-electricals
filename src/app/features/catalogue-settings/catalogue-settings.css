@@ -328,6 +328,89 @@
   background: #E8F5E9;
   color: #2E7D32;
 }
+.cs-field-bill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.12rem 0.45rem;
+  border-radius: 6px;
+  background: #FFF3E0;
+  color: #E65100;
+}
+
+/* Compact toggle on each field card */
+.cs-field-bill-toggle {
+  gap: 0.35rem;
+}
+.cs-field-bill-toggle .cs-toggle-track {
+  width: 32px;
+  height: 18px;
+}
+.cs-field-bill-toggle .cs-toggle-thumb {
+  width: 14px;
+  height: 14px;
+}
+.cs-field-bill-toggle input:checked + .cs-toggle-track {
+  background: #E65100;
+}
+.cs-field-bill-toggle input:checked + .cs-toggle-track .cs-toggle-thumb {
+  transform: translateX(14px);
+}
+.cs-field-bill-toggle .cs-toggle-label {
+  font-size: 0.7rem;
+  color: #E65100;
+}
+
+/* ── Toggle switch (e.g. "Include in bill") ── */
+.cs-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  user-select: none;
+}
+.cs-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.cs-toggle-track {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background 0.18s;
+}
+.cs-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s;
+}
+.cs-toggle input:checked + .cs-toggle-track {
+  background: #1565C0;
+}
+.cs-toggle input:checked + .cs-toggle-track .cs-toggle-thumb {
+  transform: translateX(18px);
+}
+.cs-toggle input:focus-visible + .cs-toggle-track {
+  outline: 2px solid #1565C0;
+  outline-offset: 2px;
+}
+.cs-toggle-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
 .cs-field-opts {
   flex: 1 1 100%;
   font-size: 0.78rem;

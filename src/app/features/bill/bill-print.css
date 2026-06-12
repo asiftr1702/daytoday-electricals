@@ -1,0 +1,177 @@
+/* ═══════════════════════════════════════════════════════════
+   PRINT STYLES (split from bill.css to stay within the
+   per-component CSS budget)
+   ═══════════════════════════════════════════════════════════ */
+
+@media print {
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  tr.print-only { display: table-row !important; }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+  }
+
+  body {
+    font-size: 11pt;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  /* ── Print shop header ── */
+  .print-shop-header { margin-bottom: 12px; }
+
+  .print-header-row {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .print-header-left { text-align: left; }
+  .print-header-right { text-align: right; }
+
+  .print-shop-name {
+    font-size: 15pt;
+    font-weight: 700 !important;
+    margin: 0 0 2px;
+  }
+
+  .print-address { font-size: 9pt; color: #555; margin: 2px 0; }
+  .print-customer-inline { font-size: 10pt; margin-top: 4px; }
+  .print-note-inline { font-size: 9pt; color: #555; margin-top: 2px; }
+
+  .print-date-label {
+    font-size: 8pt;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .print-date-value { font-size: 12pt; font-weight: 700 !important; }
+
+  .print-divider {
+    border: none;
+    border-top: 1.5px solid #333;
+    margin: 8px 0 10px;
+  }
+
+  /* ── Table ── */
+  .bill-table {
+    font-size: 10pt;
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #999;
+  }
+
+  .bill-table th,
+  .bill-table td {
+    border: 1px solid #bbb;
+    padding: 5px 8px;
+    text-align: left;
+  }
+
+  /* Restore right-align for price/total columns */
+  .col-price, .col-total, .total-amount { text-align: right !important; }
+  .col-qty { text-align: center !important; }
+  .col-num { text-align: center !important; width: 28px; }
+
+  .bill-table thead th {
+    background: #f0f0f0 !important;
+    font-size: 8.5pt;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Item name & brand on one line, same font */
+  .item-name { font-weight: 700 !important; margin-left: 0.4rem; }
+
+  .brand-name {
+    font-weight: 700 !important;
+  }
+
+  .sub-name {
+    font-weight: 700 !important;
+    margin-left: 0.4rem;
+  }
+
+  .item-field {
+    font-weight: 400 !important;
+    color: #333 !important;
+    margin-left: 0.4rem;
+  }
+  .item-field:not(:last-child)::after { content: ','; }
+
+  /* Remove editable-val dashed underline */
+  .editable-val {
+    border-bottom: none !important;
+    cursor: default;
+  }
+
+  .col-actions { display: none !important; }
+
+  /* ── Tfoot rows ── */
+  .bill-subtotal-row td {
+    background: #fff !important;
+    color: #555 !important;
+    font-size: 9.5pt;
+  }
+
+  /* Only hide the interactive (no-print) discount row; the print-only one remains */
+  .bill-discount-row.no-print { display: none !important; }
+
+  .bill-total-row td {
+    background: #fff !important;
+    border-top: 2px solid #333 !important;
+  }
+
+  .final-amount {
+    color: #1a6b3a !important;
+    font-size: 12pt !important;
+    font-weight: 700 !important;
+  }
+
+  .discount-amount { color: #92400e !important; }
+
+  /* ── Footer ── */
+  .print-footer {
+    margin-top: 16px;
+    font-size: 10pt;
+    color: #555;
+  }
+
+  .print-footer-row {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .print-footer-text {
+    text-align: left;
+  }
+
+  .print-footer-text p { margin: 2px 0; }
+
+  /* Watermark */
+  .print-watermark {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .watermark-img {
+    width: 260px;
+    height: 260px;
+    object-fit: contain;
+    opacity: 0.12;
+    background: white;
+  }
+
+  .print-small { font-size: 8.5pt; color: #888; }
+}

@@ -52,6 +52,7 @@ export class CatalogueSettingsComponent implements OnInit {
   readonly newFieldSuffix  = signal('');
   readonly newFieldFormula = signal('');
   readonly newFieldDecimals = signal(2);
+  readonly newFieldIncludeInBill = signal(false);
   /** Key of the field currently being edited (null = adding a new field). */
   readonly editingFieldKey = signal<string | null>(null);
   readonly fieldTypeOptions: ProductFieldType[] = ['text', 'number', 'textarea', 'select', 'pills', 'color-pills', 'computed'];
@@ -296,6 +297,8 @@ export class CatalogueSettingsComponent implements OnInit {
     }
     // No subcategory selected → applies to all subcategories
     if (subcats.length) field.showForSubcategories = subcats;
+    // Show this field's value on the printed/recorded bill
+    if (this.newFieldIncludeInBill()) field.includeInBill = true;
 
     const editingKey = this.editingFieldKey();
     if (editingKey) {
@@ -329,6 +332,7 @@ export class CatalogueSettingsComponent implements OnInit {
     this.newFieldSuffix.set(field.suffix ?? '');
     this.newFieldFormula.set(field.formula ?? '');
     this.newFieldDecimals.set(field.decimals ?? 2);
+    this.newFieldIncludeInBill.set(!!field.includeInBill);
   }
 
   /** Cancel an in-progress field edit and clear the form. */
@@ -348,6 +352,7 @@ export class CatalogueSettingsComponent implements OnInit {
     this.newFieldSuffix.set('');
     this.newFieldFormula.set('');
     this.newFieldDecimals.set(2);
+    this.newFieldIncludeInBill.set(false);
   }
 
   /** Append a {key} token to the formula being edited. */
@@ -392,6 +397,19 @@ export class CatalogueSettingsComponent implements OnInit {
 
   async removeField(catId: string, field: ProductField): Promise<void> {
     this.mutateFieldConfig(catId, fields => fields.filter(f => f.key !== field.key));
+    await this.persist();
+  }
+
+  /** Toggles whether a field's value is shown on bills, persisting immediately. */
+  async toggleFieldBill(catId: string, field: ProductField): Promise<void> {
+    this.mutateFieldConfig(catId, fields =>
+      fields.map(f => {
+        if (f.key !== field.key) return f;
+        const next = { ...f };
+        if (next.includeInBill) delete next.includeInBill;
+        else next.includeInBill = true;
+        return next;
+      }));
     await this.persist();
   }
 

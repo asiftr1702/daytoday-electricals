@@ -11,7 +11,7 @@ import { StampService } from '../../core/services/stamp.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './bill.html',
-  styleUrls: ['./bill.css'],
+  styleUrls: ['./bill.css', './bill-print.css'],
 })
 export class BillComponent implements OnInit {
   readonly billService = inject(BillService);
@@ -103,6 +103,40 @@ export class BillComponent implements OnInit {
 
   get finalAmount() {
     return this.billService.finalAmount;
+  }
+
+  // ─── Discount helpers (amount / percent / amount-received) ───────────────
+  /** Discount expressed as a % of the bill total (derived from the ₹ amount). */
+  readonly discountPercentValue = computed(() => {
+    const total = this.billService.billTotal();
+    return total > 0
+      ? Math.round((this.billService.discount() / total) * 10000) / 100
+      : 0;
+  });
+
+  /** Amount the customer pays = bill total − discount. */
+  readonly amountReceivedValue = computed(() =>
+    Math.max(0, this.billService.billTotal() - this.billService.discount())
+  );
+
+  /** Central setter: clamps the discount between 0 and the bill total. */
+  private setDiscount(amount: number): void {
+    const total = this.billService.billTotal();
+    const disc = Math.max(0, Math.min(total, Math.round((amount || 0) * 100) / 100));
+    this.billService.discount.set(disc);
+  }
+
+  onDiscountAmount(val: number): void {
+    this.setDiscount(val);
+  }
+
+  onDiscountPercent(pct: number): void {
+    const p = Math.max(0, Math.min(100, pct || 0));
+    this.setDiscount((this.billService.billTotal() * p) / 100);
+  }
+
+  onAmountReceived(val: number): void {
+    this.setDiscount(this.billService.billTotal() - (val || 0));
   }
 
   onDateChange(val: string): void {

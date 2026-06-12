@@ -186,6 +186,13 @@
                               <span class="cs-field-type">{{ f.type }}</span>
                               <span class="cs-field-group">{{ sectionLabel(f.group) }}</span>
                               <span class="cs-field-scope">{{ scopeText(f) }}</span>
+                              <label class="cs-toggle cs-field-bill-toggle"
+                                     title="Show this field's value on bills">
+                                <input type="checkbox" [checked]="!!f.includeInBill"
+                                       (change)="toggleFieldBill(cat.id, f)" />
+                                <span class="cs-toggle-track"><span class="cs-toggle-thumb"></span></span>
+                                <span class="cs-toggle-label">🧾 On bill</span>
+                              </label>
                             </div>
                             @if (optionsText(f)) {
                               <span class="cs-field-opts">{{ optionsText(f) }}</span>
@@ -285,6 +292,17 @@
                         </div>
                       </div>
                     }
+                    <div class="cs-form-row">
+                      <label class="cs-toggle">
+                        <input type="checkbox" [checked]="newFieldIncludeInBill()"
+                               (change)="newFieldIncludeInBill.set($any($event.target).checked)" />
+                        <span class="cs-toggle-track"><span class="cs-toggle-thumb"></span></span>
+                        <span class="cs-toggle-label">
+                          Include in bill
+                          <span class="cs-hint">show this value next to the item name on bills</span>
+                        </span>
+                      </label>
+                    </div>
                     <div class="cs-form-actions">
                       @if (editingFieldKey()) {
                         <button class="cs-btn cs-btn-sm cs-btn-outline" (click)="cancelFieldEdit()">Cancel</button>

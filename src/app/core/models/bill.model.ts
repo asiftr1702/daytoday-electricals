@@ -2,12 +2,15 @@ export interface BillItem {
   productId?: string;
   productName: string;
   brand?: string;
+  subcategory?: string;
   category?: string;
   unit?: string;
   qty: number;
   costPrice: number;
   sellPrice: number;   // agreed sell price per unit
   profit: number;      // (sellPrice - costPrice) * qty
+  /** Custom field values flagged "include in bill" for this product's category. */
+  billFields?: { label: string; value: string }[];
 }
 
 export interface Bill {

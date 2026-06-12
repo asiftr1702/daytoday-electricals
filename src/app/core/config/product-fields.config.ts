@@ -55,6 +55,8 @@ export interface ProductField {
    */
   formula?: string;
   decimals?: number;                            // computed: rounding (decimal places, default 2)
+  /** When true, this field's value is shown alongside the item name on the bill. */
+  includeInBill?: boolean;
 }
 
 export interface CategoryFieldConfig {

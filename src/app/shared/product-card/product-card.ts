@@ -6,6 +6,7 @@ import { Product } from '../../core/models/product.model';
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
 import { SalesService } from '../../core/services/sales.service';
 import { BillService } from '../../core/services/bill.service';
+import { CatalogueConfigService } from '../../core/services/catalogue-config.service';
 import { compressImage } from '../../core/utils/image.util';
 import { colorNameToHex } from '../../core/config/product-fields.config';
 
@@ -420,6 +421,7 @@ export class ProductCardComponent {
 
   // ── Add to Bill ───────────────────────────────────────────────────────────
   private readonly billService = inject(BillService);
+  private readonly catalogueConfig = inject(CatalogueConfigService);
   private readonly router = inject(Router);
 
   readonly billOpen = signal(false);
@@ -488,18 +490,38 @@ export class ProductCardComponent {
     event.stopPropagation();
     if (this.billQtyError()) return;
     const p = this.product();
+    const billFields = this.buildBillFields();
     this.billService.addItem({
       productId: p.id,
       productName: p.name,
       ...(p.brand ? { brand: p.brand } : {}),
+      ...(p.subcategory ? { subcategory: p.subcategory } : {}),
       category: (p as any)['category'] ?? '',
       unit: p.unit,
       qty: this.billQty(),
       costPrice: p.costPrice ?? 0,
       sellPrice: this.billSellPrice(),
+      ...(billFields.length ? { billFields } : {}),
     });
     this.billAdded.set(true);
     setTimeout(() => { this.billOpen.set(false); this.billAdded.set(false); }, 1200);
+  }
+
+  /** Custom field values for this product's category that are flagged "include in bill". */
+  private buildBillFields(): { label: string; value: string }[] {
+    const p = this.product() as any;
+    const catId = p['category'] ?? '';
+    const cat = this.catalogueConfig.categories().find(c => c.id === catId);
+    const fields = cat?.fieldConfig?.fields ?? [];
+    const result: { label: string; value: string }[] = [];
+    for (const f of fields) {
+      if (!f.includeInBill) continue;
+      const raw = p[f.key];
+      if (raw == null || raw === '') continue;
+      const value = `${f.prefix ?? ''}${raw}${f.suffix ? ' ' + f.suffix : ''}`;
+      result.push({ label: f.label, value });
+    }
+    return result;
   }
 
   goToBill(event: Event): void {
