@@ -19,6 +19,7 @@
       <a routerLink="/products" routerLinkActive="active">Products</a>
       <a routerLink="/contact" routerLinkActive="active">Contact Us</a>
       <a routerLink="/admin" routerLinkActive="active" class="admin-link" title="Admin panel for adding products">📦 Admin</a>
+      <a routerLink="/catalogue-settings" routerLinkActive="active" class="admin-link" title="Categories, brands, units & card fields">📂 Catalogue</a>
       <a routerLink="/sales" routerLinkActive="active" class="admin-link" title="Daily sales tracker">💰 Sales</a>
       <a routerLink="/bill" routerLinkActive="active" class="admin-link bill-nav-link" title="Current bill / cart">
         🧾 Bill
@@ -61,6 +62,9 @@
       </a>
       <a routerLink="/admin" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
         <span aria-hidden="true">📦</span> Admin
+      </a>
+      <a routerLink="/catalogue-settings" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
+        <span aria-hidden="true">📂</span> Catalogue
       </a>
       <a routerLink="/sales" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
         <span aria-hidden="true">💰</span> Sales

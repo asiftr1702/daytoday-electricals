@@ -204,6 +204,14 @@
                 </div>
               </div>
             </div>
+
+            @if (pricingSpecFields().length) {
+              <div class="field-grid pricing-extra-grid">
+                @for (f of pricingSpecFields(); track f.key) {
+                  <ng-container [ngTemplateOutlet]="specField" [ngTemplateOutletContext]="{ $implicit: f }"></ng-container>
+                }
+              </div>
+            }
           </div>
         } @else {
           <!-- STANDARD / UNIT-ROPE pricing -->
@@ -278,17 +286,14 @@
                 <input id="ca-disc" type="number" formControlName="discountedPrice" placeholder="0" min="0" />
               </div>
             </div>
-          </div>
-        }
 
-        <!-- Custom pricing fields -->
-        @if (pricingSpecFields().length) {
-          <div class="form-card">
-            <div class="field-grid">
-              @for (f of pricingSpecFields(); track f.key) {
-                <ng-container [ngTemplateOutlet]="specField" [ngTemplateOutletContext]="{ $implicit: f }"></ng-container>
-              }
-            </div>
+            @if (pricingSpecFields().length) {
+              <div class="field-grid pricing-extra-grid">
+                @for (f of pricingSpecFields(); track f.key) {
+                  <ng-container [ngTemplateOutlet]="specField" [ngTemplateOutletContext]="{ $implicit: f }"></ng-container>
+                }
+              </div>
+            }
           </div>
         }
 
@@ -470,6 +475,42 @@
           }
           @if (imageError()) { <p class="error" role="alert">{{ imageError() }}</p> }
         </div>
+
+        <!-- ════════ CARD LAYOUT ════════ -->
+        @if (placeableFields().length) {
+          <div class="section-label">🎴 Card layout <span class="label-note">(where each detail shows on the product card)</span></div>
+          <div class="form-card">
+            <p class="price-sync-note">Choose where each field appears on the storefront card. <b>Strip</b> = coloured band under the image · <b>Details</b> = text area below the name · <b>Off</b> = hidden.</p>
+            <div class="layout-list">
+              @for (f of placeableFields(); track f.key) {
+                <div class="layout-row">
+                  <span class="layout-field-label">{{ f.label }}</span>
+                  <div class="layout-controls">
+                    <div class="layout-seg" role="group" [attr.aria-label]="f.label + ' placement'">
+                      <button type="button" class="layout-seg-btn" [class.active]="placement(f.key) === 'strip'"
+                              (click)="setPlacement(f.key, 'strip')" [attr.aria-pressed]="placement(f.key) === 'strip'">Strip</button>
+                      <button type="button" class="layout-seg-btn" [class.active]="placement(f.key) === 'details'"
+                              (click)="setPlacement(f.key, 'details')" [attr.aria-pressed]="placement(f.key) === 'details'">Details</button>
+                      <button type="button" class="layout-seg-btn" [class.active]="placement(f.key) === 'off'"
+                              (click)="setPlacement(f.key, 'off')" [attr.aria-pressed]="placement(f.key) === 'off'">Off</button>
+                    </div>
+                    @if (placement(f.key) !== 'off') {
+                      <div class="layout-affix">
+                        <input type="text" class="layout-affix-input" [value]="cardPrefix(f.key)"
+                               (input)="setCardPrefix(f.key, $any($event.target).value)"
+                               placeholder="prefix" [attr.aria-label]="f.label + ' prefix'" />
+                        <span class="layout-affix-sample">{{ cardPrefix(f.key) }}value{{ cardSuffix(f.key) ? ' ' + cardSuffix(f.key) : '' }}</span>
+                        <input type="text" class="layout-affix-input" [value]="cardSuffix(f.key)"
+                               (input)="setCardSuffix(f.key, $any($event.target).value)"
+                               placeholder="suffix" [attr.aria-label]="f.label + ' suffix'" />
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
 
         <!-- ════════ ACTIONS ════════ -->
         <div class="form-actions">

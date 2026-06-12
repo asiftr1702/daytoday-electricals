@@ -6,6 +6,7 @@ import { FirebaseAdminService } from '../../../core/services/firebase-admin.serv
 import { CatalogueConfigService, DynamicCategory } from '../../../core/services/catalogue-config.service';
 import { CategoryFieldConfig, ProductField, colorNameToHex, evaluateFormula } from '../../../core/config/product-fields.config';
 import { AnyProduct } from '../../../core/models/any-product.model';
+import { CardLayoutField, CardLayoutSection } from '../../../core/models/product.model';
 import { compressImage } from '../../../core/utils/image.util';
 import { AdminNavComponent } from '../../../shared/admin-nav/admin-nav';
 
@@ -51,6 +52,29 @@ export class CategoryAdminComponent implements OnInit {
   readonly pricingSpecFields = computed(() => this.visibleSpecFields().filter(f => f.group === 'pricing'));
   readonly stockSpecFields = computed(() => this.visibleSpecFields().filter(f => f.group === 'stock'));
   readonly adminSpecFields = computed(() => this.visibleSpecFields().filter(f => f.group === 'admin'));
+
+  // ── Card layout (per-product field placement) ────────────────────────────
+  /** Spec/custom fields the admin may place on the product card. */
+  readonly placeableFields = computed(() =>
+    this.visibleSpecFields().filter(f => f.type !== 'computed' || !!f.formula)
+  );
+  /** key → chosen card section ('off' = not shown). */
+  readonly cardPlacement = signal<Record<string, CardLayoutSection | 'off'>>({});
+  placement(key: string): CardLayoutSection | 'off' { return this.cardPlacement()[key] ?? 'off'; }
+  setPlacement(key: string, section: CardLayoutSection | 'off'): void {
+    this.cardPlacement.update(p => ({ ...p, [key]: section }));
+  }
+
+  /** key → optional prefix/suffix shown around the value on the card. */
+  readonly cardAffix = signal<Record<string, { prefix?: string; suffix?: string }>>({});
+  cardPrefix(key: string): string { return this.cardAffix()[key]?.prefix ?? ''; }
+  cardSuffix(key: string): string { return this.cardAffix()[key]?.suffix ?? ''; }
+  setCardPrefix(key: string, value: string): void {
+    this.cardAffix.update(a => ({ ...a, [key]: { ...a[key], prefix: value } }));
+  }
+  setCardSuffix(key: string, value: string): void {
+    this.cardAffix.update(a => ({ ...a, [key]: { ...a[key], suffix: value } }));
+  }
 
   readonly isRope = computed(() =>
     this.pricingMode() === 'unit-rope' &&
@@ -531,6 +555,17 @@ export class CategoryAdminComponent implements OnInit {
     }
     this.pills.set(pillState);
 
+    // Card layout placement
+    const placement: Record<string, CardLayoutSection | 'off'> = {};
+    for (const f of this.fieldConfig()?.fields ?? []) placement[f.key] = 'off';
+    const affix: Record<string, { prefix?: string; suffix?: string }> = {};
+    for (const item of (product.cardLayout ?? [])) {
+      placement[item.key] = item.section;
+      if (item.prefix || item.suffix) affix[item.key] = { prefix: item.prefix, suffix: item.suffix };
+    }
+    this.cardPlacement.set(placement);
+    this.cardAffix.set(affix);
+
     this.currentSubcat.set(product.subcategory ?? this.subcategories()[0] ?? '');
     this.imagePreview.set(product.imageUrl ?? null);
     this.imageFile = null;
@@ -705,6 +740,21 @@ export class CategoryAdminComponent implements OnInit {
       }
     }
 
+    // Per-product card layout
+    const layout: CardLayoutField[] = [];
+    for (const f of this.placeableFields()) {
+      const section = this.placement(f.key);
+      if (section !== 'strip' && section !== 'details') continue;
+      const item: CardLayoutField = { key: f.key, label: f.label, section };
+      if (f.type === 'color-pills') item.isColor = true;
+      const prefix = this.cardPrefix(f.key).trim();
+      const suffix = this.cardSuffix(f.key).trim();
+      if (prefix) item.prefix = prefix;
+      if (suffix) item.suffix = suffix;
+      layout.push(item);
+    }
+    product.cardLayout = layout.length ? layout : undefined;
+
     return product;
   }
 
@@ -722,6 +772,8 @@ export class CategoryAdminComponent implements OnInit {
     this.productForm.reset(base);
     this.currentSubcat.set(this.subcategories()[0] ?? '');
     this.pills.set({});
+    this.cardPlacement.set({});
+    this.cardAffix.set({});
     this.generatedSku.set('');
     this.marginHint.set('');
     this.pricePerMeter.set(null);

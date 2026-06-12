@@ -7,6 +7,7 @@ import { FirebaseAdminService } from '../../core/services/firebase-admin.service
 import { SalesService } from '../../core/services/sales.service';
 import { BillService } from '../../core/services/bill.service';
 import { compressImage } from '../../core/utils/image.util';
+import { colorNameToHex } from '../../core/config/product-fields.config';
 
 @Component({
   selector: 'app-product-card',
@@ -191,6 +192,38 @@ export class ProductCardComponent {
 
   /** Light spec chips shown in the card body (empty — specs shown in strip). */
   readonly lightSpecs = computed((): { value: string }[] => []);
+
+  // ── Per-product custom card layout ───────────────────────────────────────
+  /** True when the product defines its own field placement (overrides hardcoded strips). */
+  readonly hasCustomLayout = computed(() => (this.product().cardLayout?.length ?? 0) > 0);
+
+  private resolveLayoutItem(item: { key: string; isColor?: boolean; prefix?: string; suffix?: string }):
+    { type: 'text' | 'color'; value: string; hex?: string } | null {
+    const raw = (this.product() as any)[item.key];
+    if (raw == null || raw === '') return null;
+    if (item.isColor) {
+      return { type: 'color', value: String(raw), hex: colorNameToHex(String(raw)) };
+    }
+    const text = `${item.prefix ?? ''}${raw}${item.suffix ? ' ' + item.suffix : ''}`;
+    return { type: 'text', value: text };
+  }
+
+  /** Strip items from the custom layout (colour band below the image). */
+  readonly customStripItems = computed(() =>
+    (this.product().cardLayout ?? [])
+      .filter(f => f.section === 'strip')
+      .map(f => this.resolveLayoutItem(f))
+      .filter((x): x is { type: 'text' | 'color'; value: string; hex?: string } => x != null)
+  );
+
+  /** Detail chips from the custom layout (in the card body). */
+  readonly customDetailItems = computed(() =>
+    (this.product().cardLayout ?? [])
+      .filter(f => f.section === 'details')
+      .map(f => this.resolveLayoutItem(f))
+      .filter((x): x is { type: 'text' | 'color'; value: string; hex?: string } => x != null)
+  );
+
   private readonly firebaseAdmin = inject(FirebaseAdminService);
   readonly imageUploading = signal(false);
   readonly imageUploadError = signal<string | null>(null);

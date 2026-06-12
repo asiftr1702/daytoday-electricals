@@ -77,7 +77,7 @@
   </div>
 
   <!-- ── Fan attribute strip (blade size · material abbrev · color swatch) ── -->
-  @if (fanVisualStrip().length > 0) {
+  @if (!hasCustomLayout() && fanVisualStrip().length > 0) {
     <div class="fan-attr-strip" aria-label="Fan attributes">
       @for (item of fanVisualStrip(); track item.value) {
         @if (item.type === 'color') {
@@ -93,7 +93,7 @@
   }
 
   <!-- ── Light attribute strip (color temperature · wattage) ── -->
-  @if (lightVisualStrip().length > 0) {
+  @if (!hasCustomLayout() && lightVisualStrip().length > 0) {
     <div class="fan-attr-strip" aria-label="Light attributes">
       @for (item of lightVisualStrip(); track item.value) {
         @if (item.type === 'color') {
@@ -109,9 +109,25 @@
   }
 
   <!-- ── Wire attribute strip (core size · cores · roll length) ── -->
-  @if (wireVisualStrip().length > 0) {
+  @if (!hasCustomLayout() && wireVisualStrip().length > 0) {
     <div class="fan-attr-strip" aria-label="Wire attributes">
       @for (item of wireVisualStrip(); track item.value) {
+        @if (item.type === 'color') {
+          <span class="fan-attr-color">
+            <span class="fan-color-dot" [style.background]="item.hex" [attr.title]="item.value"></span>
+            <span>{{ item.value }}</span>
+          </span>
+        } @else {
+          <span class="fan-attr-chip">{{ item.value }}</span>
+        }
+      }
+    </div>
+  }
+
+  <!-- ── Custom layout strip (admin-placed fields) ── -->
+  @if (hasCustomLayout() && customStripItems().length > 0) {
+    <div class="fan-attr-strip" aria-label="Product attributes">
+      @for (item of customStripItems(); track $index) {
         @if (item.type === 'color') {
           <span class="fan-attr-color">
             <span class="fan-color-dot" [style.background]="item.hex" [attr.title]="item.value"></span>
@@ -155,17 +171,31 @@
     @if (product().description) {
       <p class="product-desc">{{ product().description }}</p>
     }
-    @if (fanSpecs().length > 0) {
+    @if (!hasCustomLayout() && fanSpecs().length > 0) {
       <div class="fan-specs-strip" aria-label="Fan specifications">
         @for (spec of fanSpecs(); track spec.value) {
           <span class="fan-spec-chip">{{ spec.value }}</span>
         }
       </div>
     }
-    @if (lightSpecs().length > 0) {
+    @if (!hasCustomLayout() && lightSpecs().length > 0) {
       <div class="fan-specs-strip" aria-label="Light specifications">
         @for (spec of lightSpecs(); track spec.value) {
           <span class="fan-spec-chip">{{ spec.value }}</span>
+        }
+      </div>
+    }
+    @if (hasCustomLayout() && customDetailItems().length > 0) {
+      <div class="fan-specs-strip" aria-label="Product details">
+        @for (item of customDetailItems(); track $index) {
+          @if (item.type === 'color') {
+            <span class="fan-spec-chip fan-attr-color">
+              <span class="fan-color-dot" [style.background]="item.hex" [attr.title]="item.value"></span>
+              <span>{{ item.value }}</span>
+            </span>
+          } @else {
+            <span class="fan-spec-chip">{{ item.value }}</span>
+          }
         }
       </div>
     }

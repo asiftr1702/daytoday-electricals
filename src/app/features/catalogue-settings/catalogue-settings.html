@@ -286,22 +286,6 @@
                         </div>
                       </div>
                     }
-                    @if (newFieldType() === 'text' || newFieldType() === 'number' || newFieldType() === 'computed') {
-                      <div class="cs-form-row">
-                        <div class="cs-field cs-field-sm">
-                          <label>Prefix <span class="cs-hint">(optional, e.g. ₹)</span></label>
-                          <input type="text" class="cs-input" [value]="newFieldPrefix()"
-                                 (input)="newFieldPrefix.set($any($event.target).value)"
-                                 placeholder="e.g., ₹" />
-                        </div>
-                        <div class="cs-field cs-field-sm">
-                          <label>Suffix <span class="cs-hint">(optional, e.g. mm)</span></label>
-                          <input type="text" class="cs-input" [value]="newFieldSuffix()"
-                                 (input)="newFieldSuffix.set($any($event.target).value)"
-                                 placeholder="e.g., mm" />
-                        </div>
-                      </div>
-                    }
                     <div class="cs-form-actions">
                       @if (editingFieldKey()) {
                         <button class="cs-btn cs-btn-sm cs-btn-outline" (click)="cancelFieldEdit()">Cancel</button>
