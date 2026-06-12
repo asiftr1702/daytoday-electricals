@@ -15,7 +15,7 @@ import { AdminNavComponent } from '../../../shared/admin-nav/admin-nav';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, AdminNavComponent],
   templateUrl: './category-admin.html',
-  styleUrls: ['./category-admin.css'],
+  styleUrls: ['./category-admin.css', './category-admin-sheet.css'],
 })
 export class CategoryAdminComponent implements OnInit {
   private readonly fb              = inject(FormBuilder);

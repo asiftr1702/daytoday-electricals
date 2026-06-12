@@ -1,0 +1,120 @@
+/* ════════════════════════════════════════════════════════════════
+   CATEGORY ADMIN — INVENTORY SHEET
+   Mobile cards + desktop table listing of saved products.
+   Split from category-admin.css (form styles) to stay within the
+   per-component style budget and keep each concern readable.
+   ════════════════════════════════════════════════════════════════ */
+.product-sheet {
+  background: #fff; border-radius: 16px; border: 1px solid #e4e6ef; overflow: clip;
+  box-shadow: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+}
+.sheet-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.125rem; background: linear-gradient(135deg, #f8faff 0%, #EEF2FF 100%);
+  border-bottom: 1px solid #e4e6ef;
+}
+.sheet-header h2 { font-size: 1.15rem; font-weight: 700; color: #111827; margin: 0; }
+.sheet-count {
+  font-size: .95rem; font-weight: 700; color: #1565C0; background: #E3F2FD;
+  border: 1px solid #90CAF9; border-radius: 20px; padding: 3px 11px;
+}
+.sheet-loading { padding: 2.5rem 1rem; text-align: center; color: #9CA3AF; font-size: 1rem; }
+.sheet-empty {
+  padding: 3rem 1rem; text-align: center; color: #9CA3AF; font-size: 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.sheet-empty::before { content: '📦'; font-size: 2.5rem; opacity: .4; }
+
+/* ── Mobile cards ─────────────────────────────────────────────────── */
+.sheet-card-list { display: flex; flex-direction: column; }
+.sheet-card {
+  display: flex; gap: 12px; padding: .875rem 1.125rem; border-bottom: 1px solid #f5f7fa;
+  align-items: flex-start; transition: background .18s;
+}
+.sheet-card:last-child { border-bottom: none; }
+.sheet-card:hover { background: #fafbff; }
+.sheet-card.row-deleting { opacity: .4; pointer-events: none; }
+.sheet-card-thumb {
+  width: 52px; height: 52px; border-radius: 12px;
+  background: linear-gradient(135deg, #f0f2f8, #e8ecf8); overflow: hidden; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; border: 1px solid #e4e6ef;
+  box-shadow: 0 1px 3px rgba(0,0,0,.07);
+}
+.sheet-thumb { width: 100%; height: 100%; object-fit: cover; }
+.sheet-thumb-placeholder { font-size: 1.5rem; }
+.sheet-card-info { flex: 1; min-width: 0; }
+.sheet-card-name {
+  font-size: 1rem; font-weight: 700; color: #111827; line-height: 1.35;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sheet-card-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; align-items: center; }
+.sheet-card-sku { font-size: .925rem; font-family: 'Courier New', monospace; color: #9CA3AF; letter-spacing: .03em; }
+.sheet-card-brand, .sheet-card-sub {
+  font-size: .925rem; font-weight: 600; color: #6B7280; background: #f0f2f8; border-radius: 5px; padding: 2px 6px;
+}
+.sheet-card-specs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.spec-chip {
+  font-size: .925rem; font-weight: 600; background: #E3F2FD; color: #1565C0;
+  border-radius: 5px; padding: 2px 7px; white-space: nowrap; border: 1px solid #90CAF9;
+}
+.spec-chip.sm { font-size: .875rem; }
+.sheet-card-price {
+  font-size: .975rem; font-weight: 700; color: #111827; margin-top: 5px;
+  display: flex; align-items: baseline; gap: 5px;
+}
+.sheet-card-unit { font-weight: 400; font-size: .95rem; color: #9CA3AF; }
+.price-strike { text-decoration: line-through; color: #9CA3AF; font-weight: 400; font-size: .9rem; }
+.price-offer  { color: #c62828; }
+.sheet-card-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; align-items: center; }
+.avail-badge { font-size: .925rem; font-weight: 700; border-radius: 20px; padding: 2px 8px; }
+.avail-yes   { background: #e8f5e9; color: #2e7d32; }
+.avail-no    { background: #ffebee; color: #c62828; }
+.sheet-card-stock   { font-size: .925rem; color: #9CA3AF; }
+.sheet-card-warranty { font-size: .925rem; font-weight: 600; background: #FFF8E1; color: #F57F17; border-radius: 5px; padding: 2px 6px; }
+.sheet-card-actions { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; align-items: flex-end; }
+.confirm-group  { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.confirm-prompt { font-size: .95rem; color: #c62828; font-weight: 700; }
+.btn-icon {
+  width: 34px; height: 34px; border-radius: 10px; border: 1.5px solid #e4e6ef; background: #fff;
+  cursor: pointer; font-size: .975rem; display: flex; align-items: center; justify-content: center; transition: all .18s;
+}
+.btn-icon:hover:not(:disabled) { background: #f0f2f8; border-color: #94a3b8; transform: scale(1.08); }
+.btn-icon:disabled { opacity: .35; cursor: not-allowed; }
+.btn-confirm-yes { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+.btn-confirm-yes:hover:not(:disabled) { background: #c8e6c9; }
+.btn-confirm-no  { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
+.btn-confirm-no:hover:not(:disabled)  { background: #ffcdd2; }
+
+/* ── Desktop table ────────────────────────────────────────────────── */
+.sheet-table-wrap { display: none; }
+@media (min-width: 900px) {
+  .sheet-card-list  { display: none; }
+  .sheet-table-wrap { display: block; overflow-x: auto; }
+}
+.sheet-table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.sheet-table thead tr { background: linear-gradient(135deg, #f8faff 0%, #EEF2FF 100%); }
+.sheet-table th {
+  text-align: left; padding: 11px 14px; font-size: .88rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .07em; color: #9CA3AF; white-space: nowrap;
+  border-bottom: 1.5px solid #e4e6ef;
+}
+.sheet-table thead .col-actions {
+  position: sticky; right: 0; background: #f8faff; z-index: 3; box-shadow: -3px 0 8px rgba(0,0,0,0.07);
+}
+.sheet-table td { padding: 11px 14px; border-bottom: 1px solid #f5f7fa; color: #111827; vertical-align: middle; }
+.sheet-table tbody tr:last-child td { border-bottom: none; }
+.sheet-table tbody tr:hover td { background: #fafbff; }
+.sheet-table tr.row-deleting td { opacity: .35; }
+.col-thumb   { width: 44px; padding: 8px 10px; }
+.col-sku     { font-family: 'Courier New', monospace; font-size: .95rem; color: #9CA3AF; }
+.col-name    { font-weight: 700; }
+.col-specs   { min-width: 240px; max-width: 300px; }
+.spec-chips-row { display: flex; flex-wrap: wrap; gap: 3px; }
+.col-price   { white-space: nowrap; }
+.col-actions {
+  position: sticky; right: 0; background: #fff; white-space: nowrap;
+  box-shadow: -3px 0 8px rgba(0,0,0,0.07); z-index: 2;
+}
+.sheet-table tbody tr:hover .col-actions { background: #fafbff; }
+.sheet-table tbody tr.row-deleting .col-actions { background: #fff; }
+.col-actions .btn-icon { display: inline-flex; }
