@@ -119,6 +119,8 @@
   display: flex; align-items: center; justify-content: center;
 }
 .cs-icon-btn:hover { background: #f3f4f6; }
+.cs-icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.cs-icon-btn:disabled:hover { background: none; }
 .cs-icon-btn-danger:hover { background: #fee2e2; }
 
 /* Cards */
@@ -265,6 +267,21 @@
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1rem;
+}
+.cs-field-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.cs-field-section + .cs-field-section { margin-top: 0.5rem; }
+.cs-field-section-head {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #1565C0;
+  padding: 0.25rem 0.15rem;
+  border-bottom: 1px solid #e3e8f0;
 }
 .cs-field-row {
   display: flex;

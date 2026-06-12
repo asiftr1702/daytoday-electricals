@@ -41,7 +41,17 @@ export class CategoryAdminComponent implements OnInit {
       ? [{ value: 'box', label: '/ box' }, { value: 'm', label: '/ metre' }]
       : [{ value: 'piece', label: '/ piece' }, { value: 'm', label: '/ meter' }, { value: 'box', label: '/ box' }];
   });
-  readonly unitOptions   = computed(() => this.fieldConfig()?.unitOptions ?? null);
+  /**
+   * Unit dropdown options. A category may override via `fieldConfig.unitOptions`,
+   * otherwise the global units list (managed in Catalogue Settings) is used so the
+   * Unit field is common across every category.
+   */
+  readonly unitOptions   = computed(() => {
+    const override = this.fieldConfig()?.unitOptions;
+    if (override?.length) return override;
+    const global = this.catalogueConfig.units();
+    return global.length ? global : null;
+  });
 
   // ── Subcategory-aware field visibility ───────────────────────────────────
   readonly currentSubcat = signal<string>('');

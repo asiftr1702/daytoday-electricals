@@ -185,20 +185,29 @@
                   </div>
 
                   <div class="cs-fields-list">
-                    @for (f of fieldsOf(cat); track f.key; let i = $index) {
-                      <div class="cs-field-row">
-                        <div class="cs-field-meta">
-                          <span class="cs-field-label">{{ f.label }}</span>
-                          <span class="cs-field-key">{{ f.key }}</span>
-                          <span class="cs-field-type">{{ f.type }}</span>
-                          <span class="cs-field-group">{{ sectionLabel(f.group) }}</span>
-                          <span class="cs-field-scope">{{ scopeText(f) }}</span>
-                        </div>
-                        @if (optionsText(f)) {
-                          <span class="cs-field-opts">{{ optionsText(f) }}</span>
+                    @for (sec of fieldSections(cat); track sec.value) {
+                      <div class="cs-field-section">
+                        <div class="cs-field-section-head">{{ sec.label }}</div>
+                        @for (f of sec.fields; track f.key) {
+                          <div class="cs-field-row">
+                            <div class="cs-field-meta">
+                              <span class="cs-field-label">{{ f.label }}</span>
+                              <span class="cs-field-key">{{ f.key }}</span>
+                              <span class="cs-field-type">{{ f.type }}</span>
+                              <span class="cs-field-group">{{ sectionLabel(f.group) }}</span>
+                              <span class="cs-field-scope">{{ scopeText(f) }}</span>
+                            </div>
+                            @if (optionsText(f)) {
+                              <span class="cs-field-opts">{{ optionsText(f) }}</span>
+                            }
+                            <button class="cs-icon-btn" (click)="moveField(cat.id, f, -1)"
+                                    [disabled]="isFirstInSection(cat, f)" title="Move up in section">⬆️</button>
+                            <button class="cs-icon-btn" (click)="moveField(cat.id, f, 1)"
+                                    [disabled]="isLastInSection(cat, f)" title="Move down in section">⬇️</button>
+                            <button class="cs-icon-btn" (click)="editField(f)" title="Edit">✏️</button>
+                            <button class="cs-icon-btn cs-icon-btn-danger" (click)="removeField(cat.id, f)" title="Remove">🗑️</button>
+                          </div>
                         }
-                        <button class="cs-icon-btn" (click)="editField(f)" title="Edit">✏️</button>
-                        <button class="cs-icon-btn cs-icon-btn-danger" (click)="removeField(cat.id, i)" title="Remove">🗑️</button>
                       </div>
                     }
                     @if (fieldsOf(cat).length === 0) {

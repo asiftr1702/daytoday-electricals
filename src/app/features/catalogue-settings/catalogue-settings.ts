@@ -390,8 +390,66 @@ export class CatalogueSettingsComponent implements OnInit {
       : 'All subcategories';
   }
 
-  async removeField(catId: string, index: number): Promise<void> {
-    this.mutateFieldConfig(catId, fields => fields.filter((_, i) => i !== index));
+  async removeField(catId: string, field: ProductField): Promise<void> {
+    this.mutateFieldConfig(catId, fields => fields.filter(f => f.key !== field.key));
+    await this.persist();
+  }
+
+  /**
+   * Groups a category's fields by section, preserving each field's order
+   * within its section. Only non-empty sections are returned, in the same
+   * order as `fieldSectionOptions`. Used to render the field list grouped
+   * so reordering stays visually contained within a section.
+   */
+  fieldSections(cat: DynamicCategory): { value: string; label: string; fields: ProductField[] }[] {
+    return this.fieldSectionOptions
+      .map(s => ({
+        value: s.value,
+        label: s.label,
+        fields: this.fieldsOf(cat).filter(f => (f.group ?? 'specs') === s.value),
+      }))
+      .filter(s => s.fields.length > 0);
+  }
+
+  /** Fields belonging to the same section as `field`, in display order. */
+  private sameGroupFields(cat: DynamicCategory, group?: string): ProductField[] {
+    const g = group ?? 'specs';
+    return this.fieldsOf(cat).filter(f => (f.group ?? 'specs') === g);
+  }
+
+  /** True when `field` is the first field within its section (cannot move up). */
+  isFirstInSection(cat: DynamicCategory, field: ProductField): boolean {
+    return this.sameGroupFields(cat, field.group)[0]?.key === field.key;
+  }
+
+  /** True when `field` is the last field within its section (cannot move down). */
+  isLastInSection(cat: DynamicCategory, field: ProductField): boolean {
+    const group = this.sameGroupFields(cat, field.group);
+    return group[group.length - 1]?.key === field.key;
+  }
+
+  /**
+   * Reorders a field within its own section by swapping it with the nearest
+   * neighbour in the same group. `direction` is -1 (up) or 1 (down).
+   * The new order is what the admin product form renders, so it persists.
+   */
+  async moveField(catId: string, field: ProductField, direction: -1 | 1): Promise<void> {
+    this.mutateFieldConfig(catId, fields => {
+      const group = field.group ?? 'specs';
+      const idx = fields.findIndex(f => f.key === field.key);
+      if (idx === -1) return fields;
+
+      // Find the nearest field in the same section in the requested direction.
+      let target = -1;
+      for (let i = idx + direction; i >= 0 && i < fields.length; i += direction) {
+        if ((fields[i].group ?? 'specs') === group) { target = i; break; }
+      }
+      if (target === -1) return fields;
+
+      const reordered = [...fields];
+      [reordered[idx], reordered[target]] = [reordered[target], reordered[idx]];
+      return reordered;
+    });
     await this.persist();
   }
 
