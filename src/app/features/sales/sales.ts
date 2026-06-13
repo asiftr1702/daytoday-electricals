@@ -29,6 +29,17 @@ export class SalesComponent implements OnInit {
   today = new Date().toISOString().slice(0, 10);
   selectedDate = signal<string>(this.today);
 
+  // Period: 'daily' shows a single date, 'monthly' aggregates a whole month.
+  period = signal<'daily' | 'monthly'>('daily');
+  selectedMonth = signal<string>(this.today.slice(0, 7)); // YYYY-MM
+
+  /** Human label for the current period (used in section headings). */
+  periodLabel = computed(() =>
+    this.period() === 'monthly'
+      ? new Date(this.selectedMonth() + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+      : this.selectedDate(),
+  );
+
   entries = signal<SaleEntry[]>([]);
   loading = signal(false);
   saving = signal(false);
@@ -100,12 +111,35 @@ export class SalesComponent implements OnInit {
     this.loadBills();
   }
 
+  onMonthChange(event: Event): void {
+    this.selectedMonth.set((event.target as HTMLInputElement).value);
+    this.loadEntries();
+    this.loadBills();
+  }
+
+  setPeriod(period: 'daily' | 'monthly'): void {
+    if (this.period() === period) return;
+    this.period.set(period);
+    this.loadEntries();
+    this.loadBills();
+  }
+
+  /** First/last day (YYYY-MM-DD) of the selected month for range queries. */
+  private monthRange(): { from: string; to: string } {
+    const month = this.selectedMonth();
+    return { from: `${month}-01`, to: `${month}-31` };
+  }
+
   private loadBills(): void {
     this.loadingBills.set(true);
-    this.billService.getBillsByDate(this.selectedDate()).subscribe({
-      next: bills => { this.bills.set(bills); this.loadingBills.set(false); },
-      error: () => this.loadingBills.set(false),
-    });
+    const onOk = (bills: Bill[]) => { this.bills.set(bills); this.loadingBills.set(false); };
+    const onErr = () => this.loadingBills.set(false);
+    if (this.period() === 'monthly') {
+      const { from, to } = this.monthRange();
+      this.billService.getBillsByDateRange(from, to).subscribe({ next: onOk, error: onErr });
+    } else {
+      this.billService.getBillsByDate(this.selectedDate()).subscribe({ next: onOk, error: onErr });
+    }
   }
 
   toggleBillExpand(id: string): void {
@@ -130,10 +164,14 @@ export class SalesComponent implements OnInit {
 
   private loadEntries(): void {
     this.loading.set(true);
-    this.salesService.getSalesByDate(this.selectedDate()).subscribe({
-      next: list => { this.entries.set(list); this.loading.set(false); },
-      error: () => this.loading.set(false),
-    });
+    const onOk = (list: SaleEntry[]) => { this.entries.set(list); this.loading.set(false); };
+    const onErr = () => this.loading.set(false);
+    if (this.period() === 'monthly') {
+      const { from, to } = this.monthRange();
+      this.salesService.getSalesByDateRange(from, to).subscribe({ next: onOk, error: onErr });
+    } else {
+      this.salesService.getSalesByDate(this.selectedDate()).subscribe({ next: onOk, error: onErr });
+    }
   }
 
   onSubmit(): void {

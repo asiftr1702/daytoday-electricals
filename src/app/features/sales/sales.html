@@ -2,22 +2,41 @@
 
   <!-- Header -->
   <div class="sales-header">
-    <h1>💰 Daily Sales</h1>
-    <p>Record sales and track daily profit</p>
+    <h1>💰 {{ period() === 'monthly' ? 'Monthly' : 'Daily' }} Sales</h1>
+    <p>Record sales and track profit</p>
   </div>
 
   <div class="sales-content">
 
-    <!-- Date Picker -->
+    <!-- Period toggle -->
+    <div class="period-toggle" role="group" aria-label="Sales period">
+      <button type="button" class="period-btn" [class.active]="period() === 'daily'"
+              (click)="setPeriod('daily')">📅 Daily</button>
+      <button type="button" class="period-btn" [class.active]="period() === 'monthly'"
+              (click)="setPeriod('monthly')">🗓️ Monthly</button>
+    </div>
+
+    <!-- Date / Month Picker -->
     <div class="date-bar">
-      <label for="saleDate">📅 Date</label>
-      <input
-        id="saleDate"
-        type="date"
-        [value]="selectedDate()"
-        (change)="onDateChange($event)"
-        class="date-input"
-      />
+      @if (period() === 'monthly') {
+        <label for="saleMonth">🗓️ Month</label>
+        <input
+          id="saleMonth"
+          type="month"
+          [value]="selectedMonth()"
+          (change)="onMonthChange($event)"
+          class="date-input"
+        />
+      } @else {
+        <label for="saleDate">📅 Date</label>
+        <input
+          id="saleDate"
+          type="date"
+          [value]="selectedDate()"
+          (change)="onDateChange($event)"
+          class="date-input"
+        />
+      }
     </div>
 
     <!-- Summary Cards -->
@@ -60,7 +79,7 @@
     <!-- ════════ BILLS TAB ════════ -->
     @if (activeTab() === 'bills') {
       <section class="entries-section">
-        <h2>🧾 Bills for {{ selectedDate() }}</h2>
+        <h2>🧾 Bills for {{ periodLabel() }}</h2>
 
         @if (loadingBills()) {
           <p class="loading-text">Loading…</p>
@@ -154,6 +173,7 @@
 
     <!-- ════════ LINE ENTRIES TAB ════════ -->
     @if (activeTab() === 'entries') {
+    @if (period() === 'daily') {
     <form [formGroup]="saleForm" (ngSubmit)="onSubmit()" class="sale-form">
       <h2>➕ Record a Sale</h2>
 
@@ -213,10 +233,11 @@
         {{ saving() ? '⏳ Saving…' : '💾 Add Sale' }}
       </button>
     </form>
+    }
 
     <!-- Entries List -->
     <section class="entries-section">
-      <h2>🧾 Entries for {{ selectedDate() }}</h2>
+      <h2>🧾 Entries for {{ periodLabel() }}</h2>
 
       @if (loading()) {
         <p class="loading-text">Loading…</p>
