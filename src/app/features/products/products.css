@@ -253,14 +253,18 @@
 /* ─── PRODUCTS GRID ─────────────────────────────────────────────────────── */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 0.65rem;
+  max-width: 340px;
+  margin-inline: auto;
 }
 
 @media (min-width: 480px) {
   .products-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
+    max-width: none;
+    margin-inline: 0;
   }
 }
 

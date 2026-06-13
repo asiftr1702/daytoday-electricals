@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
+import { Injectable, inject, signal, PLATFORM_ID, NgZone } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
 
@@ -6,17 +6,76 @@ import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
 export class AdminAuthService {
   private readonly firestore = inject(Firestore);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly zone = inject(NgZone);
 
   private readonly SESSION_KEY = 'daytoday_auth';
+  private readonly ACTIVITY_KEY = 'daytoday_auth_activity';
+  /** Auto-logout after this much idle time. */
+  private readonly INACTIVITY_LIMIT_MS = 10 * 60 * 1000; // 10 minutes
+
+  private readonly activityEvents = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+  private readonly onActivity = () => this.registerActivity();
+  private inactivityTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly isAdmin = signal(false);
 
   constructor() {
-    if (isPlatformBrowser(this.platformId)) {
-      if (sessionStorage.getItem(this.SESSION_KEY) === '1') {
-        this.isAdmin.set(true);
-      }
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    // sessionStorage survives a page refresh but is cleared when the tab is
+    // closed, so a refresh keeps the user logged in while a closed tab does not.
+    const authed = sessionStorage.getItem(this.SESSION_KEY) === '1';
+    if (authed && !this.isSessionExpired()) {
+      this.isAdmin.set(true);
+      this.startSession();
+    } else {
+      this.clearSession();
     }
+  }
+
+  /** True when the time since the last recorded activity exceeds the limit. */
+  private isSessionExpired(): boolean {
+    const last = Number(sessionStorage.getItem(this.ACTIVITY_KEY));
+    if (!last) return true;
+    return Date.now() - last > this.INACTIVITY_LIMIT_MS;
+  }
+
+  /** Records latest activity and restarts the inactivity countdown. */
+  private registerActivity(): void {
+    if (!this.isAdmin()) return;
+    sessionStorage.setItem(this.ACTIVITY_KEY, String(Date.now()));
+    this.resetInactivityTimer();
+  }
+
+  private resetInactivityTimer(): void {
+    if (this.inactivityTimer) clearTimeout(this.inactivityTimer);
+    this.zone.runOutsideAngular(() => {
+      this.inactivityTimer = setTimeout(() => {
+        this.zone.run(() => this.logout());
+      }, this.INACTIVITY_LIMIT_MS);
+    });
+  }
+
+  /** Begins tracking activity and starts the inactivity timer. */
+  private startSession(): void {
+    sessionStorage.setItem(this.ACTIVITY_KEY, String(Date.now()));
+    this.activityEvents.forEach(evt =>
+      window.addEventListener(evt, this.onActivity, { passive: true })
+    );
+    this.resetInactivityTimer();
+  }
+
+  /** Removes stored session data, listeners and the inactivity timer. */
+  private clearSession(): void {
+    sessionStorage.removeItem(this.SESSION_KEY);
+    sessionStorage.removeItem(this.ACTIVITY_KEY);
+    if (this.inactivityTimer) {
+      clearTimeout(this.inactivityTimer);
+      this.inactivityTimer = null;
+    }
+    this.activityEvents.forEach(evt =>
+      window.removeEventListener(evt, this.onActivity)
+    );
   }
 
   /** Hash the input with SHA-256 using the browser's native Web Crypto API */
@@ -48,6 +107,7 @@ export class AdminAuthService {
       if (matched) {
         this.isAdmin.set(true);
         sessionStorage.setItem(this.SESSION_KEY, '1');
+        this.startSession();
       }
       return matched;
     } catch {
@@ -58,7 +118,7 @@ export class AdminAuthService {
   logout(): void {
     this.isAdmin.set(false);
     if (isPlatformBrowser(this.platformId)) {
-      sessionStorage.removeItem(this.SESSION_KEY);
+      this.clearSession();
     }
   }
 
