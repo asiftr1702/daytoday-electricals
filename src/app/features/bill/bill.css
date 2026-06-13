@@ -519,6 +519,46 @@
 
 .past-bill-actions { margin-top: 0.75rem; }
 
+.btn-print-bill {
+  background: none;
+  border: 1px solid #94a3b8;
+  color: #334155;
+  border-radius: 6px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  transition: background 0.15s;
+}
+.btn-print-bill:hover { background: #f1f5f9; }
+
+.return-row td { color: #9b1c1c; background: #fef6f6; }
+.return-row-tag {
+  font-size: 0.66rem;
+  background: #fee2e2;
+  color: #9b1c1c;
+  border-radius: 4px;
+  padding: 0 0.3rem;
+  margin-left: 0.2rem;
+}
+.return-row-date { display: block; font-size: 0.66rem; color: #b45c5c; }
+.return-row-amount { font-weight: 600; }
+.price-original { text-decoration: line-through; color: #9ca3af; margin-right: 0.3rem; }
+.price-discounted { font-weight: 600; }
+
+.brand-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #374151;
+  border: 1.5px solid #374151;
+  border-radius: 6px;
+  padding: 0 0.35rem;
+  line-height: 1.6;
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+
 .btn-delete-bill {
   background: none;
   border: 1px solid #f87171;

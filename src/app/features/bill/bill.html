@@ -398,8 +398,16 @@
                   @for (item of bill.items; track item.productName) {
                     <tr>
                       <td>
-                        <div>{{ itemLabel(item) }}</div>
-                        @if (item.brand) { <span class="brand-tag">{{ item.brand }}</span> }
+                        @if (item.brand) { <span class="brand-name">{{ item.brand }}</span> }
+                        <span class="item-name">{{ itemLabel(item) }}</span>
+                        @if (item.subcategory) { <span class="sub-name">{{ item.subcategory }}</span> }
+                        @if (item.billFields?.length) {
+                          <span class="item-fields">
+                            @for (f of item.billFields; track f.label) {
+                              <span class="item-field">{{ f.value }}</span>
+                            }
+                          </span>
+                        }
                       </td>
                       <td>{{ item.qty }}</td>
                       <td>{{ formatCurrency(item.sellPrice) }}</td>
@@ -422,12 +430,41 @@
                     <td colspan="3"><strong>Amount Paid</strong></td>
                     <td><strong>{{ formatCurrency(bill.finalAmount ?? bill.totalAmount) }}</strong></td>
                   </tr>
+                  @for (ret of bill.returns; track $index) {
+                    @for (ri of ret.items; track $index) {
+                      <tr class="return-row">
+                        <td>
+                          ↩ @if (ri.brand) { <span class="brand-name">{{ ri.brand }}</span> }
+                          <span class="item-name">{{ ri.productName }}</span>
+                          <span class="return-row-tag">Return</span>
+                          <span class="return-row-date">{{ ret.date }}</span>
+                        </td>
+                        <td>−{{ ri.qty }}</td>
+                        <td>
+                          @if (ri.qty && (ri.refund ?? 0) / ri.qty !== (ri.sellPrice ?? 0)) {
+                            <span class="price-original">{{ formatCurrency(ri.sellPrice ?? 0) }}</span>
+                            <span class="price-discounted">{{ formatCurrency((ri.refund ?? 0) / ri.qty) }}</span>
+                          } @else {
+                            {{ formatCurrency(ri.sellPrice ?? 0) }}
+                          }
+                        </td>
+                        <td class="return-row-amount">− {{ formatCurrency(ri.refund ?? 0) }}</td>
+                      </tr>
+                    }
+                  }
+                  @if (bill.refundedAmount) {
+                    <tr>
+                      <td colspan="3"><strong>Net Kept</strong></td>
+                      <td><strong>{{ formatCurrency(billService.netPaid(bill)) }}</strong></td>
+                    </tr>
+                  }
                 </tfoot>
               </table>
               @if (bill.note) {
                 <p class="past-bill-note">📝 {{ bill.note }}</p>
               }
               <div class="past-bill-actions">
+                <button type="button" class="btn-print-bill" (click)="printSavedBill(bill)">🖨️ Print</button>
                 <button
                   type="button"
                   class="btn-delete-bill"

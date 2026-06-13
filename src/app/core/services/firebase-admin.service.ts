@@ -108,6 +108,14 @@ export class FirebaseAdminService {
   }
 
   /**
+   * Atomically increment stockQty by the given amount (used when a sold item is returned).
+   */
+  restockStock(productId: string, by = 1, category = ''): Observable<void> {
+    const productDoc = doc(this.firestore, category, productId);
+    return from(updateDoc(productDoc, { stockQty: increment(by), updatedAt: Timestamp.now() }));
+  }
+
+  /**
    * Mark a product as discontinued (no longer restocked) or active again.
    */
   setDiscontinued(productId: string, category: string, discontinued: boolean): Observable<void> {

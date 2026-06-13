@@ -190,6 +190,11 @@ export class BillComponent implements OnInit {
     window.print();
   }
 
+  /** Print a saved past bill (shared receipt format with the Sales page). */
+  printSavedBill(bill: Bill): void {
+    this.billService.printBill(bill);
+  }
+
   goToProducts(): void {
     this.router.navigate(['/products']);
   }
