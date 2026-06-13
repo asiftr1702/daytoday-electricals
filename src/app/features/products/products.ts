@@ -111,6 +111,9 @@ export class ProductsComponent {
   readonly loading = computed(() => this.state().loading);
   readonly error = computed(() => this.state().error);
 
+  /** Subcategories collapsed in the grouped view (by subcategory name) */
+  readonly collapsedGroups = signal<ReadonlySet<string>>(new Set());
+
   /** Unique subcategory values present in the currently loaded product list */
   readonly availableSubcategories = computed<string[]>(() => {
     const seen = new Set<string>();
@@ -164,9 +167,47 @@ export class ProductsComponent {
     });
   });
 
+  /**
+   * Whether to render products grouped by subcategory. Active only when viewing
+   * "all" subcategories and there is more than one subcategory present.
+   */
+  readonly groupedView = computed(
+    () => this.selectedSubcategory() === 'all' && this.availableSubcategories().length > 1,
+  );
+
+  /** Filtered products grouped by subcategory (preserving first-seen order). */
+  readonly productGroups = computed(() => {
+    const groups = new Map<string, Product[]>();
+    for (const p of this.filteredProducts()) {
+      const key = p.subcategory || 'Other';
+      const bucket = groups.get(key);
+      if (bucket) {
+        bucket.push(p);
+      } else {
+        groups.set(key, [p]);
+      }
+    }
+    return Array.from(groups, ([subcategory, products]) => ({ subcategory, products }));
+  });
+
+  isGroupCollapsed(subcategory: string): boolean {
+    return this.collapsedGroups().has(subcategory);
+  }
+
+  toggleGroup(subcategory: string): void {
+    const next = new Set(this.collapsedGroups());
+    if (next.has(subcategory)) {
+      next.delete(subcategory);
+    } else {
+      next.add(subcategory);
+    }
+    this.collapsedGroups.set(next);
+  }
+
   selectCategory(id: string): void {
     this.searchQuery.set('');
     this.selectedSubcategory.set('all');
+    this.collapsedGroups.set(new Set());
     this.router.navigate([], { queryParams: { category: id } });
   }
 

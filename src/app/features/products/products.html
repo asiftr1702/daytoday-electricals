@@ -150,12 +150,38 @@
       }
     </div>
   } @else {
-    <!-- Products grid -->
-    <div class="products-grid">
-      @for (product of filteredProducts(); track product.name + (product.brand ?? '') + (product.subcategory ?? '')) {
-        <app-product-card [product]="product" />
+    @if (groupedView()) {
+      <!-- Grouped by subcategory -->
+      @for (group of productGroups(); track group.subcategory) {
+        <section class="subcat-group">
+          <button
+            type="button"
+            class="subcat-group-header"
+            [class.collapsed]="isGroupCollapsed(group.subcategory)"
+            [attr.aria-expanded]="!isGroupCollapsed(group.subcategory)"
+            (click)="toggleGroup(group.subcategory)"
+          >
+            <span class="subcat-group-chevron" aria-hidden="true">▾</span>
+            <span class="subcat-group-title">{{ group.subcategory }}</span>
+            <span class="subcat-group-count">{{ group.products.length }}</span>
+          </button>
+          @if (!isGroupCollapsed(group.subcategory)) {
+            <div class="products-grid">
+              @for (product of group.products; track product.name + (product.brand ?? '') + (product.subcategory ?? '')) {
+                <app-product-card [product]="product" />
+              }
+            </div>
+          }
+        </section>
       }
-    </div>
+    } @else {
+      <!-- Products grid -->
+      <div class="products-grid">
+        @for (product of filteredProducts(); track product.name + (product.brand ?? '') + (product.subcategory ?? '')) {
+          <app-product-card [product]="product" />
+        }
+      </div>
+    }
   }
 </main>
 

@@ -282,6 +282,61 @@
   }
 }
 
+/* ─── SUBCATEGORY GROUPS ─────────────────────────────────────────────────── */
+.subcat-group {
+  margin-bottom: 1.5rem;
+}
+
+.subcat-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1rem;
+  background: #faf9f7;
+  border: 1px solid #EBEBEB;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition: background 0.18s ease;
+}
+
+.subcat-group-header:hover {
+  background: #f3f1ee;
+}
+
+.subcat-group-chevron {
+  font-size: 0.9rem;
+  color: #78716c;
+  transition: transform 0.2s ease;
+}
+
+.subcat-group-header.collapsed .subcat-group-chevron {
+  transform: rotate(-90deg);
+}
+
+.subcat-group-title {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1c1917;
+  text-transform: capitalize;
+}
+
+.subcat-group-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #78716c;
+  background: #ffffff;
+  border: 1px solid #e7e5e4;
+  border-radius: 99px;
+  padding: 0.12rem 0.6rem;
+  min-width: 1.6rem;
+  text-align: center;
+}
+
 /* ─── SKELETON LOADING ───────────────────────────────────────────────────── */
 .skeleton-card {
   background: var(--color-surface);
