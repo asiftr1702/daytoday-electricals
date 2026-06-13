@@ -108,6 +108,14 @@ export class FirebaseAdminService {
   }
 
   /**
+   * Mark a product as discontinued (no longer restocked) or active again.
+   */
+  setDiscontinued(productId: string, category: string, discontinued: boolean): Observable<void> {
+    const productDoc = doc(this.firestore, category, productId);
+    return from(updateDoc(productDoc, { discontinued, updatedAt: Timestamp.now() }));
+  }
+
+  /**
    * Delete a product by its Firestore document ID from its category collection.
    */
   deleteProduct(productId: string, category: string): Observable<void> {

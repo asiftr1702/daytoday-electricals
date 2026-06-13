@@ -10,6 +10,10 @@ export interface Product {
   price?: number;
   discountedPrice?: number;
   stockQty?: number;
+  /** Low-stock threshold: when stockQty <= this value, the product needs refilling. */
+  minStockQty?: number;
+  /** When true, the item is no longer restocked and is excluded from the active low-stock list. */
+  discontinued?: boolean;
   available: boolean;
   purchaseDate?: string;
   location?: string;

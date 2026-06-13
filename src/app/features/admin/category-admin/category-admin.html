@@ -320,22 +320,31 @@
               <label for="ca-qty">Stock qty <span class="req" aria-hidden="true">*</span></label>
               <input id="ca-qty" type="number" formControlName="stockQty" placeholder="0" min="0" />
             </div>
-            @if (pricingMode() === 'length') {
+            <div class="field">
+              <label for="ca-min-qty">Min qty <span class="label-note">(low-stock alert)</span></label>
+              <input id="ca-min-qty" type="number" formControlName="minStockQty" placeholder="0" min="0" />
+            </div>
+          </div>
+
+          @if (pricingMode() === 'length') {
+            <div class="row-two">
               <div class="field">
                 <label for="ca-unit">Stock unit</label>
                 <select id="ca-unit" formControlName="stockUnit">
                   @for (u of stockUnits(); track u.value) { <option [value]="u.value">{{ u.label }}</option> }
                 </select>
               </div>
-            } @else if (unitOptions()) {
+            </div>
+          } @else if (unitOptions()) {
+            <div class="row-two">
               <div class="field">
                 <label for="ca-unit">Unit</label>
                 <select id="ca-unit" formControlName="unit">
                   @for (u of unitOptions(); track u) { <option [value]="u">{{ u }}</option> }
                 </select>
               </div>
-            }
-          </div>
+            </div>
+          }
 
           <!-- Custom stock fields -->
           @if (stockSpecFields().length) {

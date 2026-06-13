@@ -304,9 +304,10 @@ select {
   .layout-field-label { white-space: normal; }
   .layout-controls { justify-content: space-between; }
   .layout-seg { flex: 1; }
-  .layout-seg-btn { flex: 1; }
-  .layout-affix { width: 100%; justify-content: space-between; }
-  .layout-affix-input { flex: 1; width: auto; }
+  .layout-seg-btn { flex: 1; min-width: 0; padding: 6px 4px; }
+  .layout-affix { width: 100%; flex-wrap: wrap; gap: 8px; }
+  .layout-affix-input { order: 0; flex: 1 1 80px; width: auto; min-width: 0; }
+  .layout-affix-sample { order: 1; width: 100%; text-align: center; white-space: normal; }
 }
 
 /* ─── Image upload ───────────────────────────────────────────────── */

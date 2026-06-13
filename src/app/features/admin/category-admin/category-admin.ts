@@ -235,6 +235,7 @@ export class CategoryAdminComponent implements OnInit {
       sku:             ['', Validators.required],
       discountedPrice: [null, Validators.min(0)],
       stockQty:        [null, [Validators.required, Validators.min(0)]],
+      minStockQty:     [null, Validators.min(0)],
       available:       [false],
       warranty:        [this.warrantyOptions()[0] ?? 'No warranty'],
       showWarranty:    [true],
@@ -310,7 +311,7 @@ export class CategoryAdminComponent implements OnInit {
     });
 
     // Clamp negatives
-    ['costPrice', 'price', 'discountedPrice', 'stockQty', 'wattage', 'totalLength', 'rollLength',
+    ['costPrice', 'price', 'discountedPrice', 'stockQty', 'minStockQty', 'wattage', 'totalLength', 'rollLength',
       'costPerMeter', 'pricePerMeter', 'bundlePrice', 'bundleLength'].forEach(field => {
       this.productForm.get(field)?.valueChanges.subscribe((val: number | null) => {
         if (val != null && val < 0) this.productForm.get(field)?.setValue(0, { emitEvent: false });
@@ -522,6 +523,7 @@ export class CategoryAdminComponent implements OnInit {
       sku:             product.sku            ?? '',
       discountedPrice: product.discountedPrice ?? null,
       stockQty:        product.stockQty       ?? null,
+      minStockQty:     product.minStockQty    ?? null,
       available:       product.available,
       warranty:        product.warranty       ?? this.warrantyOptions()[0] ?? 'No warranty',
       showWarranty:    product.showWarranty !== false,
@@ -708,6 +710,7 @@ export class CategoryAdminComponent implements OnInit {
       subcategory:     fv.subcategory  || undefined,
       discountedPrice: fv.discountedPrice ?? undefined,
       stockQty:        fv.stockQty     ?? undefined,
+      minStockQty:     fv.minStockQty  ?? undefined,
       available:       fv.available    ?? false,
       warranty:        fv.warranty     || undefined,
       showWarranty:    fv.showWarranty === false ? false : undefined,

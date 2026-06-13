@@ -28,4 +28,8 @@ export class AdminNavComponent {
   isCatalogueSettingsActive(): boolean {
     return this.router.url === '/catalogue-settings';
   }
+
+  isLowStockActive(): boolean {
+    return this.router.url === '/low-stock';
+  }
 }

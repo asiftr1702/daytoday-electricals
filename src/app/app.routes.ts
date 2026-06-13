@@ -45,6 +45,12 @@ export const routes: Routes = [
         title: 'Category Admin — DayToDay Electricals',
       },
       {
+        path: 'low-stock',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/low-stock/low-stock').then(m => m.LowStockComponent),
+        title: 'Low Stock — DayToDay Electricals',
+      },
+      {
         path: 'sales',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/sales/sales').then(m => m.SalesComponent),

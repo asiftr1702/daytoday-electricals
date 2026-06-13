@@ -45,6 +45,19 @@
 
   <nav class="anav-list">
     <a class="anav-item"
+       [class.anav-item-active]="isLowStockActive()"
+       routerLink="/low-stock"
+       (click)="close()">
+      <span class="anav-item-icon anav-item-icon-grey">⚠️</span>
+      <div class="anav-item-text">
+        <span class="anav-item-name">Low Stock</span>
+        <span class="anav-item-desc">Items to refill</span>
+      </div>
+      @if (isLowStockActive()) {
+        <span class="anav-active-dot" aria-hidden="true"></span>
+      }
+    </a>
+    <a class="anav-item"
        [class.anav-item-active]="isCatalogueSettingsActive()"
        routerLink="/catalogue-settings"
        (click)="close()">

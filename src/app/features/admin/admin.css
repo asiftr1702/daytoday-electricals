@@ -47,6 +47,12 @@
   color: #888;
   margin: 0 0 1.25rem;
 }
+.admin-hub-sub-tools {
+  margin-top: 1.75rem;
+}
+.admin-hub-card-alert {
+  border-left: 4px solid #f5576c;
+}
 
 /* Hub grid */
 .admin-hub-grid {
