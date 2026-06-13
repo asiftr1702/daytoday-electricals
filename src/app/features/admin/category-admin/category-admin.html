@@ -50,10 +50,17 @@
           <div class="row-two">
             <div class="field">
               <label for="ca-brand">Brand <span class="req" aria-hidden="true">*</span></label>
-              <select id="ca-brand" formControlName="brand">
-                <option value="">Select brand</option>
+              <input
+                id="ca-brand"
+                type="text"
+                formControlName="brand"
+                list="ca-brand-list"
+                placeholder="Type or select a brand"
+                autocomplete="off"
+              />
+              <datalist id="ca-brand-list">
                 @for (b of brands(); track b) { <option [value]="b">{{ b }}</option> }
-              </select>
+              </datalist>
             </div>
             <div class="field">
               <label for="ca-subcat">Subcategory <span class="req" aria-hidden="true">*</span></label>
