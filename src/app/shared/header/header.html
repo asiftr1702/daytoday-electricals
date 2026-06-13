@@ -15,7 +15,6 @@
     </a>
 
     <nav class="nav-desktop" aria-label="Main navigation">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
       <a routerLink="/products" routerLinkActive="active">Products</a>
       <a routerLink="/contact" routerLinkActive="active">Contact Us</a>
       <a routerLink="/admin" routerLinkActive="active" class="admin-link" title="Admin panel for adding products">📦 Admin</a>
@@ -28,12 +27,7 @@
         }
       </a>
       <a routerLink="/change-password" routerLinkActive="active" class="admin-link" title="Settings">⚙️ Settings</a>
-      <button type="button" class="btn-admin-logout" (click)="logout()" title="Logout">🔒 Logout</button>
     </nav>
-
-    <a routerLink="/products" class="btn btn-primary nav-cta" aria-label="Browse all products">
-      Browse Products
-    </a>
 
     <button
       class="hamburger"
@@ -51,9 +45,6 @@
 
   @if (menuOpen()) {
     <nav id="mobile-menu" class="nav-mobile" aria-label="Mobile navigation">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">
-        <span aria-hidden="true">🏠</span> Home
-      </a>
       <a routerLink="/products" routerLinkActive="active" (click)="closeMenu()">
         <span aria-hidden="true">📦</span> Products
       </a>
@@ -78,9 +69,6 @@
       <a routerLink="/change-password" routerLinkActive="active" (click)="closeMenu()" class="admin-link">
         <span aria-hidden="true">⚙️</span> Settings
       </a>
-      <button type="button" class="admin-link mobile-logout-btn" (click)="logout()">
-        <span aria-hidden="true">🔒</span> Logout
-      </button>
     </nav>
   }
 </header>

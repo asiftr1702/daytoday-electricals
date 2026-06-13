@@ -1,4 +1,5 @@
 import { Component, inject, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { AdminAuthService } from '../../core/services/admin-auth.service';
 import { StampService } from '../../core/services/stamp.service';
 
@@ -12,6 +13,7 @@ import { StampService } from '../../core/services/stamp.service';
 })
 export class ChangePasswordComponent implements OnInit {
   private readonly auth = inject(AdminAuthService);
+  private readonly router = inject(Router);
   readonly stampService = inject(StampService);
 
   readonly current = signal('');
@@ -34,6 +36,11 @@ export class ChangePasswordComponent implements OnInit {
 
   ngOnInit(): void {
     this.stampService.loadStamp();
+  }
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigate(['/login']);
   }
 
   onStampSelected(event: Event): void {
