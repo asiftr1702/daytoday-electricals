@@ -766,6 +766,11 @@
     margin-top: 0;
   }
 
+  .fan-subcat-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.03em;
+  }
+
   .product-desc {
     display: none;
   }
@@ -807,14 +812,36 @@
     display: inline;
   }
 
-  /* Colour chips show only the swatch (no text) on mobile */
+  /* Colour chips show only the swatch (no text) on mobile, in a matching pill box */
   .fan-attr-color .attr-text {
     display: none;
   }
-  .fan-attr-color {
-    background: transparent;
-    border: none;
-    padding: 2px;
+  .fan-attr-strip .fan-attr-color {
+    justify-content: center;
+    gap: 0;
+    background: #fffdf5;
+    border: 1px solid #ffe082;
+    border-radius: 5px;
+    padding: 2px 6px;
+    font-size: 0.66rem;
+    line-height: 1.3;
+    cursor: pointer;
+  }
+  /* Zero-width anchor matches the text chips' line height so all boxes are equal */
+  .fan-attr-strip .fan-attr-color::before {
+    content: "\200b";
+    width: 0;
+  }
+  /* Size the swatch to the chip text height so all three boxes match */
+  .fan-attr-strip .fan-attr-color .fan-color-dot {
+    width: 0.86em;
+    height: 0.86em;
+    align-self: center;
+  }
+  /* Tap a swatch → briefly reveal its colour name */
+  .fan-attr-strip .fan-attr-color.revealed .attr-text {
+    display: inline;
+    margin-left: 4px;
   }
 
   /* Keep the fan spec chips compact */

@@ -76,6 +76,18 @@ export class ProductCardComponent {
     this.costVisible.update(v => !v);
   }
 
+  /** Colour name briefly revealed when the user taps a colour swatch. */
+  readonly revealedColor = signal<string | null>(null);
+  private revealTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Show the colour name for a few seconds when its swatch is tapped. */
+  revealColor(name: string, event: Event): void {
+    event.stopPropagation();
+    if (this.revealTimer) clearTimeout(this.revealTimer);
+    this.revealedColor.set(name);
+    this.revealTimer = setTimeout(() => this.revealedColor.set(null), 2000);
+  }
+
   // ── Category detection ──────────────────────────────────────────────────────
   readonly isFan   = computed(() => (this.product() as any)['category'] === 'fans');
   readonly isLight = computed(() => (this.product() as any)['category'] === 'lights');
@@ -125,7 +137,7 @@ export class ProductCardComponent {
     const p = this.product() as any;
     return [
       p.wattage       ? { value: `${p.wattage}W`,   short: `${p.wattage}w` } : null,
-      p.rpm           ? { value: `${p.rpm} RPM`,    short: `${p.rpm}r` }     : null,
+      p.rpm           ? { value: `${p.rpm} RPM`,    short: `${p.rpm}rpm` }   : null,
       p.speedSettings ? { value: p.speedSettings }                           : null,
     ].filter(Boolean) as { value: string; short?: string }[];
   });
@@ -141,12 +153,21 @@ export class ProductCardComponent {
     return y > 0 ? String(y) : '';
   });
 
-  /** Single/double-letter blade material abbreviation, e.g. "Copper (Cu)" → "C", "Aluminium (Alu)" → "Al". */
+  /** Short blade material abbreviation, e.g. "Copper (Cu)" → "Cu", "Aluminium (Alu)" → "Al". */
   private abbreviateMaterial(material: string): string {
-    const name = material.split('(')[0].trim();
+    // Prefer the abbreviation in parentheses if present, e.g. "Copper (Cu)" → "Cu".
+    const paren = material.match(/\(([^)]+)\)/);
+    if (paren) {
+      const abbr = paren[1].trim();
+      // Normalise common variants: "Alu" → "Al".
+      if (/^alu/i.test(abbr)) return 'Al';
+      return abbr;
+    }
+    const name = material.trim();
     const lower = name.toLowerCase();
+    if (lower.startsWith('copper')) return 'Cu';
     if (lower.startsWith('alu')) return 'Al';
-    return (name.charAt(0) || '').toUpperCase();
+    return name.charAt(0).toUpperCase();
   }
 
   /** Strip units from common attribute values for a compact mobile label. */
@@ -155,7 +176,10 @@ export class ProductCardComponent {
     let m = v.match(/^(\d+(?:\.\d+)?)\s*(?:w|watts?)\b/i);
     if (m) return `${m[1]}w`;
     m = v.match(/^(\d+(?:\.\d+)?)\s*rpm\b/i);
-    if (m) return `${m[1]}r`;
+    if (m) return `${m[1]}rpm`;
+    // Air delivery: "230 cubic mtr/meter/m³" → "230cm"
+    m = v.match(/^(\d+(?:\.\d+)?)\s*(?:cubic\s*(?:mtr|meter|metre|m)|m³|cu\s*m|cmm|cfm)\b/i);
+    if (m) return `${m[1]}cm`;
     m = v.match(/^(\d+(?:\.\d+)?)\s*(?:inch(?:es)?|in|"|mm|cm|ft|feet)\b/i);
     if (m) return m[1];
     m = v.match(/^(\d+(?:\.\d+)?)\s*m(?:\s*roll)?$/i);
@@ -244,7 +268,11 @@ export class ProductCardComponent {
       return { type: 'color', value: String(raw), hex: colorNameToHex(String(raw)) };
     }
     const text = `${item.prefix ?? ''}${raw}${item.suffix ? ' ' + item.suffix : ''}`;
-    return { type: 'text', value: text, short: this.shortenStrip(text) };
+    // Material fields abbreviate to a letter (Copper → C, Aluminium → Al); others strip units.
+    const short = /material/i.test(item.key)
+      ? this.abbreviateMaterial(String(raw))
+      : this.shortenStrip(text);
+    return { type: 'text', value: text, short };
   }
 
   /** Strip items from the custom layout (colour band below the image). */
@@ -252,7 +280,7 @@ export class ProductCardComponent {
     (this.product().cardLayout ?? [])
       .filter(f => f.section === 'strip')
       .map(f => this.resolveLayoutItem(f))
-      .filter((x): x is { type: 'text' | 'color'; value: string; hex?: string } => x != null)
+      .filter((x): x is { type: 'text' | 'color'; value: string; short?: string; hex?: string } => x != null)
   );
 
   /** Detail chips from the custom layout (in the card body). */
@@ -260,7 +288,7 @@ export class ProductCardComponent {
     (this.product().cardLayout ?? [])
       .filter(f => f.section === 'details')
       .map(f => this.resolveLayoutItem(f))
-      .filter((x): x is { type: 'text' | 'color'; value: string; hex?: string } => x != null)
+      .filter((x): x is { type: 'text' | 'color'; value: string; short?: string; hex?: string } => x != null)
   );
 
   private readonly firebaseAdmin = inject(FirebaseAdminService);
