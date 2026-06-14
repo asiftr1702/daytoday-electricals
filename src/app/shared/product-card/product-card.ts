@@ -103,15 +103,15 @@ export class ProductCardComponent {
   };
 
   /** Strip items shown between image and body: blade size, material abbrev, color swatch. */
-  readonly fanVisualStrip = computed((): Array<{ type: 'text' | 'color'; value: string; hex?: string }> => {
+  readonly fanVisualStrip = computed((): Array<{ type: 'text' | 'color'; value: string; short?: string; hex?: string }> => {
     if (!this.isFan()) return [];
     const p = this.product() as any;
-    const items: Array<{ type: 'text' | 'color'; value: string; hex?: string }> = [];
-    if (p.bladeSize) items.push({ type: 'text', value: p.bladeSize });
+    const items: Array<{ type: 'text' | 'color'; value: string; short?: string; hex?: string }> = [];
+    if (p.bladeSize) items.push({ type: 'text', value: p.bladeSize, short: this.shortenStrip(p.bladeSize) });
     if (p.bladeMaterial) {
       // Show abbreviation from parens, e.g. "Copper (Cu)" → "Cu"; fallback to full name
       const m = (p.bladeMaterial as string).match(/\(([^)]+)\)/);
-      items.push({ type: 'text', value: m ? m[1] : p.bladeMaterial });
+      items.push({ type: 'text', value: m ? m[1] : p.bladeMaterial, short: this.abbreviateMaterial(p.bladeMaterial) });
     }
     if (p.color) {
       items.push({ type: 'color', value: p.color, hex: this.FAN_COLOR_HEX[p.color] ?? '#cccccc' });
@@ -120,15 +120,50 @@ export class ProductCardComponent {
   });
 
   /** Remaining fan spec chips shown in the card body: wattage, RPM, speed. */
-  readonly fanSpecs = computed((): { value: string }[] => {
+  readonly fanSpecs = computed((): { value: string; short?: string }[] => {
     if (!this.isFan()) return [];
     const p = this.product() as any;
     return [
-      p.wattage       ? { value: `${p.wattage}W` }    : null,
-      p.rpm           ? { value: `${p.rpm} RPM` }     : null,
-      p.speedSettings ? { value: p.speedSettings }    : null,
-    ].filter(Boolean) as { value: string }[];
+      p.wattage       ? { value: `${p.wattage}W`,   short: `${p.wattage}w` } : null,
+      p.rpm           ? { value: `${p.rpm} RPM`,    short: `${p.rpm}r` }     : null,
+      p.speedSettings ? { value: p.speedSettings }                           : null,
+    ].filter(Boolean) as { value: string; short?: string }[];
   });
+
+  /** Compact mobile label for warranty, e.g. "2 years" / "2y" → "2". */
+  readonly warrantyShort = computed((): string => {
+    const w = this.product().warranty;
+    if (w && w !== 'No warranty') {
+      const m = w.match(/\d+(?:\.\d+)?/);
+      return m ? m[0] : w;
+    }
+    const y = (this.product() as any).warrantyYears;
+    return y > 0 ? String(y) : '';
+  });
+
+  /** Single/double-letter blade material abbreviation, e.g. "Copper (Cu)" → "C", "Aluminium (Alu)" → "Al". */
+  private abbreviateMaterial(material: string): string {
+    const name = material.split('(')[0].trim();
+    const lower = name.toLowerCase();
+    if (lower.startsWith('alu')) return 'Al';
+    return (name.charAt(0) || '').toUpperCase();
+  }
+
+  /** Strip units from common attribute values for a compact mobile label. */
+  private shortenStrip(value: string): string {
+    const v = value.trim();
+    let m = v.match(/^(\d+(?:\.\d+)?)\s*(?:w|watts?)\b/i);
+    if (m) return `${m[1]}w`;
+    m = v.match(/^(\d+(?:\.\d+)?)\s*rpm\b/i);
+    if (m) return `${m[1]}r`;
+    m = v.match(/^(\d+(?:\.\d+)?)\s*(?:inch(?:es)?|in|"|mm|cm|ft|feet)\b/i);
+    if (m) return m[1];
+    m = v.match(/^(\d+(?:\.\d+)?)\s*m(?:\s*roll)?$/i);
+    if (m) return `${m[1]}m`;
+    m = v.match(/^(\d+(?:\.\d+)?)\s*(?:years?|yrs?|y)$/i);
+    if (m) return m[1];
+    return v;
+  }
 
   // ── Light-specific specs ──────────────────────────────────────────────────
   private readonly LIGHT_COLOR_TEMP_HEX: Record<string, string> = {
@@ -143,35 +178,35 @@ export class ProductCardComponent {
   };
 
   /** Strip items shown between image and body: color temperature dot + size + wattage chip. */
-  readonly lightVisualStrip = computed((): Array<{ type: 'text' | 'color'; value: string; hex?: string }> => {
+  readonly lightVisualStrip = computed((): Array<{ type: 'text' | 'color'; value: string; short?: string; hex?: string }> => {
     if (!this.isLight()) return [];
     const p = this.product() as any;
-    const items: Array<{ type: 'text' | 'color'; value: string; hex?: string }> = [];
+    const items: Array<{ type: 'text' | 'color'; value: string; short?: string; hex?: string }> = [];
     if (p.colorTemp) {
       items.push({ type: 'color', value: p.colorTemp, hex: this.LIGHT_COLOR_TEMP_HEX[p.colorTemp] ?? '#fffde7' });
     }
     if (p.size) {
-      items.push({ type: 'text', value: p.size });
+      items.push({ type: 'text', value: p.size, short: this.shortenStrip(p.size) });
     }
     if (p.totalLength) {
-      items.push({ type: 'text', value: `${p.totalLength}m roll` });
+      items.push({ type: 'text', value: `${p.totalLength}m roll`, short: `${p.totalLength}m` });
     }
     if (p.wattage) {
-      items.push({ type: 'text', value: `${p.wattage}W` });
+      items.push({ type: 'text', value: `${p.wattage}W`, short: `${p.wattage}w` });
     }
     return items;
   });
 
   /** Strip items for wires/cables: core size · number of cores · roll length. */
-  readonly wireVisualStrip = computed((): Array<{ type: 'text' | 'color'; value: string; hex?: string }> => {
+  readonly wireVisualStrip = computed((): Array<{ type: 'text' | 'color'; value: string; short?: string; hex?: string }> => {
     if (!this.isWire()) return [];
     const p = this.product() as any;
-    const items: Array<{ type: 'text' | 'color'; value: string; hex?: string }> = [];
+    const items: Array<{ type: 'text' | 'color'; value: string; short?: string; hex?: string }> = [];
     if (p.color) items.push({ type: 'color', value: p.color, hex: this.WIRE_COLOR_HEX[p.color] ?? '#cccccc' });
-    if (p.size)  items.push({ type: 'text', value: p.size });
-    if (p.coreSize) items.push({ type: 'text', value: p.coreSize });
-    if (p.cores)    items.push({ type: 'text', value: p.cores });
-    if (p.totalLength) items.push({ type: 'text', value: `${p.totalLength}m roll` });
+    if (p.size)  items.push({ type: 'text', value: p.size, short: this.shortenStrip(p.size) });
+    if (p.coreSize) items.push({ type: 'text', value: p.coreSize, short: this.shortenStrip(p.coreSize) });
+    if (p.cores)    items.push({ type: 'text', value: p.cores, short: this.shortenStrip(p.cores) });
+    if (p.totalLength) items.push({ type: 'text', value: `${p.totalLength}m roll`, short: `${p.totalLength}m` });
     return items;
   });
 
@@ -202,14 +237,14 @@ export class ProductCardComponent {
   readonly hasCustomLayout = computed(() => (this.product().cardLayout?.length ?? 0) > 0);
 
   private resolveLayoutItem(item: { key: string; isColor?: boolean; prefix?: string; suffix?: string }):
-    { type: 'text' | 'color'; value: string; hex?: string } | null {
+    { type: 'text' | 'color'; value: string; short?: string; hex?: string } | null {
     const raw = (this.product() as any)[item.key];
     if (raw == null || raw === '') return null;
     if (item.isColor) {
       return { type: 'color', value: String(raw), hex: colorNameToHex(String(raw)) };
     }
     const text = `${item.prefix ?? ''}${raw}${item.suffix ? ' ' + item.suffix : ''}`;
-    return { type: 'text', value: text };
+    return { type: 'text', value: text, short: this.shortenStrip(text) };
   }
 
   /** Strip items from the custom layout (colour band below the image). */

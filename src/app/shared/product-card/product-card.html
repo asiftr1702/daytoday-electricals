@@ -83,10 +83,13 @@
         @if (item.type === 'color') {
           <span class="fan-attr-color">
             <span class="fan-color-dot" [style.background]="item.hex" [attr.title]="item.value"></span>
-            <span>{{ item.value }}</span>
+            <span class="attr-text">{{ item.value }}</span>
           </span>
         } @else {
-          <span class="fan-attr-chip">{{ item.value }}</span>
+          <span class="fan-attr-chip">
+            <span class="attr-full">{{ item.value }}</span>
+            <span class="attr-short">{{ item.short || item.value }}</span>
+          </span>
         }
       }
     </div>
@@ -99,10 +102,13 @@
         @if (item.type === 'color') {
           <span class="fan-attr-color">
             <span class="fan-color-dot" [style.background]="item.hex" [attr.title]="item.value"></span>
-            <span>{{ item.value }}</span>
+            <span class="attr-text">{{ item.value }}</span>
           </span>
         } @else {
-          <span class="fan-attr-chip">{{ item.value }}</span>
+          <span class="fan-attr-chip">
+            <span class="attr-full">{{ item.value }}</span>
+            <span class="attr-short">{{ item.short || item.value }}</span>
+          </span>
         }
       }
     </div>
@@ -115,10 +121,13 @@
         @if (item.type === 'color') {
           <span class="fan-attr-color">
             <span class="fan-color-dot" [style.background]="item.hex" [attr.title]="item.value"></span>
-            <span>{{ item.value }}</span>
+            <span class="attr-text">{{ item.value }}</span>
           </span>
         } @else {
-          <span class="fan-attr-chip">{{ item.value }}</span>
+          <span class="fan-attr-chip">
+            <span class="attr-full">{{ item.value }}</span>
+            <span class="attr-short">{{ item.short || item.value }}</span>
+          </span>
         }
       }
     </div>
@@ -131,10 +140,13 @@
         @if (item.type === 'color') {
           <span class="fan-attr-color">
             <span class="fan-color-dot" [style.background]="item.hex" [attr.title]="item.value"></span>
-            <span>{{ item.value }}</span>
+            <span class="attr-text">{{ item.value }}</span>
           </span>
         } @else {
-          <span class="fan-attr-chip">{{ item.value }}</span>
+          <span class="fan-attr-chip">
+            <span class="attr-full">{{ item.value }}</span>
+            <span class="attr-short">{{ item.short || item.value }}</span>
+          </span>
         }
       }
     </div>
@@ -150,9 +162,15 @@
       <h3 class="product-name">{{ product().name }}</h3>
       @if (showWarranty()) {
         @if (product().warranty && product().warranty !== 'No warranty') {
-          <span class="warranty-tag" [attr.title]="product().warranty + ' warranty'">{{ product().warranty }}</span>
+          <span class="warranty-tag" [attr.title]="product().warranty + ' warranty'">
+            <span class="attr-full">{{ product().warranty }}</span>
+            <span class="attr-short">{{ warrantyShort() }}</span>
+          </span>
         } @else if ($any(product()).warrantyYears > 0) {
-          <span class="warranty-tag" [attr.title]="$any(product()).warrantyYears + ' year warranty'">{{ $any(product()).warrantyYears }}y</span>
+          <span class="warranty-tag" [attr.title]="$any(product()).warrantyYears + ' year warranty'">
+            <span class="attr-full">{{ $any(product()).warrantyYears }}y</span>
+            <span class="attr-short">{{ $any(product()).warrantyYears }}</span>
+          </span>
         }
       }
     </div>
@@ -174,7 +192,10 @@
     @if (!hasCustomLayout() && fanSpecs().length > 0) {
       <div class="fan-specs-strip" aria-label="Fan specifications">
         @for (spec of fanSpecs(); track spec.value) {
-          <span class="fan-spec-chip">{{ spec.value }}</span>
+          <span class="fan-spec-chip">
+            <span class="attr-full">{{ spec.value }}</span>
+            <span class="attr-short">{{ spec.short || spec.value }}</span>
+          </span>
         }
       </div>
     }
