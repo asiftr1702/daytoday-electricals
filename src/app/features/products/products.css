@@ -284,19 +284,21 @@
 
 /* ─── SUBCATEGORY GROUPS ─────────────────────────────────────────────────── */
 .subcat-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  background: var(--color-surface);
+  border: 1px solid #EBEBEB;
+  border-radius: 14px;
+  overflow: hidden;
 }
 
 .subcat-group-header {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.75rem;
   width: 100%;
-  padding: 0.7rem 0.9rem;
-  margin-bottom: 1rem;
-  background: #faf9f7;
-  border: 1px solid #EBEBEB;
-  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+  background: var(--color-surface);
+  border: none;
   cursor: pointer;
   text-align: left;
   font: inherit;
@@ -304,13 +306,31 @@
 }
 
 .subcat-group-header:hover {
-  background: #f3f1ee;
+  background: #faf9f7;
+}
+
+/* Divider only when the panel is open */
+.subcat-group:not(:has(.subcat-group-header.collapsed)) .subcat-group-header {
+  border-bottom: 1px solid #f0efed;
 }
 
 .subcat-group-chevron {
-  font-size: 0.9rem;
-  color: #78716c;
-  transition: transform 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: #44403c;
+  background: #f0efed;
+  border-radius: 9px;
+  transition: transform 0.22s ease, background 0.18s ease;
+}
+
+.subcat-group-header:hover .subcat-group-chevron {
+  background: #ebe9e6;
 }
 
 .subcat-group-header.collapsed .subcat-group-chevron {
@@ -319,7 +339,7 @@
 
 .subcat-group-title {
   flex: 1;
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: 700;
   color: #1c1917;
   text-transform: capitalize;
@@ -328,13 +348,18 @@
 .subcat-group-count {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #78716c;
-  background: #ffffff;
-  border: 1px solid #e7e5e4;
+  color: #57534e;
+  background: #f5f4f2;
   border-radius: 99px;
-  padding: 0.12rem 0.6rem;
+  padding: 0.18rem 0.7rem;
   min-width: 1.6rem;
   text-align: center;
+}
+
+/* Products live inside the same panel as their header */
+.subcat-group .products-grid {
+  padding: 1.1rem;
+  margin: 0;
 }
 
 /* ─── SKELETON LOADING ───────────────────────────────────────────────────── */
