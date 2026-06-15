@@ -16,6 +16,7 @@
 
     <nav class="nav-desktop" aria-label="Main navigation">
       <a routerLink="/products" routerLinkActive="active">Products</a>
+      <a routerLink="/prices" routerLinkActive="active" title="Simple price list">💲 Price List</a>
       <a routerLink="/contact" routerLinkActive="active">Contact Us</a>
       <a routerLink="/admin" routerLinkActive="active" class="admin-link" title="Admin panel for adding products">📦 Admin</a>
       <a routerLink="/catalogue-settings" routerLinkActive="active" class="admin-link" title="Categories, brands, units & card fields">📂 Catalogue</a>
@@ -47,6 +48,9 @@
     <nav id="mobile-menu" class="nav-mobile" aria-label="Mobile navigation">
       <a routerLink="/products" routerLinkActive="active" (click)="closeMenu()">
         <span aria-hidden="true">📦</span> Products
+      </a>
+      <a routerLink="/prices" routerLinkActive="active" (click)="closeMenu()">
+        <span aria-hidden="true">💲</span> Price List
       </a>
       <a routerLink="/contact" routerLinkActive="active" (click)="closeMenu()">
         <span aria-hidden="true">📍</span> Contact Us

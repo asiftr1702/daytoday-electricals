@@ -1,0 +1,215 @@
+<main class="pl-page">
+  <div class="pl-container">
+
+    <!-- ── Title ── -->
+    <header class="pl-title">
+      <span class="pl-title-icon" aria-hidden="true">🧾</span>
+      <div class="pl-title-text">
+        <h1>Price List</h1>
+        <p>Tap ✏️ to edit · hold a row to see cost</p>
+      </div>
+      @if (!loading() && activeCount()) {
+        <span class="pl-title-count">{{ activeCount() }}</span>
+      }
+    </header>
+
+    <!-- ── Sticky search + chips ── -->
+    @if (!loading()) {
+      <div class="pl-sticky">
+        <div class="pl-search">
+          <span class="pl-search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="search"
+            class="pl-search-input"
+            placeholder="Search in {{ activeMeta().name }}…"
+            [value]="search()"
+            (input)="onSearch($any($event.target).value)"
+            aria-label="Search products" />
+          @if (search()) {
+            <button type="button" class="pl-search-clear" (click)="clearSearch()" aria-label="Clear search">✕</button>
+          }
+        </div>
+
+        <div class="pl-chips" role="tablist" aria-label="Choose a category">
+          @for (c of categoryOptions(); track c.id) {
+            <button type="button" class="pl-chip" [class.pl-chip-active]="activeCat() === c.id"
+                    [style.--chip]="c.color" (click)="setCategory(c.id)">
+              <span aria-hidden="true">{{ c.icon }}</span> {{ c.name }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ── Body ── -->
+    @if (loading()) {
+      <div class="pl-state">Loading price list…</div>
+    } @else if (loadingCat()) {
+      <div class="pl-state">Loading {{ activeMeta().name }}…</div>
+    } @else if (activeCount() === 0) {
+      <div class="pl-state pl-empty">
+        <span class="pl-empty-icon">📭</span>
+        <p>No products in {{ activeMeta().name }} yet.</p>
+        <span class="pl-empty-hint">Add products one by one, or pull in everything from your catalogue.</span>
+        <div class="pl-empty-actions">
+          <button type="button" class="pl-btn pl-btn-add" (click)="startAdd()" [disabled]="busy()">
+            ➕ Add product
+          </button>
+          <button type="button" class="pl-btn pl-btn-import" (click)="importFromProducts()" [disabled]="busy()">
+            ⤵️ Import from catalogue
+          </button>
+        </div>
+      </div>
+    } @else if (!activeItems().length) {
+      <div class="pl-state pl-empty">
+        <span class="pl-empty-icon">🔍</span>
+        <p>No products match “{{ search() }}”.</p>
+      </div>
+    } @else {
+
+      <section class="pl-group">
+        <h2 class="pl-group-head" [style.--accent]="activeMeta().color">
+          <span class="pl-group-icon" aria-hidden="true">{{ activeMeta().icon }}</span>
+          <span class="pl-group-name">{{ activeMeta().name }}</span>
+          <span class="pl-group-count">{{ activeItems().length }}</span>
+        </h2>
+
+        <ul class="pl-list">
+          @for (item of activeItems(); track item.id) {
+            <li class="pl-row" [class.pl-row-editing]="editingId() === item.id">
+              @if (editingId() === item.id) {
+                <!-- Edit mode -->
+                <div class="pl-edit-fields">
+                  <label class="pl-field">
+                    <span class="pl-field-label">Name</span>
+                    <input class="pl-input" type="text"
+                           [value]="editName()" (input)="editName.set($any($event.target).value)"
+                           aria-label="Edit product name" />
+                  </label>
+                  <label class="pl-field pl-field-price">
+                    <span class="pl-field-label">Sell ₹</span>
+                    <input class="pl-input" type="number" inputmode="decimal"
+                           [value]="editPrice()" (input)="editPrice.set($any($event.target).value)"
+                           aria-label="Edit selling price" />
+                  </label>
+                  <label class="pl-field pl-field-price">
+                    <span class="pl-field-label">Cost ₹</span>
+                    <input class="pl-input" type="number" inputmode="decimal"
+                           [value]="editCost()" (input)="editCost.set($any($event.target).value)"
+                           aria-label="Edit cost price" />
+                  </label>
+                </div>
+                <div class="pl-row-actions pl-row-actions-edit">
+                  <button type="button" class="pl-icon-btn pl-save" (click)="saveEdit(item)"
+                          [disabled]="busy() || !editName().trim()" aria-label="Save">✅ Save</button>
+                  <button type="button" class="pl-icon-btn pl-cancel" (click)="cancelEdit()"
+                          [disabled]="busy()" aria-label="Cancel">✖️</button>
+                </div>
+              } @else {
+                <!-- Read mode -->
+                <div class="pl-row-main"
+                     [class.pl-row-revealed]="revealedCostId() === item.id"
+                     (pointerdown)="pressStart(item)"
+                     (pointerup)="pressEnd()"
+                     (pointerleave)="pressEnd()"
+                     (pointercancel)="pressEnd()"
+                     (contextmenu)="$event.preventDefault()">
+                  <span class="pl-name">{{ item.name }}</span>
+                  @if (revealedCostId() === item.id) {
+                    <span class="pl-row-cost" (click)="hideCost()">
+                      @if (item.costPrice != null) {
+                        <span class="pl-cost-label">Cost</span>
+                        <span class="pl-cost">₹{{ item.costPrice.toLocaleString('en-IN') }}</span>
+                      } @else {
+                        <span class="pl-cost-label">Cost not set</span>
+                      }
+                    </span>
+                  } @else {
+                    <span class="pl-row-price">
+                      @if (item.sellPrice != null) {
+                        <span class="pl-price">₹{{ item.sellPrice.toLocaleString('en-IN') }}</span>
+                        <span class="pl-unit">/ {{ item.unit || 'pcs' }}</span>
+                      } @else {
+                        <span class="pl-price pl-price-na">No price set</span>
+                      }
+                    </span>
+                  }
+                </div>
+                <div class="pl-row-actions">
+                  <button type="button" class="pl-icon-btn pl-edit" (click)="startEdit(item)"
+                          [disabled]="busy()" aria-label="Edit">✏️</button>
+                  <button type="button" class="pl-icon-btn pl-delete" (click)="remove(item)"
+                          [disabled]="busy()" aria-label="Delete">🗑️</button>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+
+      <p class="pl-foot-note">{{ activeItems().length }} item(s) in {{ activeMeta().name }}.</p>
+    }
+
+  </div>
+
+  <!-- ── Floating add button ── -->
+  @if (!loading() && !loadingCat() && !adding()) {
+    <button type="button" class="pl-fab" (click)="startAdd()" [disabled]="busy()" aria-label="Add product">
+      <span aria-hidden="true">➕</span>
+    </button>
+  }
+
+  <!-- ── Add bottom sheet ── -->
+  @if (adding()) {
+    <div class="pl-sheet-backdrop" (click)="cancelAdd()" aria-hidden="true"></div>
+    <div class="pl-sheet" role="dialog" aria-label="Add product">
+      <div class="pl-sheet-handle" aria-hidden="true"></div>
+      <h3 class="pl-sheet-title">➕ Add product</h3>
+
+      <label class="pl-field">
+        <span class="pl-field-label">Product name</span>
+        <input class="pl-input" type="text" placeholder="e.g. Ceiling Fan 1200mm"
+               [value]="newName()" (input)="newName.set($any($event.target).value)"
+               aria-label="New product name" />
+      </label>
+
+      <div class="pl-sheet-row">
+        <label class="pl-field pl-field-price">
+          <span class="pl-field-label">Selling price ₹</span>
+          <input class="pl-input" type="number" inputmode="decimal" placeholder="0"
+                 [value]="newPrice()" (input)="newPrice.set($any($event.target).value)"
+                 aria-label="New selling price" />
+        </label>
+        <label class="pl-field pl-field-price">
+          <span class="pl-field-label">Cost price ₹</span>
+          <input class="pl-input" type="number" inputmode="decimal" placeholder="0"
+                 [value]="newCost()" (input)="newCost.set($any($event.target).value)"
+                 aria-label="New cost price" />
+        </label>
+        <label class="pl-field pl-field-unit">
+          <span class="pl-field-label">Unit</span>
+          <input class="pl-input" type="text" placeholder="pcs"
+                 [value]="newUnit()" (input)="newUnit.set($any($event.target).value)"
+                 aria-label="Unit" />
+        </label>
+      </div>
+
+      <label class="pl-field">
+        <span class="pl-field-label">Category</span>
+        <select class="pl-input" [value]="newCategory()"
+                (change)="newCategory.set($any($event.target).value)" aria-label="Category">
+          @for (c of categoryOptions(); track c.id) {
+            <option [value]="c.id">{{ c.icon }} {{ c.name }}</option>
+          }
+          <option value="other">📦 Other</option>
+        </select>
+      </label>
+
+      <div class="pl-sheet-actions">
+        <button type="button" class="pl-btn pl-btn-cancel" (click)="cancelAdd()" [disabled]="busy()">Done</button>
+        <button type="button" class="pl-btn pl-btn-save" (click)="saveAdd()"
+                [disabled]="busy() || !newName().trim()">✅ Save &amp; add another</button>
+      </div>
+    </div>
+  }
+</main>

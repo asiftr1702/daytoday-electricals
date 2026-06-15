@@ -28,6 +28,11 @@ export const routes: Routes = [
         title: 'Products — DayToDay Electricals',
       },
       {
+        path: 'prices',
+        loadComponent: () => import('./features/price-list/price-list').then(m => m.PriceListComponent),
+        title: 'Price List — DayToDay Electricals',
+      },
+      {
         path: 'contact',
         loadComponent: () => import('./features/contact/contact').then(m => m.ContactComponent),
         title: 'Contact Us — DayToDay Electricals',

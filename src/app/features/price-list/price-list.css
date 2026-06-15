@@ -1,0 +1,619 @@
+/* ════════════════════════════════════════════════════════════════════
+   Price List — mobile-first
+   Base styles target small screens; min-width queries enhance for tablets+.
+   ════════════════════════════════════════════════════════════════════ */
+
+:host {
+  display: block;
+}
+
+.pl-page {
+  min-height: 70vh;
+  background: #f4f6f9;
+  padding: 0.5rem 0 6rem; /* bottom space for the FAB */
+}
+
+.pl-container {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 0.85rem;
+}
+
+/* ── Title ── */
+.pl-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0.85rem;
+}
+
+.pl-title-icon {
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.pl-title-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.pl-title h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #14202c;
+}
+
+.pl-title p {
+  margin: 0.1rem 0 0;
+  color: #5b6b7b;
+  font-size: 0.9rem;
+}
+
+.pl-title-count {
+  background: #14202c;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 1rem;
+}
+
+/* ── Sticky search + chips ── */
+.pl-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #f4f6f9;
+  margin: 0 -0.85rem;
+  padding: 0.4rem 0.85rem 0.6rem;
+}
+
+/* ── Search ── */
+.pl-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 2px solid #dde4ec;
+  border-radius: 0.85rem;
+  padding: 0 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.pl-search-icon {
+  font-size: 1.05rem;
+  opacity: 0.7;
+}
+
+.pl-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 1.05rem;
+  padding: 0.8rem 0.55rem;
+  background: transparent;
+  color: #14202c;
+  min-width: 0;
+}
+
+.pl-search-clear {
+  border: none;
+  background: #eef2f6;
+  color: #5b6b7b;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ── Category chips (horizontal scroll on mobile) ── */
+.pl-chips {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.6rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pl-chips::-webkit-scrollbar { display: none; }
+
+.pl-chip {
+  --chip: #e3ebf2;
+  flex: 0 0 auto;
+  border: 2px solid transparent;
+  background: #fff;
+  color: #34465a;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  border-radius: 2rem;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.08s ease, border-color 0.12s ease;
+}
+
+.pl-chip:active { transform: scale(0.95); }
+
+.pl-chip-active {
+  border-color: #1a73e8;
+  background: var(--chip);
+  color: #102a43;
+}
+
+/* ── States ── */
+.pl-state {
+  text-align: center;
+  color: #5b6b7b;
+  font-size: 1.1rem;
+  padding: 2.5rem 1rem;
+}
+
+.pl-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pl-empty-icon { font-size: 2.6rem; }
+
+.pl-empty-hint {
+  font-size: 0.92rem;
+  color: #8693a1;
+  max-width: 22rem;
+}
+
+.pl-empty-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+  max-width: 19rem;
+  margin-top: 0.75rem;
+}
+
+/* ── Group ── */
+.pl-group {
+  margin-bottom: 0.9rem;
+  background: #fff;
+  border-radius: 1.1rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(16, 42, 67, 0.06);
+}
+
+.pl-group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.7rem 0.95rem;
+  font-size: 1rem;
+  color: #2a3a4a;
+  background: #fbfcfe;
+  border-bottom: 1px solid #eef2f6;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.pl-group-head::before {
+  content: '';
+  width: 0.3rem;
+  height: 1.3rem;
+  border-radius: 1rem;
+  background: var(--accent, #c7d2dd);
+  flex-shrink: 0;
+}
+
+.pl-group-icon { font-size: 1.2rem; }
+
+.pl-group-name {
+  flex: 1;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.pl-group-count {
+  background: #eef2f6;
+  color: #5b6b7b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.12rem 0.6rem;
+  border-radius: 1rem;
+}
+
+/* ── Rows ── */
+.pl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pl-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.6rem 0.25rem 0;
+  border-top: 1px solid #f0f3f7;
+}
+
+.pl-row:first-child { border-top: none; }
+
+/* Main area — name stacked above price (read-only display) */
+.pl-row-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 0;
+  padding: 0.65rem 0.5rem 0.65rem 0.9rem;
+  border-radius: 0.7rem;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  transition: background 0.15s ease;
+}
+
+/* While the cost is revealed, tint the row so it's clearly a different mode */
+.pl-row-revealed {
+  background: #fff7e6;
+}
+
+.pl-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2d3d;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.pl-row-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.pl-price {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #0f8a3c;
+  letter-spacing: -0.01em;
+}
+
+.pl-price-na {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #aab4c0;
+}
+
+.pl-unit {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #9aa6b2;
+}
+
+/* ── Revealed cost (long-press) ── */
+.pl-row-cost {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  white-space: nowrap;
+  cursor: pointer;
+  animation: pl-cost-pop 0.18s ease;
+}
+
+.pl-cost-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #b6792a;
+  background: #ffeccc;
+  padding: 0.08rem 0.4rem;
+  border-radius: 0.4rem;
+}
+
+.pl-cost {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #b6792a;
+  letter-spacing: -0.01em;
+}
+
+@keyframes pl-cost-pop {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Row actions ── */
+.pl-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.pl-icon-btn {
+  border: none;
+  background: transparent;
+  border-radius: 0.7rem;
+  font-size: 1.05rem;
+  line-height: 1;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.75;
+  transition: transform 0.08s ease, background 0.12s ease, opacity 0.12s ease;
+}
+
+.pl-icon-btn:active { transform: scale(0.9); opacity: 1; }
+.pl-icon-btn:disabled { opacity: 0.4; cursor: default; }
+.pl-edit:active   { background: #e8f0ff; }
+.pl-delete:active { background: #ffeaea; }
+
+/* ── Inline edit ── */
+.pl-row-editing {
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem 0.85rem;
+  background: #f8fbff;
+}
+
+.pl-edit-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.pl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.pl-edit-fields .pl-field { flex: 1 1 100%; }
+.pl-edit-fields .pl-field-price { flex: 1 1 5rem; }
+
+.pl-field-price { flex: 0 0 6.5rem; }
+.pl-field-unit  { flex: 0 0 6rem; }
+
+.pl-field-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #7a8a9a;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.pl-input {
+  border: 2px solid #d8e0e8;
+  border-radius: 0.6rem;
+  font-size: 1.05rem;
+  padding: 0.65rem 0.7rem;
+  outline: none;
+  color: #14202c;
+  background: #fff;
+  width: 100%;
+  min-width: 0;
+}
+
+.pl-input:focus { border-color: #1a73e8; }
+
+.pl-row-actions-edit {
+  width: 100%;
+  justify-content: stretch;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}
+
+.pl-save,
+.pl-cancel {
+  width: auto;
+  height: 2.9rem;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 0.7rem;
+  padding: 0 1.1rem;
+  opacity: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.pl-save {
+  flex: 1;
+  background: #0f8a3c;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(15, 138, 60, 0.25);
+}
+
+.pl-save:active   { background: #0c7332; }
+.pl-cancel:active { background: #e2e8ee; }
+.pl-save:disabled { background: #9bc4ab; box-shadow: none; }
+
+.pl-cancel {
+  flex: 0 0 auto;
+  background: #eef2f6;
+  color: #34465a;
+}
+
+/* ── Buttons ── */
+.pl-btn {
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+  padding: 0.85rem 1.1rem;
+  cursor: pointer;
+  transition: transform 0.08s ease, opacity 0.12s ease;
+}
+
+.pl-btn:active { transform: scale(0.97); }
+.pl-btn:disabled { opacity: 0.55; cursor: default; }
+
+.pl-btn-add    { background: #0f8a3c; color: #fff; }
+.pl-btn-import { background: #fff; color: #34465a; border: 2px solid #dde4ec; }
+.pl-btn-save   { background: #0f8a3c; color: #fff; }
+.pl-btn-cancel { background: #eef2f6; color: #34465a; }
+
+.pl-foot-note {
+  text-align: center;
+  color: #8693a1;
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0;
+}
+
+/* ── Floating action button ── */
+.pl-fab {
+  position: fixed;
+  right: 1rem;
+  bottom: 1.1rem;
+  z-index: 20;
+  width: 3.6rem;
+  height: 3.6rem;
+  border-radius: 50%;
+  border: none;
+  background: #0f8a3c;
+  color: #fff;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(15, 138, 60, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease;
+}
+
+.pl-fab:active { transform: scale(0.9); }
+.pl-fab:disabled { opacity: 0.6; }
+
+/* ── Add bottom sheet ── */
+.pl-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(16, 28, 40, 0.45);
+  animation: pl-fade 0.15s ease;
+}
+
+.pl-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 31;
+  background: #fff;
+  border-radius: 1.25rem 1.25rem 0 0;
+  padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  max-height: 88vh;
+  overflow-y: auto;
+  animation: pl-slide-up 0.22s ease;
+}
+
+.pl-sheet-handle {
+  width: 2.6rem;
+  height: 0.3rem;
+  background: #d4dbe3;
+  border-radius: 1rem;
+  margin: 0.1rem auto 0.3rem;
+}
+
+.pl-sheet-title {
+  margin: 0 0 0.2rem;
+  font-size: 1.2rem;
+  color: #14202c;
+}
+
+.pl-sheet-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.pl-sheet-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.pl-sheet-actions .pl-btn-cancel { flex: 0 0 auto; }
+.pl-sheet-actions .pl-btn-save { flex: 1; }
+
+@keyframes pl-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pl-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Tablet / desktop enhancements
+   ════════════════════════════════════════════════════════════════════ */
+@media (min-width: 640px) {
+  .pl-page { padding-bottom: 2.5rem; }
+  .pl-container { padding: 0 1rem; }
+
+  .pl-title h1 { font-size: 1.7rem; }
+  .pl-title p { font-size: 1rem; }
+  .pl-title-icon { font-size: 2.2rem; }
+
+  /* Roomier rows side-by-side on wider screens */
+  .pl-row-main {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .pl-name { font-size: 1.1rem; -webkit-line-clamp: 1; }
+  .pl-price { font-size: 1.25rem; }
+  .pl-icon-btn { opacity: 0.55; }
+  .pl-icon-btn:hover { opacity: 1; background: #f1f4f7; }
+
+  .pl-chips { flex-wrap: wrap; overflow: visible; }
+
+  .pl-empty-actions { flex-direction: row; justify-content: center; }
+
+  /* On wider screens the add form is a centred card instead of a bottom sheet */
+  .pl-sheet {
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(460px, 92vw);
+    border-radius: 1.1rem;
+    animation: pl-fade 0.15s ease;
+  }
+
+  .pl-sheet-handle { display: none; }
+
+  .pl-fab { right: 1.5rem; bottom: 1.5rem; }
+}
