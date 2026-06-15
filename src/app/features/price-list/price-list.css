@@ -508,6 +508,69 @@
 
 .pl-fab:active { transform: scale(0.9); }
 .pl-fab:disabled { opacity: 0.6; }
+/* Lift the FAB above the bill bar when one is showing. */
+.pl-fab-raised { bottom: 4.7rem; }
+
+.pl-tobill:active { background: #e7f6ec; }
+
+/* ── Bill bar ── */
+.pl-billbar {
+  position: fixed;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 20;
+  border: none;
+  cursor: pointer;
+  background: #14202c;
+  color: #fff;
+  border-radius: 0.9rem;
+  padding: 0.7rem 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-shadow: 0 8px 22px rgba(16, 28, 40, 0.35);
+  animation: pl-slide-up 0.2s ease;
+}
+
+.pl-billbar-icon { font-size: 1.2rem; }
+
+.pl-billbar-count {
+  font-size: 0.92rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.pl-billbar-total {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-left: auto;
+}
+
+.pl-billbar-cta {
+  font-size: 0.92rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.6rem;
+}
+
+/* ── Toast ── */
+.pl-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 5.5rem;
+  transform: translateX(-50%);
+  z-index: 40;
+  background: #14202c;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.8rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  animation: pl-fade 0.15s ease;
+}
 
 /* ── Add bottom sheet ── */
 .pl-sheet-backdrop {
@@ -563,6 +626,126 @@
 
 .pl-sheet-actions .pl-btn-cancel { flex: 0 0 auto; }
 .pl-sheet-actions .pl-btn-save { flex: 1; }
+
+/* ── Bill sheet ── */
+.pl-btn-print { background: #1a73e8; color: #fff; flex: 1; }
+.pl-btn-print:disabled { opacity: 0.5; }
+
+.pl-bill-actions { flex-wrap: wrap; }
+.pl-bill-actions .pl-btn-cancel { flex: 0 0 auto; }
+
+.pl-bill-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 42vh;
+  overflow-y: auto;
+}
+
+.pl-bill-line {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.2rem;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.pl-bill-line-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.pl-bill-line-name {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #14202c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pl-bill-line-price {
+  font-size: 0.8rem;
+  color: #7a8a9a;
+}
+
+.pl-qty {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  flex-shrink: 0;
+}
+
+.pl-qty-btn {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: #eef2f6;
+  color: #14202c;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pl-qty-btn:active { background: #dde5ee; }
+
+.pl-qty-val {
+  min-width: 1.6rem;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #14202c;
+}
+
+.pl-bill-line-total {
+  flex-shrink: 0;
+  min-width: 3.6rem;
+  text-align: right;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f8a3c;
+}
+
+.pl-bill-line-del {
+  flex-shrink: 0;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: none;
+  background: transparent;
+  color: #c0392b;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 0.5rem;
+}
+
+.pl-bill-line-del:active { background: #ffeaea; }
+
+.pl-bill-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.5rem 0.2rem 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #14202c;
+}
+
+.pl-bill-grand {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0f8a3c;
+}
 
 @keyframes pl-fade {
   from { opacity: 0; }

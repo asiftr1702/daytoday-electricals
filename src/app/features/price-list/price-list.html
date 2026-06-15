@@ -6,7 +6,7 @@
       <span class="pl-title-icon" aria-hidden="true">🧾</span>
       <div class="pl-title-text">
         <h1>Price List</h1>
-        <p>Tap ✏️ to edit · hold a row to see cost</p>
+        <p>Tap 🧾 to add to bill · ✏️ to edit · hold a row to see cost</p>
       </div>
       @if (!loading() && activeCount()) {
         <span class="pl-title-count">{{ activeCount() }}</span>
@@ -136,6 +136,8 @@
                   }
                 </div>
                 <div class="pl-row-actions">
+                  <button type="button" class="pl-icon-btn pl-tobill" (click)="addToBill(item)"
+                          [disabled]="busy() || item.sellPrice == null" aria-label="Add to bill">🧾</button>
                   <button type="button" class="pl-icon-btn pl-edit" (click)="startEdit(item)"
                           [disabled]="busy()" aria-label="Edit">✏️</button>
                   <button type="button" class="pl-icon-btn pl-delete" (click)="remove(item)"
@@ -154,9 +156,80 @@
 
   <!-- ── Floating add button ── -->
   @if (!loading() && !loadingCat() && !adding()) {
-    <button type="button" class="pl-fab" (click)="startAdd()" [disabled]="busy()" aria-label="Add product">
+    <button type="button" class="pl-fab" [class.pl-fab-raised]="billCount() > 0"
+            (click)="startAdd()" [disabled]="busy()" aria-label="Add product">
       <span aria-hidden="true">➕</span>
     </button>
+  }
+
+  <!-- ── Bill bar (appears once items are added) ── -->
+  @if (billCount() > 0 && !showBill() && !adding()) {
+    <button type="button" class="pl-billbar" (click)="openBill()" aria-label="View bill">
+      <span class="pl-billbar-icon" aria-hidden="true">🧾</span>
+      <span class="pl-billbar-count">{{ billCount() }} item(s)</span>
+      <span class="pl-billbar-total">₹{{ billTotal().toLocaleString('en-IN') }}</span>
+      <span class="pl-billbar-cta">View bill ›</span>
+    </button>
+  }
+
+  @if (billMsg()) {
+    <div class="pl-toast" role="status">{{ billMsg() }}</div>
+  }
+
+  <!-- ── Bill bottom sheet ── -->
+  @if (showBill()) {
+    <div class="pl-sheet-backdrop" (click)="closeBill()" aria-hidden="true"></div>
+    <div class="pl-sheet pl-bill-sheet" role="dialog" aria-label="Bill">
+      <div class="pl-sheet-handle" aria-hidden="true"></div>
+      <h3 class="pl-sheet-title">🧾 Bill</h3>
+
+      <div class="pl-sheet-row">
+        <label class="pl-field">
+          <span class="pl-field-label">Customer name</span>
+          <input class="pl-input" type="text" placeholder="Optional"
+                 [value]="billCustomer()" (input)="billCustomer.set($any($event.target).value)"
+                 aria-label="Customer name" />
+        </label>
+        <label class="pl-field pl-field-price">
+          <span class="pl-field-label">Mobile</span>
+          <input class="pl-input" type="tel" inputmode="numeric" placeholder="Optional"
+                 [value]="billMobile()" (input)="billMobile.set($any($event.target).value)"
+                 aria-label="Mobile number" />
+        </label>
+      </div>
+
+      <ul class="pl-bill-lines">
+        @for (line of billItems(); track line.name + line.category) {
+          <li class="pl-bill-line">
+            <div class="pl-bill-line-info">
+              <span class="pl-bill-line-name">{{ line.name }}</span>
+              <span class="pl-bill-line-price">₹{{ line.sellPrice.toLocaleString('en-IN') }} / {{ line.unit }}</span>
+            </div>
+            <div class="pl-qty">
+              <button type="button" class="pl-qty-btn" (click)="decLine($index)" aria-label="Decrease">−</button>
+              <span class="pl-qty-val">{{ line.qty }}</span>
+              <button type="button" class="pl-qty-btn" (click)="incLine($index)" aria-label="Increase">+</button>
+            </div>
+            <span class="pl-bill-line-total">₹{{ (line.sellPrice * line.qty).toLocaleString('en-IN') }}</span>
+            <button type="button" class="pl-bill-line-del" (click)="removeLine($index)" aria-label="Remove">✕</button>
+          </li>
+        }
+      </ul>
+
+      <div class="pl-bill-total-row">
+        <span>Total</span>
+        <span class="pl-bill-grand">₹{{ billTotal().toLocaleString('en-IN') }}</span>
+      </div>
+
+      <div class="pl-sheet-actions pl-bill-actions">
+        <button type="button" class="pl-btn pl-btn-cancel" (click)="clearBillCart(); closeBill()"
+                [disabled]="billSaving()">🗑️ Clear</button>
+        <button type="button" class="pl-btn pl-btn-print" (click)="printBill()"
+                [disabled]="billSaving() || billItems().length === 0">🖨️ Print</button>
+        <button type="button" class="pl-btn pl-btn-save" (click)="saveBill()"
+                [disabled]="billSaving() || billItems().length === 0">{{ billSaving() ? 'Saving…' : '✅ Save' }}</button>
+      </div>
+    </div>
   }
 
   <!-- ── Add bottom sheet ── -->

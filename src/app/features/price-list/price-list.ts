@@ -3,7 +3,19 @@ import { FormsModule } from '@angular/forms';
 import { PriceListService, PriceListEntry } from '../../core/services/price-list.service';
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
 import { CatalogueConfigService } from '../../core/services/catalogue-config.service';
+import { BillService } from '../../core/services/bill.service';
+import { Bill } from '../../core/models/bill.model';
 import { AnyProduct } from '../../core/models/any-product.model';
+
+/** A single line in the quick bill built from the price list. */
+interface BillLine {
+  name: string;
+  sellPrice: number;
+  costPrice: number | null;
+  unit: string;
+  category: string;
+  qty: number;
+}
 
 /** Selling price the customer pays — discounted price when it is the cheaper one. */
 function sellingPrice(p: AnyProduct): number | null {
@@ -41,6 +53,10 @@ export class PriceListComponent implements OnInit {
   private readonly priceList       = inject(PriceListService);
   private readonly firebaseAdmin   = inject(FirebaseAdminService);
   private readonly catalogueConfig = inject(CatalogueConfigService);
+  private readonly billService     = inject(BillService);
+
+  /** Today's date (YYYY-MM-DD) for bills created here. */
+  private readonly today = new Date().toISOString().slice(0, 10);
 
   /** Initial config load (page skeleton). */
   readonly loading    = signal(true);
@@ -72,6 +88,24 @@ export class PriceListComponent implements OnInit {
   readonly revealedCostId = signal<string | null>(null);
   private pressTimer: ReturnType<typeof setTimeout> | null = null;
   private hideTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // ── Quick bill (cart) state ──
+  /** Lines added to the in-progress bill. */
+  readonly billItems    = signal<BillLine[]>([]);
+  readonly showBill     = signal(false);
+  readonly billCustomer = signal('');
+  readonly billMobile   = signal('');
+  readonly billSaving   = signal(false);
+  readonly billMsg      = signal('');
+
+  /** Total number of units across all bill lines. */
+  readonly billCount = computed(() =>
+    this.billItems().reduce((sum, l) => sum + l.qty, 0),
+  );
+  /** Grand total of the bill (selling price × qty). */
+  readonly billTotal = computed(() =>
+    this.billItems().reduce((sum, l) => sum + l.sellPrice * l.qty, 0),
+  );
 
   /** Category chips/options (id, name, icon, colour) from the catalogue config. */
   readonly categoryOptions = computed(() =>
@@ -122,6 +156,129 @@ export class PriceListComponent implements OnInit {
       clearTimeout(this.hideTimer);
       this.hideTimer = null;
     }
+  }
+
+  // ── Quick bill (cart) ─────────────────────────────────────────────────────
+  /** Add a price-list item to the bill (or bump its quantity if already added). */
+  addToBill(item: PriceListEntry): void {
+    if (item.sellPrice == null) return;
+    const sell = item.sellPrice;
+    this.billItems.update(lines => {
+      const idx = lines.findIndex(l => l.name === item.name && l.category === item.category);
+      if (idx >= 0) {
+        const copy = lines.slice();
+        copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
+        return copy;
+      }
+      return [
+        ...lines,
+        {
+          name: item.name,
+          sellPrice: sell,
+          costPrice: item.costPrice ?? null,
+          unit: item.unit || 'pcs',
+          category: item.category,
+          qty: 1,
+        },
+      ];
+    });
+  }
+
+  incLine(index: number): void {
+    this.billItems.update(lines =>
+      lines.map((l, i) => (i === index ? { ...l, qty: l.qty + 1 } : l)),
+    );
+  }
+
+  decLine(index: number): void {
+    this.billItems.update(lines =>
+      lines
+        .map((l, i) => (i === index ? { ...l, qty: l.qty - 1 } : l))
+        .filter(l => l.qty > 0),
+    );
+  }
+
+  removeLine(index: number): void {
+    this.billItems.update(lines => lines.filter((_, i) => i !== index));
+  }
+
+  openBill(): void { this.showBill.set(true); }
+  closeBill(): void { this.showBill.set(false); }
+
+  clearBillCart(): void {
+    this.billItems.set([]);
+    this.billCustomer.set('');
+    this.billMobile.set('');
+  }
+
+  /** Build a Bill object from the current cart (used for print and save). */
+  private buildBill(): Bill {
+    const lines = this.billItems();
+    const total = this.billTotal();
+    const totalCost = lines.reduce((s, l) => s + (l.costPrice ?? 0) * l.qty, 0);
+    const datePart = this.today.replace(/-/g, '');
+    return {
+      date: this.today,
+      billNumber: `BILL-${datePart}-${Math.floor(1000 + Math.random() * 9000)}`,
+      ...(this.billCustomer().trim() ? { customerName: this.billCustomer().trim() } : {}),
+      ...(this.billMobile().trim() ? { mobileNumber: this.billMobile().trim() } : {}),
+      items: lines.map(l => ({
+        productName: l.name,
+        category: l.category,
+        unit: l.unit,
+        qty: l.qty,
+        costPrice: l.costPrice ?? 0,
+        sellPrice: l.sellPrice,
+        profit: (l.sellPrice - (l.costPrice ?? 0)) * l.qty,
+      })),
+      totalAmount: total,
+      discountAmount: 0,
+      finalAmount: total,
+      totalCost,
+      totalProfit: total - totalCost,
+    };
+  }
+
+  /** Print the current bill as a receipt (no save needed). */
+  printBill(): void {
+    if (!this.billItems().length) return;
+    this.billService.printBill(this.buildBill());
+  }
+
+  /** Save the current bill to Firestore (records it in bill history). */
+  saveBill(): void {
+    const lines = this.billItems();
+    if (!lines.length || this.billSaving()) return;
+    this.billSaving.set(true);
+    this.billMsg.set('');
+    this.billService.clearBill();
+    lines.forEach(l =>
+      this.billService.addItem({
+        productName: l.name,
+        category: l.category,
+        unit: l.unit,
+        qty: l.qty,
+        costPrice: l.costPrice ?? 0,
+        sellPrice: l.sellPrice,
+      }),
+    );
+    this.billService.customerName.set(this.billCustomer().trim());
+    this.billService.mobileNumber.set(this.billMobile().trim());
+    this.billService.saveBill(this.today).subscribe({
+      next: () => {
+        this.billSaving.set(false);
+        this.billMsg.set('✅ Bill saved');
+        this.clearBillCart();
+        this.billService.clearBill();
+        this.showBill.set(false);
+        setTimeout(() => this.billMsg.set(''), 3000);
+      },
+      error: err => {
+        this.billSaving.set(false);
+        this.billMsg.set('❌ ' + (err?.message ?? 'Failed to save'));
+        setTimeout(() => this.billMsg.set(''), 4000);
+      },
+    });
   }
 
   /** Switch to a category, fetching it from the backend the first time. */
