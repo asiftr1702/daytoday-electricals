@@ -231,50 +231,66 @@
 
       <ul class="pl-bill-lines">
         @for (line of billItems(); track line.name + line.category) {
-          <li class="pl-bill-line" [class.pl-bill-line-editing]="editingLineIndex() === $index">
-            <div class="pl-bill-line-info">
-              <span class="pl-bill-line-name">{{ line.name }}</span>
-              @if (editingLineIndex() === $index) {
-                <!-- Inline price editor -->
-                <div class="pl-line-edit-row">
-                  <span class="pl-line-edit-label">₹</span>
-                  <input class="pl-input pl-line-price-input"
-                         type="number" inputmode="decimal"
-                         [value]="editLinePrice()"
-                         (input)="editLinePrice.set($any($event.target).value)"
-                         (keydown.enter)="confirmEditLinePrice($index)"
-                         (keydown.escape)="cancelEditLinePrice()"
-                         aria-label="Edit price" />
-                  <button type="button" class="pl-line-price-ok" (click)="confirmEditLinePrice($index)" aria-label="Confirm">✓</button>
-                  <button type="button" class="pl-line-price-cancel" (click)="cancelEditLinePrice()" aria-label="Cancel">✕</button>
-                </div>
-              } @else {
-                <!-- Tap price to edit -->
-                <button type="button" class="pl-bill-line-price-btn"
-                        (click)="startEditLinePrice($index)"
-                        aria-label="Tap to edit price">
-                  @if (line.sellPrice < line.originalPrice) {
-                    <span class="pl-line-original">₹{{ line.originalPrice.toLocaleString('en-IN') }}</span>
-                  }
-                  <span class="pl-line-sell" [class.pl-line-sell-discounted]="line.sellPrice < line.originalPrice">
-                    ₹{{ line.sellPrice.toLocaleString('en-IN') }}
-                  </span>
-                  <span class="pl-line-unit">/ {{ line.unit }}</span>
-                  @if (line.sellPrice < line.originalPrice) {
-                    <span class="pl-line-discount-badge">
-                      −₹{{ (line.originalPrice - line.sellPrice).toLocaleString('en-IN') }}
+          <li class="pl-bill-line" [class.pl-bill-line-editing]="editingLineIndex() === $index"
+              [class.pl-bill-line-swipe-open]="blSwipeOpenIdx() === $index">
+            <!-- Red delete backdrop -->
+            <div class="pl-bl-swipe-bg">
+              <button type="button" class="pl-bl-del-btn" (click)="removeLine($index)">🗑️ Delete</button>
+            </div>
+            <!-- Sliding content -->
+            <div class="pl-bl-swipe-content"
+                 [style]="blSwipeRowStyle($index)"
+                 (pointerdown)="blSwipeDown($event, $index)"
+                 (pointermove)="blSwipeMove($event)"
+                 (pointerup)="blSwipeUp($event, $index)"
+                 (pointercancel)="blCancelSwipe()">
+              <div class="pl-bill-line-info">
+                <span class="pl-bill-line-name">{{ line.name }}</span>
+                @if (editingLineIndex() === $index) {
+                  <!-- Inline price editor -->
+                  <div class="pl-line-edit-row">
+                    <span class="pl-line-edit-label">₹</span>
+                    <input class="pl-input pl-line-price-input"
+                           type="number" inputmode="decimal"
+                           [value]="editLinePrice()"
+                           (input)="editLinePrice.set($any($event.target).value)"
+                           (keydown.enter)="confirmEditLinePrice($index)"
+                           (keydown.escape)="cancelEditLinePrice()"
+                           aria-label="Edit price" />
+                    <button type="button" class="pl-line-price-ok" (click)="confirmEditLinePrice($index)" aria-label="Confirm">✓</button>
+                    <button type="button" class="pl-line-price-cancel" (click)="cancelEditLinePrice()" aria-label="Cancel">✕</button>
+                  </div>
+                } @else {
+                  <!-- Tap price to edit -->
+                  <button type="button" class="pl-bill-line-price-btn"
+                          (click)="startEditLinePrice($index)"
+                          aria-label="Tap to edit price">
+                    @if (line.sellPrice < line.originalPrice) {
+                      <span class="pl-line-original">₹{{ line.originalPrice.toLocaleString('en-IN') }}</span>
+                    }
+                    <span class="pl-line-sell" [class.pl-line-sell-discounted]="line.sellPrice < line.originalPrice">
+                      ₹{{ line.sellPrice.toLocaleString('en-IN') }}
                     </span>
-                  }
-                </button>
-              }
+                    <span class="pl-line-unit">/ {{ line.unit }}</span>
+                    @if (line.sellPrice < line.originalPrice) {
+                      <span class="pl-line-discount-badge">
+                        −₹{{ (line.originalPrice - line.sellPrice).toLocaleString('en-IN') }}
+                      </span>
+                    }
+                  </button>
+                }
+              </div>
+              <div class="pl-qty">
+                @if (qtyExpandIdx() === $index) {
+                  <button type="button" class="pl-qty-btn" (click)="decLine($index); resetQtyTimer()" aria-label="Decrease">−</button>
+                  <span class="pl-qty-val pl-qty-val-active" (click)="qtyExpandIdx.set(null)">{{ line.qty }}</span>
+                  <button type="button" class="pl-qty-btn" (click)="incLine($index); resetQtyTimer()" aria-label="Increase">+</button>
+                } @else {
+                  <span class="pl-qty-chip" (click)="expandQty($index)">{{ line.qty }}</span>
+                }
+              </div>
+              <span class="pl-bill-line-total">₹{{ (line.sellPrice * line.qty).toLocaleString('en-IN') }}</span>
             </div>
-            <div class="pl-qty">
-              <button type="button" class="pl-qty-btn" (click)="decLine($index)" aria-label="Decrease">−</button>
-              <span class="pl-qty-val">{{ line.qty }}</span>
-              <button type="button" class="pl-qty-btn" (click)="incLine($index)" aria-label="Increase">+</button>
-            </div>
-            <span class="pl-bill-line-total">₹{{ (line.sellPrice * line.qty).toLocaleString('en-IN') }}</span>
-            <button type="button" class="pl-bill-line-del" (click)="removeLine($index)" aria-label="Remove">✕</button>
           </li>
         }
       </ul>
@@ -312,9 +328,9 @@
         <button type="button" class="pl-btn pl-btn-cancel" (click)="clearBillCart(); closeBill()"
                 [disabled]="billSaving()">🗑️ Clear</button>
         <button type="button" class="pl-btn pl-btn-whatsapp" (click)="shareOnWhatsApp()"
-                [disabled]="billSaving() || billItems().length === 0 || !canWhatsApp()"
-                [title]="canWhatsApp() ? 'Share on WhatsApp' : 'Enter mobile number to share'">
-          📲 WhatsApp
+                [disabled]="billSaving() || billItems().length === 0"
+                title="Share bill as image">
+          📲 Share
         </button>
         <button type="button" class="pl-btn pl-btn-print" (click)="printBill()"
                 [disabled]="billSaving() || billItems().length === 0">🖨️ Print</button>

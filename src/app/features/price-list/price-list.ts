@@ -126,6 +126,21 @@ export class PriceListComponent implements OnInit {
   readonly editingLineIndex = signal<number | null>(null);
   readonly editLinePrice    = signal<string>('');
 
+  // ── Per-line qty stepper (tap to expand, auto-collapses after 3 s) ──
+  readonly qtyExpandIdx = signal<number | null>(null);
+  private qtyCollapseTimer: ReturnType<typeof setTimeout> | null = null;
+
+  expandQty(idx: number): void {
+    if (this.qtyCollapseTimer) clearTimeout(this.qtyCollapseTimer);
+    this.qtyExpandIdx.set(idx);
+    this.qtyCollapseTimer = setTimeout(() => this.qtyExpandIdx.set(null), 3000);
+  }
+
+  resetQtyTimer(): void {
+    if (this.qtyCollapseTimer) clearTimeout(this.qtyCollapseTimer);
+    this.qtyCollapseTimer = setTimeout(() => this.qtyExpandIdx.set(null), 3000);
+  }
+
   /** Total number of units across all bill lines. */
   readonly billCount = computed(() =>
     this.billItems().reduce((sum, l) => sum + l.qty, 0),
@@ -350,6 +365,82 @@ export class PriceListComponent implements OnInit {
   removeLine(index: number): void {
     this.editingLineIndex.set(null);
     this.billItems.update(lines => lines.filter((_, i) => i !== index));
+    this.blCloseSwipe();
+  }
+
+  // ── Bill-line swipe-to-delete ─────────────────────────────────────────────
+  private static readonly BL_SWIPE_LOCK      = 6;
+  private static readonly BL_SWIPE_THRESHOLD = 55;
+
+  private blStartX     = 0;
+  private blStartY     = 0;
+  private blPointerId  = -1;
+  private blAxisLocked: 'h' | 'v' | null = null;
+
+  readonly blSwipingIdx   = signal<number | null>(null);
+  readonly blSwipeOffset  = signal(0);
+  readonly blSwipeOpenIdx = signal<number | null>(null);
+
+  blSwipeDown(event: PointerEvent, idx: number): void {
+    if (this.blSwipeOpenIdx() !== null && this.blSwipeOpenIdx() !== idx) {
+      this.blCloseSwipe();
+    }
+    if (this.blSwipeOpenIdx() === idx) return;
+    this.blStartX     = event.clientX;
+    this.blStartY     = event.clientY;
+    this.blPointerId  = event.pointerId;
+    this.blAxisLocked = null;
+    this.blSwipingIdx.set(idx);
+    this.blSwipeOffset.set(0);
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  }
+
+  blSwipeMove(event: PointerEvent): void {
+    if (event.pointerId !== this.blPointerId) return;
+    const dx = event.clientX - this.blStartX;
+    const dy = event.clientY - this.blStartY;
+    if (!this.blAxisLocked) {
+      if (Math.abs(dx) < PriceListComponent.BL_SWIPE_LOCK && Math.abs(dy) < PriceListComponent.BL_SWIPE_LOCK) return;
+      this.blAxisLocked = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
+    }
+    if (this.blAxisLocked === 'v') { this.blCancelSwipe(); return; }
+    event.preventDefault();
+    this.blSwipeOffset.set(Math.max(-100, Math.min(0, dx)));
+  }
+
+  blSwipeUp(event: PointerEvent, idx: number): void {
+    if (event.pointerId !== this.blPointerId) return;
+    const offset = this.blSwipeOffset();
+    if (offset <= -PriceListComponent.BL_SWIPE_THRESHOLD) {
+      this.blCloseSwipe();
+      this.removeLine(idx);
+    } else if (offset < -10) {
+      this.blSwipeOpenIdx.set(idx);
+      this.blSwipeOffset.set(0);
+      this.blSwipingIdx.set(null);
+    } else {
+      this.blCancelSwipe();
+    }
+    this.blPointerId = -1;
+  }
+
+  blCancelSwipe(): void {
+    this.blSwipeOffset.set(0);
+    this.blSwipingIdx.set(null);
+    this.blAxisLocked = null;
+    this.blPointerId  = -1;
+  }
+
+  blCloseSwipe(): void {
+    this.blSwipeOpenIdx.set(null);
+    this.blSwipeOffset.set(0);
+    this.blSwipingIdx.set(null);
+  }
+
+  blSwipeRowStyle(idx: number): string {
+    if (this.blSwipingIdx() === idx) return `transform:translateX(${this.blSwipeOffset()}px)`;
+    if (this.blSwipeOpenIdx() === idx) return 'transform:translateX(-72px)';
+    return '';
   }
 
   startEditLinePrice(index: number): void {

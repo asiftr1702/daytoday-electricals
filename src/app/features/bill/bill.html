@@ -161,29 +161,114 @@
         </button>
       </div>
     } @else {
-      <table class="bill-table">
+      <!-- ── Screen: swipe-to-delete list ──────────────────────────────── -->
+      <div class="bill-items-wrapper no-print">
+        <div class="bill-col-header">
+          <span class="bch-num">#</span>
+          <span class="bch-item">Item</span>
+          <span class="bch-qty">Qty</span>
+          <span class="bch-price">Price ₹</span>
+          <span class="bch-total">Total ₹</span>
+        </div>
+        <ul class="bill-items-list">
+          @for (item of items(); track trackByIndex($index)) {
+            <li class="bill-row" [class.bill-swipe-open]="bSwipeOpenIdx() === $index">
+              <div class="bill-swipe-bg">
+                <button type="button" class="bill-del-btn" (click)="removeItem($index)">🗑️ Delete</button>
+              </div>
+              <div class="bill-swipe-content"
+                   [style]="bSwipeRowStyle($index)"
+                   (pointerdown)="bSwipeDown($event, $index)"
+                   (pointermove)="bSwipeMove($event)"
+                   (pointerup)="bSwipeUp($event, $index)"
+                   (pointercancel)="bCancelSwipe()">
+                <span class="bill-num">{{ $index + 1 }}</span>
+                <div class="bill-item-info">
+                  @if (item.brand) { <span class="brand-name">{{ item.brand }}</span> }
+                  <span class="item-name">{{ itemLabel(item) }}</span>
+                  @if (item.subcategory) { <span class="sub-name">{{ item.subcategory }}</span> }
+                  @if (item.billFields?.length) {
+                    <span class="item-fields">
+                      @for (f of item.billFields; track f.label) {
+                        <span class="item-field">{{ f.value }}</span>
+                      }
+                    </span>
+                  }
+                </div>
+                <div class="bill-qty">
+                  @if (editingIndex() === $index) {
+                    <div class="b-qty-stepper">
+                      <button type="button" class="b-qty-btn" (click)="updateQty($index, item.qty - 1)" [disabled]="item.qty <= 1">−</button>
+                      <span class="b-qty-val" (click)="editingIndex.set(null)">{{ item.qty }}</span>
+                      <button type="button" class="b-qty-btn" (click)="updateQty($index, item.qty + 1)">+</button>
+                    </div>
+                  } @else {
+                    <span class="editable-val" (click)="editingIndex.set($index)" title="Tap to edit qty">{{ item.qty }}</span>
+                  }
+                </div>
+                <div class="bill-price">
+                  @if (editingIndex() === $index) {
+                    <input type="number" class="inline-input" [value]="item.sellPrice" min="0"
+                           (change)="updateSellPrice($index, +$any($event.target).value)" />
+                  } @else {
+                    <span class="editable-val" (click)="editingIndex.set($index)" title="Tap to edit">{{ formatCurrency(item.sellPrice) }}</span>
+                  }
+                </div>
+                <div class="bill-row-total">{{ formatCurrency(item.sellPrice * item.qty) }}</div>
+              </div>
+            </li>
+          }
+        </ul>
+
+        <!-- Screen totals -->
+        <div class="bill-totals-screen">
+          @if (discount() > 0) {
+            <div class="bt-row bt-subtotal">
+              <span>Subtotal</span><span>{{ formatCurrency(billTotal()) }}</span>
+            </div>
+          }
+          <div class="bt-row bt-discount">
+            <div class="discount-controls">
+              <label class="dc-field">
+                <span class="dc-cap">Disc %</span>
+                <input type="number" class="discount-input" min="0" max="100" placeholder="0"
+                       [value]="discountPercentValue()" (input)="onDiscountPercent(+$any($event.target).value)" />
+              </label>
+              <label class="dc-field">
+                <span class="dc-cap">Received ₹</span>
+                <input type="number" class="discount-input" min="0" [max]="billTotal()" placeholder="0"
+                       [value]="amountReceivedValue()" (input)="onAmountReceived(+$any($event.target).value)" />
+              </label>
+              <label class="dc-field">
+                <span class="dc-cap">Discount ₹</span>
+                <input type="number" class="discount-input" min="0" [max]="billTotal()" placeholder="0"
+                       [value]="discount()" (input)="onDiscountAmount(+$any($event.target).value)" />
+              </label>
+            </div>
+            @if (discount() > 0) {
+              <span class="bt-disc-val">− {{ formatCurrency(discount()) }}</span>
+            }
+          </div>
+          <div class="bt-row bt-grand">
+            <span><strong>{{ discount() > 0 ? 'Amount Paid' : 'Grand Total' }}</strong></span>
+            <span class="final-amount"><strong>{{ formatCurrency(finalAmount()) }}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Print: traditional table ───────────────────────────────────── -->
+      <table class="bill-table print-only">
         <thead>
-          <tr>
-            <th>#</th>
-            <th>Item</th>
-            <th>Qty</th>
-            <th>Unit Price (₹)</th>
-            <th>Total (₹)</th>
-            <th class="no-print">Actions</th>
-          </tr>
+          <tr><th>#</th><th>Item</th><th>Qty</th><th>Unit Price (₹)</th><th>Total (₹)</th></tr>
         </thead>
         <tbody>
           @for (item of items(); track trackByIndex($index)) {
             <tr>
               <td class="col-num">{{ $index + 1 }}</td>
               <td class="col-name">
-                @if (item.brand) {
-                  <span class="brand-name">{{ item.brand }}</span>
-                }
+                @if (item.brand) { <span class="brand-name">{{ item.brand }}</span> }
                 <span class="item-name">{{ itemLabel(item) }}</span>
-                @if (item.subcategory) {
-                  <span class="sub-name">{{ item.subcategory }}</span>
-                }
+                @if (item.subcategory) { <span class="sub-name">{{ item.subcategory }}</span> }
                 @if (item.billFields?.length) {
                   <span class="item-fields">
                     @for (f of item.billFields; track f.label) {
@@ -192,53 +277,9 @@
                   </span>
                 }
               </td>
-
-              <!-- Qty -->
-              <td class="col-qty">
-                @if (editingIndex() === $index) {
-                  <input
-                    type="number"
-                    class="inline-input"
-                    [value]="item.qty"
-                    min="1"
-                    (change)="updateQty($index, +$any($event.target).value)"
-                  />
-                } @else {
-                  <span class="editable-val" (click)="editingIndex.set($index)" title="Click to edit">
-                    {{ item.qty }}
-                  </span>
-                }
-              </td>
-
-              <!-- Unit Sell Price -->
-              <td class="col-price">
-                @if (editingIndex() === $index) {
-                  <input
-                    type="number"
-                    class="inline-input"
-                    [value]="item.sellPrice"
-                    min="0"
-                    (change)="updateSellPrice($index, +$any($event.target).value)"
-                  />
-                } @else {
-                  <span class="editable-val" (click)="editingIndex.set($index)" title="Click to edit">
-                    {{ formatCurrency(item.sellPrice) }}
-                  </span>
-                }
-              </td>
-
-              <!-- Row total -->
+              <td class="col-qty">{{ item.qty }}</td>
+              <td class="col-price">{{ formatCurrency(item.sellPrice) }}</td>
               <td class="col-total">{{ formatCurrency(item.sellPrice * item.qty) }}</td>
-
-              <!-- Actions (no-print) -->
-              <td class="col-actions no-print">
-                @if (editingIndex() === $index) {
-                  <button type="button" class="btn-done" (click)="editingIndex.set(null)" title="Done">✓</button>
-                } @else {
-                  <button type="button" class="btn-edit" (click)="editingIndex.set($index)" title="Edit">✏️</button>
-                }
-                <button type="button" class="btn-remove" (click)="removeItem($index)" title="Remove">🗑️</button>
-              </td>
             </tr>
           }
         </tbody>
@@ -247,58 +288,8 @@
             <tr class="bill-subtotal-row">
               <td colspan="4" class="total-label">Subtotal</td>
               <td class="total-amount">{{ formatCurrency(billTotal()) }}</td>
-              <td class="no-print"></td>
             </tr>
-          }
-          <tr class="bill-discount-row no-print">
-            <td colspan="4" class="total-label discount-label">
-              <div class="discount-controls">
-                <label class="dc-field">
-                  <span class="dc-cap">Discount %</span>
-                  <input
-                    type="number"
-                    class="discount-input"
-                    min="0"
-                    max="100"
-                    placeholder="0"
-                    [value]="discountPercentValue()"
-                    (input)="onDiscountPercent(+$any($event.target).value)"
-                  />
-                </label>
-                <label class="dc-field">
-                  <span class="dc-cap">Amount Received</span>
-                  <input
-                    type="number"
-                    class="discount-input"
-                    min="0"
-                    [max]="billTotal()"
-                    placeholder="0"
-                    [value]="amountReceivedValue()"
-                    (input)="onAmountReceived(+$any($event.target).value)"
-                  />
-                </label>
-                <label class="dc-field">
-                  <span class="dc-cap">Discount ₹</span>
-                  <input
-                    type="number"
-                    class="discount-input"
-                    min="0"
-                    [max]="billTotal()"
-                    placeholder="0"
-                    [value]="discount()"
-                    (input)="onDiscountAmount(+$any($event.target).value)"
-                  />
-                </label>
-              </div>
-            </td>
-            <td class="total-amount discount-amount">
-              @if (discount() > 0) { − {{ formatCurrency(discount()) }} }
-            </td>
-            <td class="no-print"></td>
-          </tr>
-          <!-- Discount row shown on print only when a discount was applied -->
-          @if (discount() > 0) {
-            <tr class="bill-discount-row print-only">
+            <tr class="bill-discount-row">
               <td colspan="4" class="total-label">Discount</td>
               <td class="total-amount discount-amount">− {{ formatCurrency(discount()) }}</td>
             </tr>
@@ -306,7 +297,6 @@
           <tr class="bill-total-row">
             <td colspan="4" class="total-label"><strong>{{ discount() > 0 ? 'Amount Paid' : 'Grand Total' }}</strong></td>
             <td class="total-amount final-amount"><strong>{{ formatCurrency(finalAmount()) }}</strong></td>
-            <td class="no-print"></td>
           </tr>
         </tfoot>
       </table>

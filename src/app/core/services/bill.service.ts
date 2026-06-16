@@ -400,38 +400,53 @@ export class BillService {
       </body></html>`;
   }
 
-  /** Print a saved bill via a hidden iframe (works inside sandboxed browsers). */
+  /** Print a bill receipt.
+   *
+   * Strategy:
+   *  1. Build a Blob URL and open it in a new tab — works reliably on Android Chrome.
+   *  2. If the popup is blocked (window.open returns null), fall back to the hidden-iframe
+   *     approach which works in desktop browsers and the VS Code embedded webview.
+   */
   printBill(bill: Bill): void {
     const html = this.buildReceiptHtml(bill);
+
+    // ── Attempt 1: new tab via Blob URL (Android-compatible) ──────────────
+    const blob = new Blob([html], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    const newWin = window.open(url, '_blank');
+
+    if (newWin) {
+      // New tab opened successfully — revoke the object URL after a safe delay.
+      newWin.addEventListener('load', () => {
+        try { newWin.print(); } catch { /* some browsers auto-show print UI */ }
+      }, { once: true });
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      return;
+    }
+
+    // Popup was blocked — clean up the blob URL and fall back to iframe.
+    URL.revokeObjectURL(url);
+
+    // ── Fallback: hidden iframe (desktop / VS Code webview) ───────────────
     const iframe = document.createElement('iframe');
     iframe.setAttribute('aria-hidden', 'true');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
     document.body.appendChild(iframe);
 
     const cleanup = () => {
       if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
     };
 
-    const doc = iframe.contentWindow?.document;
-    if (!doc) { cleanup(); return; }
-    doc.open();
-    doc.write(html);
-    doc.close();
+    const iDoc = iframe.contentWindow?.document;
+    if (!iDoc) { cleanup(); return; }
+    iDoc.open();
+    iDoc.write(html);
+    iDoc.close();
 
     const win = iframe.contentWindow!;
     win.onafterprint = () => setTimeout(cleanup, 100);
     setTimeout(() => {
-      try {
-        win.focus();
-        win.print();
-      } catch {
-        cleanup();
-      }
+      try { win.focus(); win.print(); } catch { cleanup(); }
     }, 300);
   }
 }
