@@ -73,10 +73,11 @@ export class PriceListComponent implements OnInit {
   private readonly cache = signal<Map<string, PriceListEntry[]>>(new Map());
 
   // ── Inline edit state ──
-  readonly editingId = signal<string | null>(null);
-  readonly editName  = signal('');
-  readonly editPrice = signal<string>('');
-  readonly editCost  = signal<string>('');
+  readonly editingId  = signal<string | null>(null);
+  readonly editName   = signal('');
+  readonly editPrice  = signal<string>('');
+  readonly editCost   = signal<string>('');
+  readonly editStock  = signal<string>('');
 
   // ── Add-row state ──
   readonly adding      = signal(false);
@@ -85,6 +86,7 @@ export class PriceListComponent implements OnInit {
   readonly newCost     = signal<string>('');
   readonly newCategory = signal('');
   readonly newUnit     = signal('pcs');
+  readonly newStock    = signal<string>('');
 
   // ── Long-press "reveal cost" state ──
   /** Id of the row whose hidden cost is currently revealed (null = none). */
@@ -413,6 +415,7 @@ export class PriceListComponent implements OnInit {
     this.editName.set(entry.name);
     this.editPrice.set(entry.sellPrice != null ? String(entry.sellPrice) : '');
     this.editCost.set(entry.costPrice != null ? String(entry.costPrice) : '');
+    this.editStock.set(entry.stock != null ? String(entry.stock) : '');
   }
 
   cancelEdit(): void {
@@ -425,14 +428,15 @@ export class PriceListComponent implements OnInit {
     const name = this.editName().trim();
     if (!name) return;
     const price = this.parsePrice(this.editPrice());
-    const cost = this.parsePrice(this.editCost());
+    const cost  = this.parsePrice(this.editCost());
+    const stock = this.parseStock(this.editStock());
 
     this.busy.set(true);
     try {
-      await this.priceList.update(id, { name, sellPrice: price, costPrice: cost });
+      await this.priceList.update(id, { name, sellPrice: price, costPrice: cost, stock });
       const cat = entry.category || 'other';
       const list = (this.cache().get(cat) ?? []).map(e =>
-        e.id === id ? { ...e, name, sellPrice: price, costPrice: cost } : e,
+        e.id === id ? { ...e, name, sellPrice: price, costPrice: cost, stock } : e,
       );
       this.setCatEntries(cat, list);
       this.editingId.set(null);
@@ -449,6 +453,7 @@ export class PriceListComponent implements OnInit {
     this.newPrice.set('');
     this.newCost.set('');
     this.newUnit.set('pcs');
+    this.newStock.set('');
     if (!this.newCategory()) {
       this.newCategory.set(this.activeCat() || this.categoryOptions()[0]?.id || 'other');
     }
@@ -467,6 +472,7 @@ export class PriceListComponent implements OnInit {
       costPrice: this.parsePrice(this.newCost()),
       category: this.newCategory() || 'other',
       unit: this.newUnit().trim() || 'pcs',
+      stock: this.parseStock(this.newStock()),
     };
 
     this.busy.set(true);
@@ -523,6 +529,7 @@ export class PriceListComponent implements OnInit {
           costPrice: costPriceOf(p),
           category: (p['category'] as string) || 'other',
           unit: p.unit || 'pcs',
+          stock: typeof p.stockQty === 'number' ? p.stockQty : null,
         }));
         try {
           await this.priceList.importMany(rows);
@@ -537,8 +544,35 @@ export class PriceListComponent implements OnInit {
     });
   }
 
+  /** Adjust the stock count for a row by delta (±1) and immediately save to Firestore. */
+  async adjustStock(item: PriceListEntry, delta: number): Promise<void> {
+    if (!item.id) return;
+    const current = item.stock ?? 0;
+    const next = Math.max(0, current + delta);
+    // Nothing to do if already at 0 and decrementing (and stock was already set)
+    if (next === current && item.stock != null) return;
+    const cat = item.category || 'other';
+    // Optimistic cache update
+    this.setCatEntries(cat, (this.cache().get(cat) ?? []).map(e =>
+      e.id === item.id ? { ...e, stock: next } : e,
+    ));
+    try {
+      await this.priceList.update(item.id, { stock: next });
+    } catch {
+      // Rollback
+      this.setCatEntries(cat, (this.cache().get(cat) ?? []).map(e =>
+        e.id === item.id ? { ...e, stock: item.stock ?? null } : e,
+      ));
+    }
+  }
+
   private parsePrice(value: string): number | null {
     const n = parseFloat(String(value).replace(/[^0-9.]/g, ''));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private parseStock(value: string): number | null {
+    const n = parseInt(String(value).replace(/[^0-9]/g, ''), 10);
     return Number.isFinite(n) ? n : null;
   }
 }

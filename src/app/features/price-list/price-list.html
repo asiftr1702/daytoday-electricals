@@ -96,8 +96,12 @@
                     <span class="pl-field-label">Cost ₹</span>
                     <input class="pl-input" type="number" inputmode="decimal"
                            [value]="editCost()" (input)="editCost.set($any($event.target).value)"
-                           aria-label="Edit cost price" />
-                  </label>
+                           aria-label="Edit cost price" />                  </label>
+                  <label class="pl-field pl-field-price">
+                    <span class="pl-field-label">Stock qty</span>
+                    <input class="pl-input" type="number" inputmode="numeric"
+                           [value]="editStock()" (input)="editStock.set($any($event.target).value)"
+                           placeholder="—" aria-label="Edit stock count" />                  </label>
                 </div>
                 <div class="pl-row-actions pl-row-actions-edit">
                   <button type="button" class="pl-icon-btn pl-save" (click)="saveEdit(item)"
@@ -125,23 +129,34 @@
                       }
                     </span>
                   } @else {
-                    <span class="pl-row-price">
-                      @if (item.sellPrice != null) {
-                        <span class="pl-price">₹{{ item.sellPrice.toLocaleString('en-IN') }}</span>
-                        <span class="pl-unit">/ {{ item.unit || 'pcs' }}</span>
-                      } @else {
-                        <span class="pl-price pl-price-na">No price set</span>
-                      }
-                    </span>
+                    <div class="pl-row-info-line">
+                      <span class="pl-row-price">
+                        @if (item.sellPrice != null) {
+                          <span class="pl-price">₹{{ item.sellPrice.toLocaleString('en-IN') }}</span>
+                          <span class="pl-unit">/ {{ item.unit || 'pcs' }}</span>
+                        } @else {
+                          <span class="pl-price pl-price-na">No price set</span>
+                        }
+                      </span>
+                    </div>
                   }
                 </div>
-                <div class="pl-row-actions">
-                  <button type="button" class="pl-icon-btn pl-tobill" (click)="addToBill(item)"
-                          [disabled]="busy() || item.sellPrice == null" aria-label="Add to bill">🧾</button>
-                  <button type="button" class="pl-icon-btn pl-edit" (click)="startEdit(item)"
-                          [disabled]="busy()" aria-label="Edit">✏️</button>
-                  <button type="button" class="pl-icon-btn pl-delete" (click)="remove(item)"
-                          [disabled]="busy()" aria-label="Delete">🗑️</button>
+                <div class="pl-row-actions-grid">
+                  <div class="pl-act-row">
+                    <button type="button" class="pl-act-btn pl-act-edit" (click)="startEdit(item)"
+                            [disabled]="busy()" aria-label="Edit">✏️</button>
+                    <button type="button" class="pl-act-btn pl-act-del" (click)="remove(item)"
+                            [disabled]="busy()" aria-label="Delete">🗑️</button>
+                  </div>
+                  <div class="pl-act-row">
+                    <button type="button" class="pl-act-btn pl-act-bill" (click)="addToBill(item)"
+                            [disabled]="busy() || item.sellPrice == null" aria-label="Add to bill">🧾</button>
+                    <span class="pl-stock-count"
+                          [class.pl-stock-count-out]="(item.stock ?? 0) === 0"
+                          [class.pl-stock-count-low]="(item.stock ?? 0) > 0 && (item.stock ?? 0) <= 3">
+                      {{ item.stock ?? 0 }}
+                    </span>
+                  </div>
                 </div>
               }
             </li>
@@ -314,6 +329,15 @@
           <input class="pl-input" type="number" inputmode="decimal" placeholder="0"
                  [value]="newCost()" (input)="newCost.set($any($event.target).value)"
                  aria-label="New cost price" />
+        </label>
+      </div>
+
+      <div class="pl-sheet-row">
+        <label class="pl-field pl-field-price">
+          <span class="pl-field-label">Stock qty</span>
+          <input class="pl-input" type="number" inputmode="numeric" placeholder="0"
+                 [value]="newStock()" (input)="newStock.set($any($event.target).value)"
+                 aria-label="Stock count" />
         </label>
         <label class="pl-field pl-field-unit">
           <span class="pl-field-label">Unit</span>

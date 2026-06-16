@@ -25,6 +25,8 @@ export interface PriceListEntry {
   category: string;
   /** Optional unit label (e.g. pcs, mtr). */
   unit?: string;
+  /** Current stock count. null/undefined means not tracked. */
+  stock?: number | null;
 }
 
 /**
