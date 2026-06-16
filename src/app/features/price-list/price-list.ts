@@ -10,7 +10,10 @@ import { AnyProduct } from '../../core/models/any-product.model';
 /** A single line in the quick bill built from the price list. */
 interface BillLine {
   name: string;
+  /** The current (possibly discounted) price per unit. */
   sellPrice: number;
+  /** Original list price — set once on add, never changes. Used to show discount. */
+  originalPrice: number;
   costPrice: number | null;
   unit: string;
   category: string;
@@ -95,8 +98,13 @@ export class PriceListComponent implements OnInit {
   readonly showBill     = signal(false);
   readonly billCustomer = signal('');
   readonly billMobile   = signal('');
+  readonly billPaid     = signal<string>('');
   readonly billSaving   = signal(false);
   readonly billMsg      = signal('');
+
+  // ── Per-line price editing ──
+  readonly editingLineIndex = signal<number | null>(null);
+  readonly editLinePrice    = signal<string>('');
 
   /** Total number of units across all bill lines. */
   readonly billCount = computed(() =>
@@ -106,6 +114,26 @@ export class PriceListComponent implements OnInit {
   readonly billTotal = computed(() =>
     this.billItems().reduce((sum, l) => sum + l.sellPrice * l.qty, 0),
   );
+
+  /** The parsed paid amount entered by the user (NaN when blank). */
+  private readonly parsedPaid = computed(() => {
+    const v = parseFloat(this.billPaid());
+    return isNaN(v) || v < 0 ? NaN : v;
+  });
+
+  /** Discount = total − paid (only when customer paid less than total). */
+  readonly billDiscount = computed(() => {
+    const paid = this.parsedPaid();
+    const total = this.billTotal();
+    return !isNaN(paid) && paid < total ? Math.round(total - paid) : 0;
+  });
+
+  /** Change to return to customer (when they overpay). */
+  readonly billChange = computed(() => {
+    const paid = this.parsedPaid();
+    const total = this.billTotal();
+    return !isNaN(paid) && paid > total ? Math.round(paid - total) : 0;
+  });
 
   /** Category chips/options (id, name, icon, colour) from the catalogue config. */
   readonly categoryOptions = computed(() =>
@@ -170,11 +198,13 @@ export class PriceListComponent implements OnInit {
         copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
         return copy;
       }
+
       return [
         ...lines,
         {
           name: item.name,
           sellPrice: sell,
+          originalPrice: sell,
           costPrice: item.costPrice ?? null,
           unit: item.unit || 'pcs',
           category: item.category,
@@ -199,7 +229,29 @@ export class PriceListComponent implements OnInit {
   }
 
   removeLine(index: number): void {
+    this.editingLineIndex.set(null);
     this.billItems.update(lines => lines.filter((_, i) => i !== index));
+  }
+
+  startEditLinePrice(index: number): void {
+    this.editingLineIndex.set(index);
+    this.editLinePrice.set(String(this.billItems()[index].sellPrice));
+  }
+
+  confirmEditLinePrice(index: number): void {
+    const v = parseFloat(this.editLinePrice());
+    if (!isNaN(v) && v >= 0) {
+      this.billItems.update(lines =>
+        lines.map((l, i) => i === index ? { ...l, sellPrice: v } : l),
+      );
+    }
+    this.editingLineIndex.set(null);
+    this.editLinePrice.set('');
+  }
+
+  cancelEditLinePrice(): void {
+    this.editingLineIndex.set(null);
+    this.editLinePrice.set('');
   }
 
   openBill(): void { this.showBill.set(true); }
@@ -209,6 +261,9 @@ export class PriceListComponent implements OnInit {
     this.billItems.set([]);
     this.billCustomer.set('');
     this.billMobile.set('');
+    this.billPaid.set('');
+    this.editingLineIndex.set(null);
+    this.editLinePrice.set('');
   }
 
   /** Build a Bill object from the current cart (used for print and save). */
@@ -217,6 +272,8 @@ export class PriceListComponent implements OnInit {
     const total = this.billTotal();
     const totalCost = lines.reduce((s, l) => s + (l.costPrice ?? 0) * l.qty, 0);
     const datePart = this.today.replace(/-/g, '');
+    const discount = this.billDiscount();
+    const finalAmt = total - discount;
     return {
       date: this.today,
       billNumber: `BILL-${datePart}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -230,12 +287,16 @@ export class PriceListComponent implements OnInit {
         costPrice: l.costPrice ?? 0,
         sellPrice: l.sellPrice,
         profit: (l.sellPrice - (l.costPrice ?? 0)) * l.qty,
+        // record per-item discount if price was reduced from the list price
+        ...(l.sellPrice < l.originalPrice
+          ? { originalPrice: l.originalPrice, itemDiscount: Math.round((l.originalPrice - l.sellPrice) * l.qty) }
+          : {}),
       })),
       totalAmount: total,
-      discountAmount: 0,
-      finalAmount: total,
+      discountAmount: discount,
+      finalAmount: finalAmt,
       totalCost,
-      totalProfit: total - totalCost,
+      totalProfit: finalAmt - totalCost,
     };
   }
 
@@ -259,11 +320,12 @@ export class PriceListComponent implements OnInit {
         unit: l.unit,
         qty: l.qty,
         costPrice: l.costPrice ?? 0,
-        sellPrice: l.sellPrice,
+        sellPrice: l.sellPrice,  // actual (discounted) price
       }),
     );
     this.billService.customerName.set(this.billCustomer().trim());
     this.billService.mobileNumber.set(this.billMobile().trim());
+    this.billService.discount.set(this.billDiscount());
     this.billService.saveBill(this.today).subscribe({
       next: () => {
         this.billSaving.set(false);

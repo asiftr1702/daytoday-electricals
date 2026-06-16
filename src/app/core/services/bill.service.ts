@@ -353,7 +353,7 @@ export class BillService {
     ].join('');
 
     return `<!doctype html><html><head><meta charset="utf-8">
-      <title>${this.esc(bill.billNumber ?? 'Bill')}</title>
+      <title>DayToDay Electricals</title>
       <style>
         * { box-sizing: border-box; }
         body { font-family: Arial, sans-serif; color: #111; margin: 16px; position: relative; }
@@ -362,10 +362,14 @@ export class BillService {
         .head { display: flex; justify-content: space-between; align-items: flex-start; }
         .meta { font-size: 12px; margin: 6px 0; }
         .billno { font-size: 12px; color: #4338ca; font-weight: 700; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th, td { padding: 5px 6px; border-bottom: 1px solid #ddd; text-align: left; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; table-layout: fixed; }
+        col.c-item  { width: 52%; }
+        col.c-qty   { width: 10%; }
+        col.c-price { width: 19%; }
+        col.c-total { width: 19%; }
+        th, td { padding: 5px 6px; border-bottom: 1px solid #ddd; text-align: left; overflow-wrap: break-word; word-break: break-word; }
         th { background: #f3f4f6; font-size: 11px; text-transform: uppercase; color: #6b7280; }
-        td.c { text-align: center; } td.r { text-align: right; }
+        td.c, th.c { text-align: center; } td.r, th.r { text-align: right; }
         tfoot td { font-weight: 700; border-bottom: 1px solid #ddd; }
         tr.ret td { color: #9b1c1c; background: #fef6f6; font-weight: 400; }
         tr.ret small { color: #b45c5c; }
@@ -386,6 +390,9 @@ export class BillService {
       </div>
       <div class="meta">${meta}</div>
       <table>
+        <colgroup>
+          <col class="c-item"><col class="c-qty"><col class="c-price"><col class="c-total">
+        </colgroup>
         <thead><tr><th>Item</th><th class="c">Qty</th><th class="r">Price</th><th class="r">Total</th></tr></thead>
         <tbody>${itemRows}</tbody>
         <tfoot>${footRows}</tfoot>

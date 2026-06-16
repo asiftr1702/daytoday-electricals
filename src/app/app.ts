@@ -13,7 +13,11 @@ import { FooterComponent } from './shared/footer/footer';
 export class App {
   readonly router = inject(Router);
 
-  get isLoginPage(): boolean {
-    return this.router.url === '/login' || this.router.url.startsWith('/login?');
+  /** Pages that render standalone, without the DayToDay Electricals header/footer chrome. */
+  private readonly chromelessPaths = ['/login', '/prices'];
+
+  get isChromeless(): boolean {
+    const url = this.router.url.split('?')[0].split('#')[0];
+    return this.chromelessPaths.some(p => url === p || url.startsWith(p + '/'));
   }
 }

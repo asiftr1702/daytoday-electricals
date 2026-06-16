@@ -1,10 +1,10 @@
 <a href="#main-content" class="skip-link">Skip to main content</a>
-@if (!isLoginPage) {
+@if (!isChromeless) {
   <app-header />
 }
 <main id="main-content">
   <router-outlet />
 </main>
-@if (!isLoginPage) {
+@if (!isChromeless) {
   <app-footer />
 }
