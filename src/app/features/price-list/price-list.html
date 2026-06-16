@@ -175,7 +175,7 @@
                               [class.pl-stock-count-out]="availableStock(item) === 0"
                               [class.pl-stock-count-low]="availableStock(item) > 0 && availableStock(item) <= 3"
                               [class.pl-stock-count-add]="availableStock(item) > 0 && item.sellPrice != null"
-                              [disabled]="busy() || item.sellPrice == null || (item.stock ?? 0) === 0"
+                              [disabled]="busy() || item.sellPrice == null"
                               (click)="addToBill(item)"
                               aria-label="Tap to add to bill">
                         {{ availableStock(item) }}

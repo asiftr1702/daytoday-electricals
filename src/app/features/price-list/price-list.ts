@@ -406,22 +406,21 @@ export class PriceListComponent implements OnInit {
     if (item.sellPrice == null) return;
     const sell = item.sellPrice;
     const stock = item.stock ?? null;
+    if (this.availableStock(item) <= 0) {
+      this.flashStockLimit(0);
+      return;
+    }
     this.billItems.update(lines => {
       const idx = lines.findIndex(l => l.name === item.name && l.category === item.category);
       if (idx >= 0) {
         const line = lines[idx];
         if (line.stock != null && line.qty >= line.stock) {
-          this.flashStockLimit(line.name, Math.max(0, line.stock - line.qty));
+          this.flashStockLimit(Math.max(0, line.stock - line.qty));
           return lines;
         }
         const copy = lines.slice();
         copy[idx] = { ...line, qty: line.qty + 1 };
         return copy;
-      }
-
-      if (stock != null && stock <= 0) {
-        this.flashStockLimit(item.name, 0);
-        return lines;
       }
 
       return [
@@ -442,11 +441,11 @@ export class PriceListComponent implements OnInit {
   }
 
   /** Show a brief "only N in stock" warning on the bill. */
-  private flashStockLimit(name: string, stock: number): void {
+  private flashStockLimit(stock: number): void {
     this.billMsg.set(
       stock <= 0
-        ? `⚠️ No more "${name}" left in inventory`
-        : `⚠️ Only ${stock} "${name}" left in inventory`,
+        ? `⚠️ No more left in inventory`
+        : `⚠️ Only ${stock} left in inventory`,
     );
     setTimeout(() => this.billMsg.set(''), 2500);
   }
@@ -468,7 +467,7 @@ export class PriceListComponent implements OnInit {
       lines.map((l, i) => {
         if (i !== index) return l;
         if (l.stock != null && l.qty >= l.stock) {
-          this.flashStockLimit(l.name, Math.max(0, l.stock - l.qty));
+          this.flashStockLimit(Math.max(0, l.stock - l.qty));
           return l;
         }
         return { ...l, qty: l.qty + 1 };
