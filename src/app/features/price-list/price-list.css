@@ -5,22 +5,15 @@
 
 :host {
   display: block;
-}
-
-/* ── Design tokens ── */
-:host {
   --pl-green: #059652;
   --pl-green-dark: #047a42;
   --pl-green-light: #e6f7ee;
-  --pl-navy: #0f1d2e;
   --pl-text: #1a2736;
   --pl-text-muted: #617082;
   --pl-border: #e4eaf1;
   --pl-surface: #ffffff;
   --pl-bg: #f0f3f7;
-  --pl-radius: 1rem;
   --pl-shadow-sm: 0 1px 3px rgba(15, 29, 46, 0.08);
-  --pl-shadow-md: 0 4px 16px rgba(15, 29, 46, 0.12);
 }
 
 .pl-page {
@@ -45,8 +38,7 @@
   gap: 0.75rem;
   background: linear-gradient(135deg, #0c2340 0%, #144d30 100%);
   margin: 0 -0.9rem 1rem;
-  padding: 1rem 1.1rem calc(1rem + env(safe-area-inset-top));
-  padding-top: calc(0.9rem + env(safe-area-inset-top));
+  padding: calc(0.9rem + env(safe-area-inset-top)) 1.1rem calc(1rem + env(safe-area-inset-top));
 }
 
 .pl-title-icon {
@@ -238,7 +230,7 @@
 .pl-group {
   margin-bottom: 0.85rem;
   background: var(--pl-surface);
-  border-radius: var(--pl-radius);
+  border-radius: 1rem;
   overflow: hidden;
   box-shadow: var(--pl-shadow-sm);
   border: 1px solid var(--pl-border);
@@ -292,7 +284,6 @@
 .pl-row {
   display: flex;
   align-items: center;
-  gap: 0;
   border-top: 1px solid #f0f4f8;
   transition: background 0.12s ease;
 }
@@ -308,7 +299,6 @@
   gap: 0.18rem;
   min-width: 0;
   padding: 0.82rem 0.5rem 0.82rem 1rem;
-  border-radius: 0;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -397,7 +387,6 @@
 .pl-row-actions {
   display: flex;
   align-items: center;
-  gap: 0;
   flex-shrink: 0;
   padding-right: 0.3rem;
 }
@@ -500,7 +489,6 @@
   font-weight: 700;
   border-radius: 0.75rem;
   padding: 0 1.1rem;
-  opacity: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -544,9 +532,8 @@
 .pl-btn:active { transform: scale(0.97); filter: brightness(0.94); }
 .pl-btn:disabled { opacity: 0.5; cursor: default; }
 
-.pl-btn-add    { background: var(--pl-green); color: #fff; }
+.pl-btn-add, .pl-btn-save { background: var(--pl-green); color: #fff; }
 .pl-btn-import { background: #fff; color: #3a4e62; border: 1.5px solid #cdd8e4; }
-.pl-btn-save   { background: var(--pl-green); color: #fff; }
 .pl-btn-cancel { background: #eef2f7; color: #3a4e62; }
 
 .pl-foot-note {
@@ -644,7 +631,7 @@
   bottom: calc(6rem + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   z-index: 40;
-  background: var(--pl-navy);
+  background: #0f1d2e;
   color: #fff;
   font-weight: 600;
   font-size: 0.93rem;
@@ -792,8 +779,7 @@
   gap: 0.25rem;
   border: none;
   background: transparent;
-  padding: 0.4rem 0;        /* vertical padding → bigger touch target */
-  margin: 0;
+  padding: 0.4rem 0;
   cursor: pointer;
   /* prevent iOS 300ms delay and scroll-intent capture */
   touch-action: manipulation;
