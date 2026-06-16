@@ -13,6 +13,13 @@
       }
     </header>
 
+    <!-- ── Saved bills button ── -->
+    @if (!loading()) {
+      <button type="button" class="pl-saved-btn" (click)="openSavedBills()">
+        📋 Saved bills ›
+      </button>
+    }
+
     <!-- ── Sticky search + chips ── -->
     @if (!loading()) {
       <div class="pl-sticky">
@@ -165,13 +172,13 @@
                   <div class="pl-row-actions-grid">
                     <div class="pl-act-row">
                       <button type="button" class="pl-stock-count"
-                              [class.pl-stock-count-out]="(item.stock ?? 0) === 0"
-                              [class.pl-stock-count-low]="(item.stock ?? 0) > 0 && (item.stock ?? 0) <= 3"
-                              [class.pl-stock-count-add]="(item.stock ?? 0) > 0 && item.sellPrice != null"
+                              [class.pl-stock-count-out]="availableStock(item) === 0"
+                              [class.pl-stock-count-low]="availableStock(item) > 0 && availableStock(item) <= 3"
+                              [class.pl-stock-count-add]="availableStock(item) > 0 && item.sellPrice != null"
                               [disabled]="busy() || item.sellPrice == null || (item.stock ?? 0) === 0"
                               (click)="addToBill(item)"
                               aria-label="Tap to add to bill">
-                        {{ item.stock ?? 0 }}
+                        {{ availableStock(item) }}
                       </button>
                     </div>
                   </div>
@@ -462,6 +469,88 @@
         <button type="button" class="pl-edit-save" (click)="saveAdd()"
                 [disabled]="busy() || !newName().trim()">✅ Save &amp; add</button>
       </div>
+    </div>
+  }
+
+  <!-- ── Saved bills bottom sheet ── -->
+  @if (showSavedBills()) {
+    <div class="pl-sheet-backdrop" (click)="closeSavedBills()" aria-hidden="true"></div>
+    <div class="pl-sheet pl-saved-sheet" role="dialog" aria-label="Saved bills">
+      <div class="pl-sheet-handle" aria-hidden="true"></div>
+      <h3 class="pl-sheet-title">📋 Saved bills</h3>
+
+      <!-- Date picker -->
+      <label class="pl-saved-date">
+        <span class="pl-saved-date-label">📅 Date</span>
+        <input type="date" class="pl-input pl-saved-date-input"
+               [value]="savedBillsDate()" [max]="today"
+               (change)="onSavedBillsDateChange($any($event.target).value)"
+               aria-label="Choose bill date" />
+      </label>
+
+      @if (loadingSavedBills()) {
+        <p class="pl-saved-state">Loading…</p>
+      } @else if (!savedBills().length) {
+        <p class="pl-saved-state">No bills saved on this date.</p>
+      } @else {
+        <ul class="pl-saved-list">
+          @for (bill of savedBills(); track bill.id) {
+            <li class="pl-saved-item">
+              <div class="pl-saved-head" (click)="openBillDetail(bill)">
+                <div class="pl-saved-info">
+                  <span class="pl-saved-name">{{ bill.customerName || 'Walk-in customer' }}</span>
+                  <span class="pl-saved-meta">
+                    {{ bill.items.length }} item(s)@if (bill.mobileNumber) { · {{ bill.mobileNumber }}}
+                  </span>
+                </div>
+                <span class="pl-saved-amount">₹{{ netPaid(bill).toLocaleString('en-IN') }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="pl-sheet-actions">
+        <button type="button" class="pl-btn pl-btn-cancel" (click)="closeSavedBills()">Close</button>
+      </div>
+    </div>
+  }
+
+  <!-- ── Bill detail modal ── -->
+  @if (selectedBill(); as bill) {
+    <div class="pl-modal-backdrop" (click)="closeBillDetail()" aria-hidden="true"></div>
+    <div class="pl-modal" role="dialog" aria-label="Bill details">
+      <header class="pl-modal-head">
+        <div class="pl-modal-title">
+          <span class="pl-modal-name">{{ bill.customerName || 'Walk-in customer' }}</span>
+          <span class="pl-modal-sub">
+            {{ savedBillsDate() }}@if (bill.mobileNumber) { · {{ bill.mobileNumber }}}
+          </span>
+        </div>
+        <button type="button" class="pl-modal-close" (click)="closeBillDetail()" aria-label="Close">✕</button>
+      </header>
+
+      <div class="pl-modal-body">
+        <ul class="pl-modal-items">
+          @for (it of bill.items; track $index) {
+            <li class="pl-modal-line">
+              <div class="pl-modal-line-info">
+                <span class="pl-modal-line-name">{{ it.productName }}</span>
+                <span class="pl-modal-line-rate">₹{{ it.sellPrice.toLocaleString('en-IN') }} × {{ it.qty }}</span>
+              </div>
+              <span class="pl-modal-line-amt">₹{{ (it.sellPrice * it.qty).toLocaleString('en-IN') }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <footer class="pl-modal-foot">
+        <div class="pl-modal-total">
+          <span>Total</span>
+          <span class="pl-modal-grand">₹{{ netPaid(bill).toLocaleString('en-IN') }}</span>
+        </div>
+        <button type="button" class="pl-btn pl-btn-whatsapp" (click)="shareSavedBill(bill)">📲 Share</button>
+      </footer>
     </div>
   }
 </main>

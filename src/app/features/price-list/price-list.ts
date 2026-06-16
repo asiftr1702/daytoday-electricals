@@ -67,7 +67,7 @@ export class PriceListComponent implements OnInit {
   private readonly stampService    = inject(StampService);
 
   /** Today's date (YYYY-MM-DD) for bills created here. */
-  private readonly today = new Date().toISOString().slice(0, 10);
+  readonly today = new Date().toISOString().slice(0, 10);
 
   /** Initial config load (page skeleton). */
   readonly loading    = signal(true);
@@ -130,6 +130,15 @@ export class PriceListComponent implements OnInit {
   readonly billSaving   = signal(false);
   readonly billMsg      = signal('');
 
+  // ── Saved bills (today) ──
+  readonly showSavedBills    = signal(false);
+  readonly savedBills        = signal<Bill[]>([]);
+  readonly loadingSavedBills = signal(false);
+  /** Date (YYYY-MM-DD) whose saved bills are shown. Defaults to today. */
+  readonly savedBillsDate    = signal<string>(this.today);
+  /** Saved bill opened in the detail modal (null = none). */
+  readonly selectedBill      = signal<Bill | null>(null);
+
   // ── Per-line price editing ──
   readonly editingLineIndex = signal<number | null>(null);
   readonly editLinePrice    = signal<string>('');
@@ -141,7 +150,7 @@ export class PriceListComponent implements OnInit {
   readonly warrantyPresets = ['6 Months', '1 Year', '2 Years', '5 Years'];
 
   /** Warranty label — fans use "Stator Warranty", everything else "Warranty". */
-  warrantyLabel(line: BillLine): string {
+  warrantyLabel(line: { category: string }): string {
     return (line.category || '').toLowerCase().includes('fan') ? 'Stator Warranty' : 'Warranty';
   }
 
@@ -402,7 +411,7 @@ export class PriceListComponent implements OnInit {
       if (idx >= 0) {
         const line = lines[idx];
         if (line.stock != null && line.qty >= line.stock) {
-          this.flashStockLimit(line.name, line.stock);
+          this.flashStockLimit(line.name, Math.max(0, line.stock - line.qty));
           return lines;
         }
         const copy = lines.slice();
@@ -434,8 +443,24 @@ export class PriceListComponent implements OnInit {
 
   /** Show a brief "only N in stock" warning on the bill. */
   private flashStockLimit(name: string, stock: number): void {
-    this.billMsg.set(`⚠️ Only ${stock} in stock for ${name}`);
+    this.billMsg.set(
+      stock <= 0
+        ? `⚠️ No more "${name}" left in inventory`
+        : `⚠️ Only ${stock} "${name}" left in inventory`,
+    );
     setTimeout(() => this.billMsg.set(''), 2500);
+  }
+
+  /** Quantity of this item already sitting in the cart. */
+  private cartQtyFor(item: PriceListEntry): number {
+    return this.billItems()
+      .filter(l => l.name === item.name && l.category === item.category)
+      .reduce((sum, l) => sum + l.qty, 0);
+  }
+
+  /** Live stock = row stock minus what's already in the cart (never below 0). */
+  availableStock(item: PriceListEntry): number {
+    return Math.max(0, (item.stock ?? 0) - this.cartQtyFor(item));
   }
 
   incLine(index: number): void {
@@ -443,7 +468,7 @@ export class PriceListComponent implements OnInit {
       lines.map((l, i) => {
         if (i !== index) return l;
         if (l.stock != null && l.qty >= l.stock) {
-          this.flashStockLimit(l.name, l.stock);
+          this.flashStockLimit(l.name, Math.max(0, l.stock - l.qty));
           return l;
         }
         return { ...l, qty: l.qty + 1 };
@@ -627,18 +652,36 @@ export class PriceListComponent implements OnInit {
   /** Whether a mobile number has been entered (enables WhatsApp share). */
   readonly canWhatsApp = computed(() => this.billItems().length > 0);
 
-  /** Draw the current cart as a PNG receipt image. */
-  private buildBillImage(): Promise<File> {
-    const lines = this.billItems();
-    const cust  = this.billCustomer().trim();
-    const mob   = this.billMobile().trim();
-    const disc  = this.billDiscount();
-    const due   = this.billDue();
-    const advance = this.billAdvance();
-    const total = this.billTotal();
+  /** Lightweight per-line data the receipt renderer needs. */
+  private billImageLines(): { name: string; qty: number; sellPrice: number; warranty?: string; category: string }[] {
+    return this.billItems().map(l => ({
+      name: l.name, qty: l.qty, sellPrice: l.sellPrice,
+      ...(l.warranty ? { warranty: l.warranty } : {}),
+      category: l.category,
+    }));
+  }
+
+  /** Draw a receipt image from explicit data (used by both cart + saved bills). */
+  private renderBillImage(data: {
+    lines: { name: string; qty: number; sellPrice: number; warranty?: string; category: string }[];
+    cust: string;
+    mob: string;
+    disc: number;
+    due: number;
+    advance: number;
+    total: number;
+    date: string;
+  }): Promise<File> {
+    const lines = data.lines;
+    const cust  = data.cust;
+    const mob   = data.mob;
+    const disc  = data.disc;
+    const due   = data.due;
+    const advance = data.advance;
+    const total = data.total;
     const final = total - disc;
     const paid  = due > 0 ? Math.max(0, final - due) : final;
-    const date  = this.today;
+    const date  = data.date;
 
     const W   = 560;
     const PAD = 22;
@@ -861,9 +904,31 @@ export class PriceListComponent implements OnInit {
    */
   async shareOnWhatsApp(): Promise<void> {
     if (!this.billItems().length) return;
+    await this.shareBillData({
+      lines: this.billImageLines(),
+      cust: this.billCustomer().trim(),
+      mob: this.billMobile().trim(),
+      disc: this.billDiscount(),
+      due: this.billDue(),
+      advance: this.billAdvance(),
+      total: this.billTotal(),
+      date: this.today,
+    });
+  }
 
+  /** Share an explicit bill (cart or saved) as an image, with a wa.me text fallback. */
+  private async shareBillData(data: {
+    lines: { name: string; qty: number; sellPrice: number; warranty?: string; category: string }[];
+    cust: string;
+    mob: string;
+    disc: number;
+    due: number;
+    advance: number;
+    total: number;
+    date: string;
+  }): Promise<void> {
     try {
-      const file = await this.buildBillImage();
+      const file = await this.renderBillImage(data);
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: 'Bill — DayToDay Electricals' });
         return;
@@ -873,19 +938,14 @@ export class PriceListComponent implements OnInit {
     }
 
     // Fallback: wa.me text link (needs mobile number)
-    const mobile = this.billMobile().trim().replace(/\D/g, '');
+    const mobile = data.mob.replace(/\D/g, '');
     if (mobile.length >= 10) {
-      const lines = this.billItems();
-      const disc  = this.billDiscount();
-      const due   = this.billDue();
-      const advance = this.billAdvance();
-      const total = this.billTotal();
+      const { lines, disc, due, advance, total, cust } = data;
       const final = total - disc;
       const paid  = due > 0 ? Math.max(0, final - due) : final;
-      const cust  = this.billCustomer().trim();
       let msg = '🧾 *Bill from DayToDay Electricals*\n';
       if (cust) msg += `Customer: ${cust}\n`;
-      msg += `Date: ${this.today}\n\n`;
+      msg += `Date: ${data.date}\n\n`;
       lines.forEach(l => {
         msg += `• ${l.name}  ×${l.qty}  = ₹${(l.sellPrice * l.qty).toLocaleString('en-IN')}\n`;
         if (l.warranty) msg += `   🛡 ${this.warrantyLabel(l)}: ${l.warranty}\n`;
@@ -943,6 +1003,66 @@ export class PriceListComponent implements OnInit {
       },
     });
   }
+
+  // ── Saved bills ─────────────────────────────────────────────────────────
+  /** Open the saved-bills sheet and load bills for the selected date (today by default). */
+  openSavedBills(): void {
+    this.showSavedBills.set(true);
+    this.loadSavedBills();
+  }
+
+  /** Change the date and reload the saved bills for it. */
+  onSavedBillsDateChange(date: string): void {
+    if (!date) return;
+    this.savedBillsDate.set(date);
+    this.loadSavedBills();
+  }
+
+  /** Fetch the bills for the currently selected date. */
+  private loadSavedBills(): void {
+    this.loadingSavedBills.set(true);
+    this.billService.getBillsByDate(this.savedBillsDate()).subscribe({
+      next: bills => {
+        this.savedBills.set(bills.slice().reverse()); // newest first
+        this.loadingSavedBills.set(false);
+      },
+      error: () => {
+        this.savedBills.set([]);
+        this.loadingSavedBills.set(false);
+      },
+    });
+  }
+
+  closeSavedBills(): void { this.showSavedBills.set(false); }
+
+  /** Open a saved bill in the detail modal. */
+  openBillDetail(bill: Bill): void { this.selectedBill.set(bill); }
+
+  /** Close the bill detail modal. */
+  closeBillDetail(): void { this.selectedBill.set(null); }
+
+  /** Share a saved bill as an image (same as the cart Share button). */
+  shareSavedBill(bill: Bill): void {
+    this.shareBillData({
+      lines: bill.items.map(it => ({
+        name: it.productName,
+        qty: it.qty,
+        sellPrice: it.sellPrice,
+        ...(it.warranty ? { warranty: it.warranty } : {}),
+        category: it.category ?? '',
+      })),
+      cust: bill.customerName?.trim() ?? '',
+      mob: bill.mobileNumber?.trim() ?? '',
+      disc: bill.discountAmount ?? 0,
+      due: bill.dueAmount ?? 0,
+      advance: bill.advanceAmount ?? 0,
+      total: bill.totalAmount ?? 0,
+      date: bill.date,
+    });
+  }
+
+  /** Net amount kept for a saved bill (after any refunds). */
+  netPaid(bill: Bill): number { return this.billService.netPaid(bill); }
 
   /** After a bill is saved, reduce the price-list stock for each sold line. */
   private decrementStockForLines(lines: BillLine[]): void {
