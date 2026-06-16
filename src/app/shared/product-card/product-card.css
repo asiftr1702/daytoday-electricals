@@ -142,7 +142,7 @@
 
 /* ─── CARD BODY ───────────────────────────────────────────────────────────── */
 .card-body {
-  padding: 0.875rem 1rem 0.75rem;
+  padding: 10.875rem 1rem 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;

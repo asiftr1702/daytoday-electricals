@@ -161,16 +161,18 @@
                     }
                   </div>
 
-                  <!-- Single action column: bill + stock only -->
+                  <!-- Single action column: tap stock to add to bill -->
                   <div class="pl-row-actions-grid">
                     <div class="pl-act-row">
-                      <button type="button" class="pl-act-btn pl-act-bill" (click)="addToBill(item)"
-                              [disabled]="busy() || item.sellPrice == null" aria-label="Add to bill">🧾</button>
-                      <span class="pl-stock-count"
-                            [class.pl-stock-count-out]="(item.stock ?? 0) === 0"
-                            [class.pl-stock-count-low]="(item.stock ?? 0) > 0 && (item.stock ?? 0) <= 3">
+                      <button type="button" class="pl-stock-count"
+                              [class.pl-stock-count-out]="(item.stock ?? 0) === 0"
+                              [class.pl-stock-count-low]="(item.stock ?? 0) > 0 && (item.stock ?? 0) <= 3"
+                              [class.pl-stock-count-add]="(item.stock ?? 0) > 0 && item.sellPrice != null"
+                              [disabled]="busy() || item.sellPrice == null || (item.stock ?? 0) === 0"
+                              (click)="addToBill(item)"
+                              aria-label="Tap to add to bill">
                         {{ item.stock ?? 0 }}
-                      </span>
+                      </button>
                     </div>
                   </div>
                 </div>

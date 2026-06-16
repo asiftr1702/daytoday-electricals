@@ -412,6 +412,7 @@
   display: block;        /* changed from flex — inner swipe-content is flex */
   position: relative;
   overflow: hidden;
+  padding:4px 0;
   border-top: 6px solid #e8edf3;
   transition: background 0.12s ease;
 }
@@ -493,7 +494,7 @@
 .pl-act-edit { background: #e8f0fe; color: #1a56bd; }
 .pl-act-del  { background: #ffebee; color: #c62828; }
 
-/* Stock count chip */
+/* Stock count chip — tap to add to bill */
 .pl-stock-count {
   min-width: 2.2rem;
   height: 2.2rem;
@@ -507,7 +508,17 @@
   color: var(--pl-green-dark);
   border: 1.5px solid rgba(5, 150, 82, 0.18);
   letter-spacing: -0.01em;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.09s ease, filter 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
 }
+
+.pl-stock-count.pl-stock-count-add {
+  box-shadow: 0 0 0 2px rgba(5, 150, 82, 0.14);
+}
+.pl-stock-count:active   { transform: scale(0.88); filter: brightness(0.94); }
+.pl-stock-count:disabled { cursor: default; box-shadow: none; }
 
 .pl-stock-count.pl-stock-count-low {
   background: #fff3e0;
@@ -519,6 +530,7 @@
   background: #ffebee;
   color: #c62828;
   border-color: rgba(198, 40, 40, 0.18);
+  opacity: 0.7;
 }
 
 /* ════════════════════════════════════════════════════════════════════

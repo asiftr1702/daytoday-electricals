@@ -252,7 +252,7 @@
             }
           </div>
           <div class="bt-row bt-grand">
-            <span><strong>{{ discount() > 0 ? 'Amount Paid' : 'Grand Total' }}</strong></span>
+            <span><strong>{{ discount() > 0 ? 'Amount Paid' : 'Total Paid' }}</strong></span>
             <span class="final-amount"><strong>{{ formatCurrency(finalAmount()) }}</strong></span>
           </div>
         </div>
@@ -297,7 +297,7 @@
             </tr>
           }
           <tr class="bill-total-row">
-            <td colspan="4" class="total-label"><strong>{{ discount() > 0 ? 'Amount Paid' : 'Grand Total' }}</strong></td>
+            <td colspan="4" class="total-label"><strong>{{ discount() > 0 ? 'Amount Paid' : 'Total Paid' }}</strong></td>
             <td class="total-amount final-amount"><strong>{{ formatCurrency(finalAmount()) }}</strong></td>
           </tr>
         </tfoot>
