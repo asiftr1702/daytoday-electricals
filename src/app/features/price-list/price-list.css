@@ -380,6 +380,7 @@
   align-items: center;
   gap: 0.45rem;
   flex-wrap: wrap;
+  padding-top: 1.5px;
 }
 
 /* ── Stock badge ── */
@@ -412,7 +413,7 @@
   display: block;        /* changed from flex — inner swipe-content is flex */
   position: relative;
   overflow: hidden;
-  padding:4px 0;
+  padding:3px 0;
   border-top: 6px solid #e8edf3;
   transition: background 0.12s ease;
 }

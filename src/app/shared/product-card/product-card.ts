@@ -554,6 +554,7 @@ export class ProductCardComponent {
     if (this.billQtyError()) return;
     const p = this.product();
     const billFields = this.buildBillFields();
+    const stock = this.effectiveStockQty();
     this.billService.addItem({
       productId: p.id,
       productName: p.name,
@@ -564,6 +565,7 @@ export class ProductCardComponent {
       qty: this.billQty(),
       costPrice: p.costPrice ?? 0,
       sellPrice: this.billSellPrice(),
+      ...(stock != null ? { stock } : {}),
       ...(billFields.length ? { billFields } : {}),
     });
     this.billAdded.set(true);

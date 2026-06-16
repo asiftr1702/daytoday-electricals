@@ -10,6 +10,8 @@ import { AnyProduct } from '../../core/models/any-product.model';
 
 /** A single line in the quick bill built from the price list. */
 interface BillLine {
+  /** Price-list entry id (used to decrement stock on save). */
+  id?: string;
   name: string;
   /** The current (possibly discounted) price per unit. */
   sellPrice: number;
@@ -19,6 +21,8 @@ interface BillLine {
   unit: string;
   category: string;
   qty: number;
+  /** Stock available when added (null = not stock-tracked). */
+  stock: number | null;
   /** Optional warranty label shown on the bill (e.g. "1 Year"). */
   warranty?: string;
 }
@@ -392,17 +396,29 @@ export class PriceListComponent implements OnInit {
   addToBill(item: PriceListEntry): void {
     if (item.sellPrice == null) return;
     const sell = item.sellPrice;
+    const stock = item.stock ?? null;
     this.billItems.update(lines => {
       const idx = lines.findIndex(l => l.name === item.name && l.category === item.category);
       if (idx >= 0) {
+        const line = lines[idx];
+        if (line.stock != null && line.qty >= line.stock) {
+          this.flashStockLimit(line.name, line.stock);
+          return lines;
+        }
         const copy = lines.slice();
-        copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
+        copy[idx] = { ...line, qty: line.qty + 1 };
         return copy;
+      }
+
+      if (stock != null && stock <= 0) {
+        this.flashStockLimit(item.name, 0);
+        return lines;
       }
 
       return [
         ...lines,
         {
+          id: item.id,
           name: item.name,
           sellPrice: sell,
           originalPrice: sell,
@@ -410,14 +426,28 @@ export class PriceListComponent implements OnInit {
           unit: item.unit || 'pcs',
           category: item.category,
           qty: 1,
+          stock,
         },
       ];
     });
   }
 
+  /** Show a brief "only N in stock" warning on the bill. */
+  private flashStockLimit(name: string, stock: number): void {
+    this.billMsg.set(`⚠️ Only ${stock} in stock for ${name}`);
+    setTimeout(() => this.billMsg.set(''), 2500);
+  }
+
   incLine(index: number): void {
     this.billItems.update(lines =>
-      lines.map((l, i) => (i === index ? { ...l, qty: l.qty + 1 } : l)),
+      lines.map((l, i) => {
+        if (i !== index) return l;
+        if (l.stock != null && l.qty >= l.stock) {
+          this.flashStockLimit(l.name, l.stock);
+          return l;
+        }
+        return { ...l, qty: l.qty + 1 };
+      }),
     );
   }
 
@@ -900,6 +930,7 @@ export class PriceListComponent implements OnInit {
       next: () => {
         this.billSaving.set(false);
         this.billMsg.set('✅ Bill saved');
+        this.decrementStockForLines(lines);
         this.clearBillCart();
         this.billService.clearBill();
         this.showBill.set(false);
@@ -911,6 +942,25 @@ export class PriceListComponent implements OnInit {
         setTimeout(() => this.billMsg.set(''), 4000);
       },
     });
+  }
+
+  /** After a bill is saved, reduce the price-list stock for each sold line. */
+  private decrementStockForLines(lines: BillLine[]): void {
+    for (const l of lines) {
+      if (!l.id || l.stock == null) continue;
+      const next = Math.max(0, l.stock - l.qty);
+      const cat = l.category || 'other';
+      // Optimistic cache update so the on-screen count drops immediately.
+      this.setCatEntries(cat, (this.cache().get(cat) ?? []).map(e =>
+        e.id === l.id ? { ...e, stock: next } : e,
+      ));
+      this.priceList.update(l.id, { stock: next }).catch(() => {
+        // Rollback the cache if the persist fails.
+        this.setCatEntries(cat, (this.cache().get(cat) ?? []).map(e =>
+          e.id === l.id ? { ...e, stock: l.stock } : e,
+        ));
+      });
+    }
   }
 
   /** Switch to a category, fetching it from the backend the first time. */

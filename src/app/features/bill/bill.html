@@ -19,11 +19,15 @@
   </div>
 
   <!-- ── Success / Error ─────────────────────────────────────────────────── -->
-  @if (successMsg()) {
-    <div class="alert alert-success no-print">{{ successMsg() }}</div>
-  }
-  @if (errorMsg()) {
-    <div class="alert alert-error no-print">{{ errorMsg() }}</div>
+  @if (successMsg() || errorMsg()) {
+    <div class="bill-toast no-print">
+      @if (successMsg()) {
+        <div class="alert alert-success">{{ successMsg() }}</div>
+      }
+      @if (errorMsg()) {
+        <div class="alert alert-error">{{ errorMsg() }}</div>
+      }
+    </div>
   }
 
   <!-- ══════════════════════════════════════════════════════════════════════
@@ -202,7 +206,7 @@
                     <div class="b-qty-stepper">
                       <button type="button" class="b-qty-btn" (click)="updateQty($index, item.qty - 1)" [disabled]="item.qty <= 1">−</button>
                       <span class="b-qty-val" (click)="editingIndex.set(null)">{{ item.qty }}</span>
-                      <button type="button" class="b-qty-btn" (click)="updateQty($index, item.qty + 1)">+</button>
+                      <button type="button" class="b-qty-btn" (click)="updateQty($index, item.qty + 1)" [disabled]="item.stock != null && item.qty >= item.stock">+</button>
                     </div>
                   } @else {
                     <span class="editable-val" (click)="editingIndex.set($index)" title="Tap to edit qty">{{ item.qty }}</span>

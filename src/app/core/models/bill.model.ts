@@ -9,6 +9,8 @@ export interface BillItem {
   costPrice: number;
   sellPrice: number;   // agreed sell price per unit
   profit: number;      // (sellPrice - costPrice) * qty
+  /** Stock available for this product when added (undefined = not stock-tracked). */
+  stock?: number;
   /** Custom field values flagged "include in bill" for this product's category. */
   billFields?: { label: string; value: string }[];
   /** Optional warranty label shown on the bill (e.g. "1 Year"). */

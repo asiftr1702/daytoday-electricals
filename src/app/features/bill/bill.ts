@@ -221,6 +221,12 @@ export class BillComponent implements OnInit {
 
   updateQty(index: number, qty: number): void {
     if (qty < 1) return;
+    const item = this.items()[index];
+    if (item && item.stock != null && qty > item.stock) {
+      this.errorMsg.set(`⚠️ Only ${item.stock} in stock for ${item.productName}`);
+      setTimeout(() => this.errorMsg.set(''), 2500);
+      return;
+    }
     this.billService.updateItem(index, { qty });
   }
 

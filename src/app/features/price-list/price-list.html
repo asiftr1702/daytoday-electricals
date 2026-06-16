@@ -306,7 +306,7 @@
                 @if (qtyExpandIdx() === $index) {
                   <button type="button" class="pl-qty-btn" (click)="decLine($index); resetQtyTimer()" aria-label="Decrease">−</button>
                   <span class="pl-qty-val pl-qty-val-active" (click)="qtyExpandIdx.set(null)">{{ line.qty }}</span>
-                  <button type="button" class="pl-qty-btn" (click)="incLine($index); resetQtyTimer()" aria-label="Increase">+</button>
+                  <button type="button" class="pl-qty-btn" (click)="incLine($index); resetQtyTimer()" aria-label="Increase" [disabled]="line.stock != null && line.qty >= line.stock">+</button>
                 } @else {
                   <span class="pl-qty-chip" (click)="expandQty($index)">{{ line.qty }}</span>
                 }
