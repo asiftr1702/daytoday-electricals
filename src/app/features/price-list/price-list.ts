@@ -93,7 +93,25 @@ export class PriceListComponent implements OnInit {
   readonly revealedCostId = signal<string | null>(null);
   private pressTimer: ReturnType<typeof setTimeout> | null = null;
   private hideTimer: ReturnType<typeof setTimeout> | null = null;
+  // ── Swipe-to-edit / swipe-to-delete state ──
+  /** Id of the row currently being swiped. */
+  readonly swipingId    = signal<string | null>(null);
+  /** Current swipe offset in px (negative = left / delete, positive = right / edit). */
+  readonly swipeOffset  = signal(0);
+  /** Id of the row whose swipe action has been revealed (stays open until dismissed). */
+  readonly swipeOpenId  = signal<string | null>(null);
+  /** Direction of the currently-open swipe: 'edit' | 'delete' | null. */
+  readonly swipeDir     = signal<'edit' | 'delete' | null>(null);
 
+  private swipeStartX = 0;
+  private swipeStartY = 0;
+  private swipePointerId = -1;
+  private swipeItem: PriceListEntry | null = null;
+  /** How far (px) the user must drag before we lock in the swipe axis. */
+  private static readonly SWIPE_LOCK  = 8;
+  /** How far (px) the user must drag to trigger the action on release. */
+  private static readonly SWIPE_THRESHOLD = 72;
+  private swipeAxisLocked: 'h' | 'v' | null = null;
   // ── Quick bill (cart) state ──
   /** Lines added to the in-progress bill. */
   readonly billItems    = signal<BillLine[]>([]);
@@ -156,7 +174,6 @@ export class PriceListComponent implements OnInit {
     this.pressTimer = setTimeout(() => {
       this.revealedCostId.set(id);
       this.pressTimer = null;
-      // Auto-hide the cost again after a short window.
       this.clearHideTimer();
       this.hideTimer = setTimeout(() => this.hideCost(), REVEAL_MS);
     }, LONG_PRESS_MS);
@@ -167,11 +184,111 @@ export class PriceListComponent implements OnInit {
     this.clearPressTimer();
   }
 
-  /** Hide the revealed cost (tap elsewhere / release after reveal). */
+  /** Hide the revealed cost. */
   hideCost(): void {
     this.clearPressTimer();
     this.clearHideTimer();
     this.revealedCostId.set(null);
+  }
+
+  // ── Swipe gestures ────────────────────────────────────────────────────────
+  swipePointerDown(event: PointerEvent, item: PriceListEntry): void {
+    if (!item.id || this.editingId() === item.id) return;
+    // Close any other open swipe
+    if (this.swipeOpenId() && this.swipeOpenId() !== item.id) {
+      this.closeSwipe();
+    }
+    // If this row's swipe is already open, let clicks through to the action buttons
+    if (this.swipeOpenId() === item.id) return;
+
+    this.swipeItem        = item;
+    this.swipeStartX      = event.clientX;
+    this.swipeStartY      = event.clientY;
+    this.swipePointerId   = event.pointerId;
+    this.swipeAxisLocked  = null;
+    this.swipingId.set(item.id);
+    this.swipeOffset.set(0);
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  }
+
+  swipePointerMove(event: PointerEvent): void {
+    if (event.pointerId !== this.swipePointerId) return;
+    const dx = event.clientX - this.swipeStartX;
+    const dy = event.clientY - this.swipeStartY;
+
+    if (!this.swipeAxisLocked) {
+      if (Math.abs(dx) < PriceListComponent.SWIPE_LOCK && Math.abs(dy) < PriceListComponent.SWIPE_LOCK) return;
+      this.swipeAxisLocked = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
+    }
+
+    if (this.swipeAxisLocked === 'v') {
+      this.cancelSwipe();
+      return;
+    }
+
+    event.preventDefault();
+    this.clearPressTimer(); // cancel long-press if swiping
+    // Clamp: max 100px either side
+    const clamped = Math.max(-100, Math.min(100, dx));
+    this.swipeOffset.set(clamped);
+  }
+
+  swipePointerUp(event: PointerEvent, item: PriceListEntry): void {
+    if (event.pointerId !== this.swipePointerId) return;
+    const offset = this.swipeOffset();
+
+    if (Math.abs(offset) >= PriceListComponent.SWIPE_THRESHOLD) {
+      if (offset < 0) {
+        // Left swipe → delete
+        this.swipeOpenId.set(null);
+        this.swipeOffset.set(0);
+        this.swipingId.set(null);
+        this.swipeItem = null;
+        this.remove(item);
+      } else {
+        // Right swipe → edit
+        this.swipeOpenId.set(null);
+        this.swipeOffset.set(0);
+        this.swipingId.set(null);
+        this.swipeItem = null;
+        this.startEdit(item);
+      }
+    } else if (Math.abs(offset) > 10) {
+      // Partial swipe — snap to open reveal
+      const dir = offset < 0 ? 'delete' : 'edit';
+      this.swipeDir.set(dir);
+      this.swipeOpenId.set(item.id ?? null);
+      this.swipeOffset.set(0);
+      this.swipingId.set(null);
+    } else {
+      this.cancelSwipe();
+    }
+    this.swipeItem      = null;
+    this.swipePointerId = -1;
+  }
+
+  private cancelSwipe(): void {
+    this.swipeOffset.set(0);
+    this.swipingId.set(null);
+    this.swipeItem = null;
+    this.swipePointerId = -1;
+    this.swipeAxisLocked = null;
+  }
+
+  closeSwipe(): void {
+    this.swipeOpenId.set(null);
+    this.swipeDir.set(null);
+    this.swipeOffset.set(0);
+    this.swipingId.set(null);
+  }
+
+  swipeRowStyle(id: string | undefined): string {
+    if (!id) return '';
+    if (this.swipingId() === id) {
+      const o = this.swipeOffset();
+      return `transform: translateX(${o}px)`;
+    }
+    return '';
   }
 
   private clearPressTimer(): void {
@@ -306,6 +423,38 @@ export class PriceListComponent implements OnInit {
   printBill(): void {
     if (!this.billItems().length) return;
     this.billService.printBill(this.buildBill());
+  }
+
+  /** Whether a mobile number has been entered (enables WhatsApp share). */
+  readonly canWhatsApp = computed(() => this.billMobile().trim().length >= 10);
+
+  /** Share the bill as a WhatsApp message to the entered mobile number. */
+  shareOnWhatsApp(): void {
+    const mobile = this.billMobile().trim().replace(/\D/g, '');
+    if (!mobile) return;
+    const lines = this.billItems();
+    const customer = this.billCustomer().trim();
+    const discount = this.billDiscount();
+    const total    = this.billTotal();
+    const final    = total - discount;
+
+    let msg = '🧾 *Bill from DayToDay Electricals*\n';
+    if (customer) msg += `Customer: ${customer}\n`;
+    msg += `Date: ${this.today}\n\n`;
+
+    lines.forEach(l => {
+      msg += `• ${l.name}  ×${l.qty}  @₹${l.sellPrice.toLocaleString('en-IN')}  = ₹${(l.sellPrice * l.qty).toLocaleString('en-IN')}\n`;
+    });
+
+    msg += `\n*Total: ₹${total.toLocaleString('en-IN')}*`;
+    if (discount > 0) {
+      msg += `\nDiscount: −₹${discount.toLocaleString('en-IN')}`;
+      msg += `\n*Amount Payable: ₹${final.toLocaleString('en-IN')}*`;
+    }
+    msg += '\n\nThank you for shopping with us! 🙏';
+
+    const url = `https://wa.me/91${mobile}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
   }
 
   /** Save the current bill to Firestore (records it in bill history). */

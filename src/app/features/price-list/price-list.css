@@ -281,15 +281,6 @@
   padding: 0;
 }
 
-.pl-row {
-  display: flex;
-  align-items: center;
-  border-top: 6px solid #e8edf3;
-  transition: background 0.12s ease;
-}
-
-.pl-row:first-child { border-top: none; }
-
 /* Main press area */
 .pl-row-main {
   flex: 1;
@@ -416,11 +407,59 @@
   border-color: rgba(198, 40, 40, 0.15);
 }
 
-/* ── Row action buttons (2×2 grid) ── */
+/* ── Swipe row wrapper ── */
+.pl-row {
+  display: block;        /* changed from flex — inner swipe-content is flex */
+  position: relative;
+  overflow: hidden;
+  border-top: 6px solid #e8edf3;
+  transition: background 0.12s ease;
+}
+
+.pl-row:first-child { border-top: none; }
+
+/* Swipe background (revealed when swiping) */
+.pl-swipe-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.pl-swipe-bg-delete { background: #ffebee; justify-content: flex-end; }
+.pl-swipe-bg-edit   { background: #e8f0fe; justify-content: flex-start; }
+
+.pl-swipe-hint {
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0 1rem;
+  pointer-events: none;
+}
+
+.pl-swipe-hint-right { color: #c62828; }
+.pl-swipe-hint-left  { color: #1a56bd; }
+
+/* The sliding content layer */
+.pl-swipe-content {
+  display: flex;
+  align-items: center;
+  background: var(--pl-surface);
+  position: relative;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  will-change: transform;
+  transition: transform 0.22s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* When snapped open, shift to reveal the action behind */
+.pl-swipe-open-delete { transform: translateX(-72px) !important; transition: transform 0.2s ease; }
+.pl-swipe-open-edit   { transform: translateX(72px)  !important; transition: transform 0.2s ease; }
+
+/* ── Row action column: bill + stock only ── */
 .pl-row-actions-grid {
   display: flex;
-  flex-direction: column;
-  gap: 0.22rem;
   flex-shrink: 0;
   padding: 0.4rem 0.5rem 0.4rem 0.1rem;
 }
@@ -454,7 +493,7 @@
 .pl-act-edit { background: #e8f0fe; color: #1a56bd; }
 .pl-act-del  { background: #ffebee; color: #c62828; }
 
-/* Stock count chip — sits next to the bill button */
+/* Stock count chip */
 .pl-stock-count {
   min-width: 2.2rem;
   height: 2.2rem;
@@ -485,20 +524,97 @@
 /* ════════════════════════════════════════════════════════════════════
    INLINE EDIT
    ════════════════════════════════════════════════════════════════════ */
-.pl-row-editing {
-  flex-direction: column;
-  gap: 0.65rem;
-  padding: 0.85rem 0.9rem;
-  background: #f5f9ff;
-  border-top: 2px solid #d6e4ff;
-}
+/* ════════════════════════════════════════════════════════════════════
+   INLINE EDIT — compact card
+   ════════════════════════════════════════════════════════════════════ */
+.pl-row-editing { background: #f5f9ff; }
 
-.pl-edit-fields {
+.pl-edit-card {
+  width: 100%;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.55rem 0.75rem;
 }
 
+.pl-edit-name {
+  width: 100%;
+}
+
+.pl-edit-row {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.pl-edit-lbl {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.pl-edit-lbl span {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #8a9aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pl-edit-input {
+  border: 1.5px solid #cdd8e4;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  padding: 0.42rem 0.55rem;
+  outline: none;
+  color: var(--pl-text);
+  background: var(--pl-surface);
+  width: 100%;
+  min-width: 0;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pl-edit-input:focus {
+  border-color: var(--pl-green);
+  box-shadow: 0 0 0 2px rgba(5, 150, 82, 0.12);
+}
+
+.pl-edit-actions {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.1rem;
+}
+
+.pl-edit-save {
+  flex: 1;
+  border: none;
+  border-radius: 6px;
+  background: var(--pl-green);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: filter 0.12s ease;
+}
+.pl-edit-save:active  { filter: brightness(0.9); }
+.pl-edit-save:disabled { opacity: 0.45; cursor: default; }
+
+.pl-edit-cancel {
+  border: none;
+  border-radius: 6px;
+  background: #eef2f7;
+  color: #5a6a7a;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.pl-edit-cancel:active { background: #dce4ee; }
+
+/* ── legacy field classes (used in add-sheet) ── */
 .pl-field {
   display: flex;
   flex-direction: column;
@@ -506,9 +622,6 @@
   flex: 1;
   min-width: 0;
 }
-
-.pl-edit-fields .pl-field { flex: 1 1 100%; }
-.pl-edit-fields .pl-field-price { flex: 1 1 5rem; }
 
 .pl-field-price { flex: 0 0 6.5rem; }
 .pl-field-unit  { flex: 0 0 6rem; }
@@ -523,9 +636,9 @@
 
 .pl-input {
   border: 1.5px solid #cdd8e4;
-  border-radius: 0.65rem;
-  font-size: 1.05rem;
-  padding: 0.72rem 0.8rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  padding: 0.62rem 0.75rem;
   outline: none;
   color: var(--pl-text);
   background: var(--pl-surface);
@@ -537,47 +650,6 @@
 .pl-input:focus {
   border-color: var(--pl-green);
   box-shadow: 0 0 0 3px rgba(5, 150, 82, 0.12);
-}
-
-.pl-row-actions-edit {
-  width: 100%;
-  justify-content: stretch;
-  gap: 0.5rem;
-  margin-top: 0.15rem;
-}
-
-.pl-save,
-.pl-cancel {
-  width: auto;
-  height: 3rem;
-  font-size: 1rem;
-  font-weight: 700;
-  border-radius: 0.75rem;
-  padding: 0 1.1rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  cursor: pointer;
-}
-
-.pl-save {
-  flex: 1;
-  background: var(--pl-green);
-  color: #fff;
-  border: none;
-  box-shadow: 0 3px 10px rgba(5, 150, 82, 0.3);
-}
-
-.pl-save:active   { background: var(--pl-green-dark); }
-.pl-cancel:active { background: #dce4ee; }
-.pl-save:disabled { background: #8dc8aa; box-shadow: none; }
-
-.pl-cancel {
-  flex: 0 0 auto;
-  background: #eef2f7;
-  color: #3a4e62;
-  border: none;
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -615,14 +687,14 @@
   position: fixed;
   right: 1rem;
   bottom: calc(1.1rem + env(safe-area-inset-bottom));
-  z-index: 20;
-  width: 3.75rem;
-  height: 3.75rem;
+  z-index: 25;
+  width: 3.5rem;
+  height: 3.5rem;
   border-radius: 50%;
   border: none;
   background: var(--pl-green);
   color: #fff;
-  font-size: 1.7rem;
+  font-size: 1.6rem;
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(5, 150, 82, 0.45), 0 2px 6px rgba(5, 150, 82, 0.3);
@@ -748,10 +820,23 @@
 
 .pl-sheet-title {
   margin: 0 0 0.15rem;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: var(--pl-text);
   letter-spacing: -0.02em;
+}
+
+/* Compact add sheet */
+.pl-add-sheet { gap: 0.45rem; padding-bottom: calc(0.9rem + env(safe-area-inset-bottom)); }
+
+.pl-add-name {
+  width: 100%;
+  font-size: 1rem;
+}
+
+.pl-add-row {
+  display: flex;
+  gap: 0.35rem;
 }
 
 .pl-sheet-row {
@@ -771,6 +856,8 @@
 /* ── Bill sheet specifics ── */
 .pl-btn-print { background: #1a73e8; color: #fff; flex: 1; }
 .pl-btn-print:disabled { opacity: 0.5; }
+.pl-btn-whatsapp { background: #25d366; color: #fff; flex: 1; }
+.pl-btn-whatsapp:disabled { opacity: 0.4; }
 
 .pl-bill-actions { flex-wrap: wrap; }
 .pl-bill-actions .pl-btn-cancel { flex: 0 0 auto; }

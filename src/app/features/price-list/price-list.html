@@ -78,84 +78,100 @@
           @for (item of activeItems(); track item.id) {
             <li class="pl-row" [class.pl-row-editing]="editingId() === item.id">
               @if (editingId() === item.id) {
-                <!-- Edit mode -->
-                <div class="pl-edit-fields">
-                  <label class="pl-field">
-                    <span class="pl-field-label">Name</span>
-                    <input class="pl-input" type="text"
-                           [value]="editName()" (input)="editName.set($any($event.target).value)"
-                           aria-label="Edit product name" />
-                  </label>
-                  <label class="pl-field pl-field-price">
-                    <span class="pl-field-label">Sell ₹</span>
-                    <input class="pl-input" type="number" inputmode="decimal"
-                           [value]="editPrice()" (input)="editPrice.set($any($event.target).value)"
-                           aria-label="Edit selling price" />
-                  </label>
-                  <label class="pl-field pl-field-price">
-                    <span class="pl-field-label">Cost ₹</span>
-                    <input class="pl-input" type="number" inputmode="decimal"
-                           [value]="editCost()" (input)="editCost.set($any($event.target).value)"
-                           aria-label="Edit cost price" />                  </label>
-                  <label class="pl-field pl-field-price">
-                    <span class="pl-field-label">Stock qty</span>
-                    <input class="pl-input" type="number" inputmode="numeric"
-                           [value]="editStock()" (input)="editStock.set($any($event.target).value)"
-                           placeholder="—" aria-label="Edit stock count" />                  </label>
-                </div>
-                <div class="pl-row-actions pl-row-actions-edit">
-                  <button type="button" class="pl-icon-btn pl-save" (click)="saveEdit(item)"
-                          [disabled]="busy() || !editName().trim()" aria-label="Save">✅ Save</button>
-                  <button type="button" class="pl-icon-btn pl-cancel" (click)="cancelEdit()"
-                          [disabled]="busy()" aria-label="Cancel">✖️</button>
+                <!-- Edit mode — compact inline card -->
+                <div class="pl-edit-card">
+                  <input class="pl-edit-input pl-edit-name" type="text" placeholder="Name"
+                         [value]="editName()" (input)="editName.set($any($event.target).value)"
+                         aria-label="Edit product name" />
+                  <div class="pl-edit-row">
+                    <label class="pl-edit-lbl">
+                      <span>Sell ₹</span>
+                      <input class="pl-edit-input" type="number" inputmode="decimal"
+                             [value]="editPrice()" (input)="editPrice.set($any($event.target).value)"
+                             aria-label="Selling price" />
+                    </label>
+                    <label class="pl-edit-lbl">
+                      <span>Cost ₹</span>
+                      <input class="pl-edit-input" type="number" inputmode="decimal"
+                             [value]="editCost()" (input)="editCost.set($any($event.target).value)"
+                             aria-label="Cost price" />
+                    </label>
+                    <label class="pl-edit-lbl">
+                      <span>Stock</span>
+                      <input class="pl-edit-input" type="number" inputmode="numeric"
+                             [value]="editStock()" (input)="editStock.set($any($event.target).value)"
+                             placeholder="0" aria-label="Stock qty" />
+                    </label>
+                  </div>
+                  <div class="pl-edit-actions">
+                    <button type="button" class="pl-edit-save" (click)="saveEdit(item)"
+                            [disabled]="busy() || !editName().trim()">✅ Save</button>
+                    <button type="button" class="pl-edit-cancel" (click)="cancelEdit()"
+                            [disabled]="busy()">✕</button>
+                  </div>
                 </div>
               } @else {
-                <!-- Read mode -->
-                <div class="pl-row-main"
-                     [class.pl-row-revealed]="revealedCostId() === item.id"
-                     (pointerdown)="pressStart(item)"
-                     (pointerup)="pressEnd()"
-                     (pointerleave)="pressEnd()"
-                     (pointercancel)="pressEnd()"
-                     (contextmenu)="$event.preventDefault()">
-                  <span class="pl-name">{{ item.name }}</span>
-                  @if (revealedCostId() === item.id) {
-                    <span class="pl-row-cost" (click)="hideCost()">
-                      @if (item.costPrice != null) {
-                        <span class="pl-cost-label">Cost</span>
-                        <span class="pl-cost">₹{{ item.costPrice.toLocaleString('en-IN') }}</span>
-                      } @else {
-                        <span class="pl-cost-label">Cost not set</span>
-                      }
-                    </span>
-                  } @else {
-                    <div class="pl-row-info-line">
-                      <span class="pl-row-price">
-                        @if (item.sellPrice != null) {
-                          <span class="pl-price">₹{{ item.sellPrice.toLocaleString('en-IN') }}</span>
-                          <span class="pl-unit">/ {{ item.unit || 'pcs' }}</span>
-                        } @else {
-                          <span class="pl-price pl-price-na">No price set</span>
-                        }
-                      </span>
-                    </div>
+                <!-- Read mode: swipeable row -->
+                <!-- Swipe backdrop: red (delete) on right side, blue (edit) on left side -->
+                <div class="pl-swipe-bg"
+                     [class.pl-swipe-bg-delete]="swipeOpenId() === item.id && swipeDir() === 'delete'"
+                     [class.pl-swipe-bg-edit]="swipeOpenId() === item.id && swipeDir() === 'edit'">
+                  @if (swipeOpenId() === item.id && swipeDir() === 'delete') {
+                    <span class="pl-swipe-hint pl-swipe-hint-right">🗑️ Delete</span>
+                  }
+                  @if (swipeOpenId() === item.id && swipeDir() === 'edit') {
+                    <span class="pl-swipe-hint pl-swipe-hint-left">✏️ Edit</span>
                   }
                 </div>
-                <div class="pl-row-actions-grid">
-                  <div class="pl-act-row">
-                    <button type="button" class="pl-act-btn pl-act-edit" (click)="startEdit(item)"
-                            [disabled]="busy()" aria-label="Edit">✏️</button>
-                    <button type="button" class="pl-act-btn pl-act-del" (click)="remove(item)"
-                            [disabled]="busy()" aria-label="Delete">🗑️</button>
+
+                <!-- Swipeable content layer -->
+                <div class="pl-swipe-content"
+                     [class.pl-swipe-open-delete]="swipeOpenId() === item.id && swipeDir() === 'delete'"
+                     [class.pl-swipe-open-edit]="swipeOpenId() === item.id && swipeDir() === 'edit'"
+                     [style]="swipeRowStyle(item.id)"
+                     (pointerdown)="swipePointerDown($event, item); pressStart(item)"
+                     (pointermove)="swipePointerMove($event)"
+                     (pointerup)="swipePointerUp($event, item); pressEnd()"
+                     (pointercancel)="closeSwipe(); pressEnd()"
+                     (contextmenu)="$event.preventDefault()">
+
+                  <div class="pl-row-main"
+                       [class.pl-row-revealed]="revealedCostId() === item.id">
+                    <span class="pl-name">{{ item.name }}</span>
+                    @if (revealedCostId() === item.id) {
+                      <span class="pl-row-cost" (click)="hideCost()">
+                        @if (item.costPrice != null) {
+                          <span class="pl-cost-label">Cost</span>
+                          <span class="pl-cost">₹{{ item.costPrice.toLocaleString('en-IN') }}</span>
+                        } @else {
+                          <span class="pl-cost-label">Cost not set</span>
+                        }
+                      </span>
+                    } @else {
+                      <div class="pl-row-info-line">
+                        <span class="pl-row-price">
+                          @if (item.sellPrice != null) {
+                            <span class="pl-price">₹{{ item.sellPrice.toLocaleString('en-IN') }}</span>
+                            <span class="pl-unit">/ {{ item.unit || 'pcs' }}</span>
+                          } @else {
+                            <span class="pl-price pl-price-na">No price set</span>
+                          }
+                        </span>
+                      </div>
+                    }
                   </div>
-                  <div class="pl-act-row">
-                    <button type="button" class="pl-act-btn pl-act-bill" (click)="addToBill(item)"
-                            [disabled]="busy() || item.sellPrice == null" aria-label="Add to bill">🧾</button>
-                    <span class="pl-stock-count"
-                          [class.pl-stock-count-out]="(item.stock ?? 0) === 0"
-                          [class.pl-stock-count-low]="(item.stock ?? 0) > 0 && (item.stock ?? 0) <= 3">
-                      {{ item.stock ?? 0 }}
-                    </span>
+
+                  <!-- Single action column: bill + stock only -->
+                  <div class="pl-row-actions-grid">
+                    <div class="pl-act-row">
+                      <button type="button" class="pl-act-btn pl-act-bill" (click)="addToBill(item)"
+                              [disabled]="busy() || item.sellPrice == null" aria-label="Add to bill">🧾</button>
+                      <span class="pl-stock-count"
+                            [class.pl-stock-count-out]="(item.stock ?? 0) === 0"
+                            [class.pl-stock-count-low]="(item.stock ?? 0) > 0 && (item.stock ?? 0) <= 3">
+                        {{ item.stock ?? 0 }}
+                      </span>
+                    </div>
                   </div>
                 </div>
               }
@@ -295,6 +311,11 @@
       <div class="pl-sheet-actions pl-bill-actions">
         <button type="button" class="pl-btn pl-btn-cancel" (click)="clearBillCart(); closeBill()"
                 [disabled]="billSaving()">🗑️ Clear</button>
+        <button type="button" class="pl-btn pl-btn-whatsapp" (click)="shareOnWhatsApp()"
+                [disabled]="billSaving() || billItems().length === 0 || !canWhatsApp()"
+                [title]="canWhatsApp() ? 'Share on WhatsApp' : 'Enter mobile number to share'">
+          📲 WhatsApp
+        </button>
         <button type="button" class="pl-btn pl-btn-print" (click)="printBill()"
                 [disabled]="billSaving() || billItems().length === 0">🖨️ Print</button>
         <button type="button" class="pl-btn pl-btn-save" (click)="saveBill()"
@@ -306,50 +327,51 @@
   <!-- ── Add bottom sheet ── -->
   @if (adding()) {
     <div class="pl-sheet-backdrop" (click)="cancelAdd()" aria-hidden="true"></div>
-    <div class="pl-sheet" role="dialog" aria-label="Add product">
+    <div class="pl-sheet pl-add-sheet" role="dialog" aria-label="Add product">
       <div class="pl-sheet-handle" aria-hidden="true"></div>
-      <h3 class="pl-sheet-title">➕ Add product</h3>
+      <h3 class="pl-sheet-title">+ New item</h3>
 
-      <label class="pl-field">
-        <span class="pl-field-label">Product name</span>
-        <input class="pl-input" type="text" placeholder="e.g. Ceiling Fan 1200mm"
-               [value]="newName()" (input)="newName.set($any($event.target).value)"
-               aria-label="New product name" />
-      </label>
+      <!-- Name -->
+      <input class="pl-edit-input pl-add-name" type="text" placeholder="Product name"
+             [value]="newName()" (input)="newName.set($any($event.target).value)"
+             aria-label="Product name" />
 
-      <div class="pl-sheet-row">
-        <label class="pl-field pl-field-price">
-          <span class="pl-field-label">Selling price ₹</span>
-          <input class="pl-input" type="number" inputmode="decimal" placeholder="0"
+      <!-- Sell / Cost -->
+      <div class="pl-add-row">
+        <label class="pl-edit-lbl">
+          <span>Sell ₹</span>
+          <input class="pl-edit-input" type="number" inputmode="decimal" placeholder="0"
                  [value]="newPrice()" (input)="newPrice.set($any($event.target).value)"
-                 aria-label="New selling price" />
+                 aria-label="Selling price" />
         </label>
-        <label class="pl-field pl-field-price">
-          <span class="pl-field-label">Cost price ₹</span>
-          <input class="pl-input" type="number" inputmode="decimal" placeholder="0"
+        <label class="pl-edit-lbl">
+          <span>Cost ₹</span>
+          <input class="pl-edit-input" type="number" inputmode="decimal" placeholder="0"
                  [value]="newCost()" (input)="newCost.set($any($event.target).value)"
-                 aria-label="New cost price" />
+                 aria-label="Cost price" />
         </label>
       </div>
 
-      <div class="pl-sheet-row">
-        <label class="pl-field pl-field-price">
-          <span class="pl-field-label">Stock qty</span>
-          <input class="pl-input" type="number" inputmode="numeric" placeholder="0"
+      <!-- Stock / Unit -->
+      <div class="pl-add-row">
+        <label class="pl-edit-lbl">
+          <span>Stock</span>
+          <input class="pl-edit-input" type="number" inputmode="numeric" placeholder="0"
                  [value]="newStock()" (input)="newStock.set($any($event.target).value)"
-                 aria-label="Stock count" />
+                 aria-label="Stock qty" />
         </label>
-        <label class="pl-field pl-field-unit">
-          <span class="pl-field-label">Unit</span>
-          <input class="pl-input" type="text" placeholder="pcs"
+        <label class="pl-edit-lbl">
+          <span>Unit</span>
+          <input class="pl-edit-input" type="text" placeholder="pcs"
                  [value]="newUnit()" (input)="newUnit.set($any($event.target).value)"
                  aria-label="Unit" />
         </label>
       </div>
 
-      <label class="pl-field">
-        <span class="pl-field-label">Category</span>
-        <select class="pl-input" [value]="newCategory()"
+      <!-- Category -->
+      <label class="pl-edit-lbl">
+        <span>Category</span>
+        <select class="pl-edit-input" [value]="newCategory()"
                 (change)="newCategory.set($any($event.target).value)" aria-label="Category">
           @for (c of categoryOptions(); track c.id) {
             <option [value]="c.id">{{ c.icon }} {{ c.name }}</option>
@@ -358,10 +380,11 @@
         </select>
       </label>
 
-      <div class="pl-sheet-actions">
-        <button type="button" class="pl-btn pl-btn-cancel" (click)="cancelAdd()" [disabled]="busy()">Done</button>
-        <button type="button" class="pl-btn pl-btn-save" (click)="saveAdd()"
-                [disabled]="busy() || !newName().trim()">✅ Save &amp; add another</button>
+      <!-- Actions -->
+      <div class="pl-edit-actions">
+        <button type="button" class="pl-edit-cancel" (click)="cancelAdd()" [disabled]="busy()">Done</button>
+        <button type="button" class="pl-edit-save" (click)="saveAdd()"
+                [disabled]="busy() || !newName().trim()">✅ Save &amp; add</button>
       </div>
     </div>
   }
