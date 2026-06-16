@@ -1019,6 +1019,79 @@
   animation: pl-cost-pop 0.16s ease;
 }
 
+/* ── Warranty (compact) ── */
+.pl-warr-add {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: #8294a4;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.1rem 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.pl-warr-add:active { color: var(--pl-green); }
+
+.pl-warr-chip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  border: 1px solid #bfe6d2;
+  background: #e9f9f1;
+  color: var(--pl-green-dark);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 1rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.pl-warr-chip:active { background: #d8f5e8; }
+
+.pl-warranty-edit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+
+.pl-warr-preset {
+  border: 1px solid #d3dce5;
+  background: #f4f7fa;
+  color: var(--pl-text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.18rem 0.5rem;
+  border-radius: 1rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.pl-warr-preset:active { background: #e4ecf3; }
+.pl-warr-preset-active {
+  border-color: var(--pl-green);
+  background: #e9f9f1;
+  color: var(--pl-green-dark);
+}
+
+.pl-warr-clear {
+  border: 1px solid #f0c8c8;
+  background: #fdeced;
+  color: #c0392b;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.18rem 0.5rem;
+  border-radius: 1rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.pl-warr-clear:active { background: #fbdcdd; }
+
 /* Inline price input + confirm/cancel */
 .pl-line-price-input {
   width: 6.5rem;
@@ -1179,6 +1252,57 @@
 .pl-paid-badge-change {
   background: var(--pl-green-light);
   color: var(--pl-green-dark);
+}
+
+.pl-paid-badge-due {
+  background: #fdeced;
+  color: #c0392b;
+}
+
+.pl-paid-badge-advance {
+  background: #eef4ff;
+  color: #1d5fbf;
+}
+
+/* Shortfall: discount vs due toggle */
+.pl-shortfall-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.4rem 0 0.2rem;
+}
+
+.pl-shortfall-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--pl-text-muted);
+}
+
+.pl-shortfall-toggle {
+  display: inline-flex;
+  border: 1px solid #d3dce5;
+  border-radius: 2rem;
+  overflow: hidden;
+  background: #f4f7fa;
+}
+
+.pl-shortfall-opt {
+  border: none;
+  background: transparent;
+  color: var(--pl-text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.3rem 0.85rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pl-shortfall-opt-active {
+  background: var(--pl-green);
+  color: #fff;
 }
 
 /* ════════════════════════════════════════════════════════════════════

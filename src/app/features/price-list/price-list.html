@@ -230,7 +230,7 @@
       </div>
 
       <ul class="pl-bill-lines">
-        @for (line of billItems(); track line.name + line.category) {
+        @for (line of billItems(); track line.name + line.category; let lineIdx = $index) {
           <li class="pl-bill-line" [class.pl-bill-line-editing]="editingLineIndex() === $index"
               [class.pl-bill-line-swipe-open]="blSwipeOpenIdx() === $index">
             <!-- Red delete backdrop (only while swiping/open) -->
@@ -281,6 +281,24 @@
                     }
                   </button>
                 }
+
+                <!-- Warranty: compact chip / add link / preset editor -->
+                @if (warrantyEditIdx() === $index) {
+                  <div class="pl-warranty-edit">
+                    @for (w of warrantyPresets; track w) {
+                      <button type="button" class="pl-warr-preset"
+                              [class.pl-warr-preset-active]="line.warranty === w"
+                              (click)="setLineWarranty(lineIdx, w)">{{ w }}</button>
+                    }
+                    @if (line.warranty) {
+                      <button type="button" class="pl-warr-clear" (click)="setLineWarranty(lineIdx, '')">✕ Clear</button>
+                    }
+                  </div>
+                } @else if (line.warranty) {
+                  <button type="button" class="pl-warr-chip" (click)="toggleWarrantyEdit($index)">🛡 {{ warrantyLabel(line) }}: {{ line.warranty }}</button>
+                } @else {
+                  <button type="button" class="pl-warr-add" (click)="toggleWarrantyEdit($index)">+ {{ warrantyLabel(line) }}</button>
+                }
               </div>
               <div class="pl-qty">
                 @if (qtyExpandIdx() === $index) {
@@ -319,12 +337,52 @@
             −₹{{ billDiscount().toLocaleString('en-IN') }} discount
           </span>
         }
+        @if (billDue() > 0) {
+          <span class="pl-paid-badge pl-paid-badge-due">
+            ₹{{ billDue().toLocaleString('en-IN') }} due
+          </span>
+        }
         @if (billChange() > 0) {
           <span class="pl-paid-badge pl-paid-badge-change">
             ₹{{ billChange().toLocaleString('en-IN') }} change
           </span>
         }
+        @if (billAdvance() > 0) {
+          <span class="pl-paid-badge pl-paid-badge-advance">
+            ₹{{ billAdvance().toLocaleString('en-IN') }} advance
+          </span>
+        }
       </div>
+
+      <!-- ── Shortfall: discount vs due ── -->
+      @if (billShortfallValue() > 0) {
+        <div class="pl-shortfall-row">
+          <span class="pl-shortfall-label">₹{{ billShortfallValue().toLocaleString('en-IN') }} short — treat as:</span>
+          <div class="pl-shortfall-toggle">
+            <button type="button" class="pl-shortfall-opt"
+                    [class.pl-shortfall-opt-active]="shortfallMode() === 'discount'"
+                    (click)="shortfallMode.set('discount')">Discount</button>
+            <button type="button" class="pl-shortfall-opt"
+                    [class.pl-shortfall-opt-active]="shortfallMode() === 'due'"
+                    (click)="shortfallMode.set('due')">Due</button>
+          </div>
+        </div>
+      }
+
+      <!-- ── Overpayment: change vs advance ── -->
+      @if (billOverpayValue() > 0) {
+        <div class="pl-shortfall-row">
+          <span class="pl-shortfall-label">₹{{ billOverpayValue().toLocaleString('en-IN') }} extra — treat as:</span>
+          <div class="pl-shortfall-toggle">
+            <button type="button" class="pl-shortfall-opt"
+                    [class.pl-shortfall-opt-active]="overpayMode() === 'change'"
+                    (click)="overpayMode.set('change')">Change</button>
+            <button type="button" class="pl-shortfall-opt"
+                    [class.pl-shortfall-opt-active]="overpayMode() === 'advance'"
+                    (click)="overpayMode.set('advance')">Advance</button>
+          </div>
+        </div>
+      }
 
       <div class="pl-sheet-actions pl-bill-actions">
         <button type="button" class="pl-btn pl-btn-cancel" (click)="clearBillCart(); closeBill()"

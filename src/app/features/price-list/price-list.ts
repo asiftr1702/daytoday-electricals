@@ -19,6 +19,8 @@ interface BillLine {
   unit: string;
   category: string;
   qty: number;
+  /** Optional warranty label shown on the bill (e.g. "1 Year"). */
+  warranty?: string;
 }
 
 /** Selling price the customer pays — discounted price when it is the cheaper one. */
@@ -128,6 +130,35 @@ export class PriceListComponent implements OnInit {
   readonly editingLineIndex = signal<number | null>(null);
   readonly editLinePrice    = signal<string>('');
 
+  // ── Per-line warranty editing ──
+  /** Index of the line whose warranty editor is open (null = none). */
+  readonly warrantyEditIdx = signal<number | null>(null);
+  /** Quick preset warranty options. */
+  readonly warrantyPresets = ['6 Months', '1 Year', '2 Years', '5 Years'];
+
+  /** Warranty label — fans use "Stator Warranty", everything else "Warranty". */
+  warrantyLabel(line: BillLine): string {
+    return (line.category || '').toLowerCase().includes('fan') ? 'Stator Warranty' : 'Warranty';
+  }
+
+  /** Open / toggle the warranty editor for a line. */
+  toggleWarrantyEdit(index: number): void {
+    this.warrantyEditIdx.set(this.warrantyEditIdx() === index ? null : index);
+  }
+
+  /** Set (or clear, when value is empty) the warranty on a line and close the editor. */
+  setLineWarranty(index: number, value: string): void {
+    const v = value.trim();
+    this.billItems.update(lines =>
+      lines.map((l, i) => {
+        if (i !== index) return l;
+        const { warranty, ...rest } = l;
+        return v ? { ...rest, warranty: v } : rest;
+      }),
+    );
+    this.warrantyEditIdx.set(null);
+  }
+
   // ── Per-line qty stepper (tap to expand, auto-collapses after 3 s) ──
   readonly qtyExpandIdx = signal<number | null>(null);
   private qtyCollapseTimer: ReturnType<typeof setTimeout> | null = null;
@@ -158,19 +189,53 @@ export class PriceListComponent implements OnInit {
     return isNaN(v) || v < 0 ? NaN : v;
   });
 
-  /** Discount = total − paid (only when customer paid less than total). */
-  readonly billDiscount = computed(() => {
+  /**
+   * How to treat a shortfall (paid < total):
+   *  • 'discount' — the unpaid part is a price reduction (bill is settled).
+   *  • 'due'      — the unpaid part is still owed by the customer.
+   */
+  readonly shortfallMode = signal<'discount' | 'due'>('discount');
+
+  /** Raw shortfall = total − paid (only when customer paid less than total). */
+  readonly billShortfallValue = computed(() => {
     const paid = this.parsedPaid();
     const total = this.billTotal();
     return !isNaN(paid) && paid < total ? Math.round(total - paid) : 0;
   });
 
-  /** Change to return to customer (when they overpay). */
-  readonly billChange = computed(() => {
+  /** Discount = shortfall when it is being treated as a discount. */
+  readonly billDiscount = computed(() =>
+    this.shortfallMode() === 'discount' ? this.billShortfallValue() : 0,
+  );
+
+  /** Due = shortfall when it is being treated as an outstanding balance. */
+  readonly billDue = computed(() =>
+    this.shortfallMode() === 'due' ? this.billShortfallValue() : 0,
+  );
+
+  /**
+   * How to treat an overpayment (paid > total):
+   *  • 'change'  — extra cash is returned to the customer now.
+   *  • 'advance' — extra is kept as credit for the customer's future purchases.
+   */
+  readonly overpayMode = signal<'change' | 'advance'>('change');
+
+  /** Raw overpayment = paid − total (only when customer paid more than total). */
+  readonly billOverpayValue = computed(() => {
     const paid = this.parsedPaid();
     const total = this.billTotal();
     return !isNaN(paid) && paid > total ? Math.round(paid - total) : 0;
   });
+
+  /** Change to return to customer (when overpayment is treated as change). */
+  readonly billChange = computed(() =>
+    this.overpayMode() === 'change' ? this.billOverpayValue() : 0,
+  );
+
+  /** Advance/credit kept for future purchases (when overpayment is treated as advance). */
+  readonly billAdvance = computed(() =>
+    this.overpayMode() === 'advance' ? this.billOverpayValue() : 0,
+  );
 
   /** Category chips/options (id, name, icon, colour) from the catalogue config. */
   readonly categoryOptions = computed(() =>
@@ -474,6 +539,8 @@ export class PriceListComponent implements OnInit {
     this.billCustomer.set('');
     this.billMobile.set('');
     this.billPaid.set('');
+    this.shortfallMode.set('discount');
+    this.overpayMode.set('change');
     this.editingLineIndex.set(null);
     this.editLinePrice.set('');
   }
@@ -485,6 +552,8 @@ export class PriceListComponent implements OnInit {
     const totalCost = lines.reduce((s, l) => s + (l.costPrice ?? 0) * l.qty, 0);
     const datePart = this.today.replace(/-/g, '');
     const discount = this.billDiscount();
+    const due = this.billDue();
+    const advance = this.billAdvance();
     const finalAmt = total - discount;
     return {
       date: this.today,
@@ -503,12 +572,19 @@ export class PriceListComponent implements OnInit {
         ...(l.sellPrice < l.originalPrice
           ? { originalPrice: l.originalPrice, itemDiscount: Math.round((l.originalPrice - l.sellPrice) * l.qty) }
           : {}),
+        ...(l.warranty ? { warranty: l.warranty } : {}),
       })),
       totalAmount: total,
       discountAmount: discount,
       finalAmount: finalAmt,
       totalCost,
       totalProfit: finalAmt - totalCost,
+      ...(due > 0
+        ? { dueAmount: due, amountPaid: Math.max(0, Math.round(finalAmt - due)) }
+        : {}),
+      ...(advance > 0
+        ? { advanceAmount: advance, amountPaid: Math.round(finalAmt + advance) }
+        : {}),
     };
   }
 
@@ -527,8 +603,11 @@ export class PriceListComponent implements OnInit {
     const cust  = this.billCustomer().trim();
     const mob   = this.billMobile().trim();
     const disc  = this.billDiscount();
+    const due   = this.billDue();
+    const advance = this.billAdvance();
     const total = this.billTotal();
     const final = total - disc;
+    const paid  = due > 0 ? Math.max(0, final - due) : final;
     const date  = this.today;
 
     const W   = 560;
@@ -540,13 +619,18 @@ export class PriceListComponent implements OnInit {
     const H_GAP   = 6;
     const H_CHEAD = 26;
     const H_ITEM  = 26;
+    const H_WARR  = 15; // extra height for a line that carries a warranty
     const H_DIV   = 2;
     const H_SUB   = disc > 0 ? 24 : 0;
     const H_DISC  = disc > 0 ? 24 : 0;
+    const H_PAID  = due > 0 ? 24 : 0;
+    const H_DUE   = due > 0 ? 26 : 0;
+    const H_ADV   = advance > 0 ? 26 : 0;
     const H_TOTAL = 36;
     const H_FOOT  = 42;
-    const H = H_HEAD + H_CUST + H_GAP + H_CHEAD + lines.length * H_ITEM
-            + H_DIV + H_SUB + H_DISC + H_TOTAL + H_GAP + H_FOOT;
+    const itemsH  = lines.reduce((s, l) => s + H_ITEM + (l.warranty ? H_WARR : 0), 0);
+    const H = H_HEAD + H_CUST + H_GAP + H_CHEAD + itemsH
+            + H_DIV + H_SUB + H_DISC + H_TOTAL + H_PAID + H_DUE + H_ADV + H_GAP + H_FOOT;
 
     const canvas = document.createElement('canvas');
     canvas.width  = W * S;
@@ -622,13 +706,19 @@ export class PriceListComponent implements OnInit {
 
       // Item rows
       lines.forEach((line, i) => {
-        if (i % 2 === 1) { ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, y, W, H_ITEM); }
+        const rowH = H_ITEM + (line.warranty ? H_WARR : 0);
+        if (i % 2 === 1) { ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, y, W, rowH); }
         ctx.font = '13px Arial';
         let name = line.name;
         while (ctx.measureText(name).width > nameW - 6 && name.length > 1) name = name.slice(0, -1);
         if (name.length < line.name.length) name = name.slice(0, -1) + '…';
 
         ctx.fillStyle = '#1a2736'; ctx.fillText(name, xName, y + 18);
+        if (line.warranty) {
+          ctx.font = '10px Arial'; ctx.fillStyle = '#047a42';
+          ctx.fillText(this.warrantyLabel(line) + ': ' + line.warranty, xName, y + 31);
+        }
+        ctx.font = '13px Arial';
         ctx.textAlign = 'center'; ctx.fillStyle = '#617082';
         ctx.fillText(String(line.qty), xQty + qtyW / 2, y + 18);
         ctx.textAlign = 'right'; ctx.font = '12px Arial';
@@ -636,8 +726,8 @@ export class PriceListComponent implements OnInit {
         ctx.fillStyle = '#1a2736'; ctx.font = 'bold 13px Arial';
         ctx.fillText('₹' + (line.sellPrice * line.qty).toLocaleString('en-IN'), xTot + totW, y + 18);
         ctx.textAlign = 'left';
-        ctx.fillStyle = '#e4eaf1'; ctx.fillRect(0, y + H_ITEM - 1, W, 1);
-        y += H_ITEM;
+        ctx.fillStyle = '#e4eaf1'; ctx.fillRect(0, y + rowH - 1, W, 1);
+        y += rowH;
       });
 
       // Divider
@@ -661,7 +751,33 @@ export class PriceListComponent implements OnInit {
       ctx.fillText(disc > 0 ? 'Amount Paid' : 'Total', PAD, y + 24);
       ctx.textAlign = 'right'; ctx.font = 'bold 18px Arial';
       ctx.fillText('₹' + final.toLocaleString('en-IN'), W - PAD, y + 24);
-      ctx.textAlign = 'left'; y += H_TOTAL + H_GAP;
+      ctx.textAlign = 'left'; y += H_TOTAL;
+
+      // Paid + Due rows (partial payment)
+      if (due > 0) {
+        ctx.textAlign = 'right'; ctx.fillStyle = '#617082'; ctx.font = '12px Arial';
+        ctx.fillText('Paid', W - PAD - totW - 6, y + H_PAID - 8);
+        ctx.fillText('₹' + paid.toLocaleString('en-IN'), W - PAD, y + H_PAID - 8);
+        ctx.textAlign = 'left'; y += H_PAID;
+
+        ctx.fillStyle = '#fdeced'; ctx.fillRect(0, y, W, H_DUE);
+        ctx.fillStyle = '#c0392b'; ctx.font = 'bold 14px Arial';
+        ctx.fillText('Balance Due', PAD, y + 18);
+        ctx.textAlign = 'right'; ctx.font = 'bold 15px Arial';
+        ctx.fillText('₹' + due.toLocaleString('en-IN'), W - PAD, y + 18);
+        ctx.textAlign = 'left'; y += H_DUE;
+      }
+
+      // Advance / credit row (overpayment kept for future)
+      if (advance > 0) {
+        ctx.fillStyle = '#eef4ff'; ctx.fillRect(0, y, W, H_ADV);
+        ctx.fillStyle = '#1d5fbf'; ctx.font = 'bold 14px Arial';
+        ctx.fillText('Advance Balance', PAD, y + 18);
+        ctx.textAlign = 'right'; ctx.font = 'bold 15px Arial';
+        ctx.fillText('₹' + advance.toLocaleString('en-IN'), W - PAD, y + 18);
+        ctx.textAlign = 'left'; y += H_ADV;
+      }
+      y += H_GAP;
 
       // Footer
       ctx.fillStyle = '#617082'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
@@ -731,16 +847,28 @@ export class PriceListComponent implements OnInit {
     if (mobile.length >= 10) {
       const lines = this.billItems();
       const disc  = this.billDiscount();
+      const due   = this.billDue();
+      const advance = this.billAdvance();
       const total = this.billTotal();
       const final = total - disc;
+      const paid  = due > 0 ? Math.max(0, final - due) : final;
       const cust  = this.billCustomer().trim();
       let msg = '🧾 *Bill from DayToDay Electricals*\n';
       if (cust) msg += `Customer: ${cust}\n`;
       msg += `Date: ${this.today}\n\n`;
       lines.forEach(l => {
         msg += `• ${l.name}  ×${l.qty}  = ₹${(l.sellPrice * l.qty).toLocaleString('en-IN')}\n`;
+        if (l.warranty) msg += `   🛡 ${this.warrantyLabel(l)}: ${l.warranty}\n`;
       });
-      msg += `\n*Total: ₹${final.toLocaleString('en-IN')}*\n\nThank you! 🙏`;
+      msg += `\n*Total: ₹${final.toLocaleString('en-IN')}*\n`;
+      if (due > 0) {
+        msg += `Paid: ₹${paid.toLocaleString('en-IN')}\n`;
+        msg += `*Balance Due: ₹${due.toLocaleString('en-IN')}*\n`;
+      }
+      if (advance > 0) {
+        msg += `*Advance Balance: ₹${advance.toLocaleString('en-IN')}*\n`;
+      }
+      msg += `\nThank you! 🙏`;
       window.open(`https://wa.me/91${mobile}?text=${encodeURIComponent(msg)}`, '_blank');
     } else {
       this.billMsg.set('Open in Chrome on Android to share as image, or enter a mobile number.');

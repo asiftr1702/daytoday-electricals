@@ -11,6 +11,8 @@ export interface BillItem {
   profit: number;      // (sellPrice - costPrice) * qty
   /** Custom field values flagged "include in bill" for this product's category. */
   billFields?: { label: string; value: string }[];
+  /** Optional warranty label shown on the bill (e.g. "1 Year"). */
+  warranty?: string;
   /** Cumulative quantity returned by the customer (0 / undefined = none returned). */
   returnedQty?: number;
 }
@@ -35,6 +37,12 @@ export interface Bill {
   finalAmount: number;   // totalAmount - discountAmount (actual amount paid) — ORIGINAL, never mutated by returns
   totalCost: number;     // sum of costPrice * qty
   totalProfit: number;   // net profit (recomputed after returns)
+  /** Amount actually paid by the customer (when a partial payment was made). */
+  amountPaid?: number;
+  /** Outstanding balance still owed by the customer (finalAmount − amountPaid). */
+  dueAmount?: number;
+  /** Excess amount kept as credit for the customer's future purchases. */
+  advanceAmount?: number;
   note?: string;
   /** Cumulative amount refunded across all returns. */
   refundedAmount?: number;
