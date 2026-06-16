@@ -410,27 +410,10 @@ export class BillService {
   printBill(bill: Bill): void {
     const html = this.buildReceiptHtml(bill);
 
-    // ── Attempt 1: new tab via Blob URL (Android-compatible) ──────────────
-    const blob = new Blob([html], { type: 'text/html' });
-    const url  = URL.createObjectURL(blob);
-    const newWin = window.open(url, '_blank');
-
-    if (newWin) {
-      // New tab opened successfully — revoke the object URL after a safe delay.
-      newWin.addEventListener('load', () => {
-        try { newWin.print(); } catch { /* some browsers auto-show print UI */ }
-      }, { once: true });
-      setTimeout(() => URL.revokeObjectURL(url), 30_000);
-      return;
-    }
-
-    // Popup was blocked — clean up the blob URL and fall back to iframe.
-    URL.revokeObjectURL(url);
-
-    // ── Fallback: hidden iframe (desktop / VS Code webview) ───────────────
+    // ── Attempt 1: hidden iframe (desktop) ────────────────────────────────
     const iframe = document.createElement('iframe');
     iframe.setAttribute('aria-hidden', 'true');
-    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0';
     document.body.appendChild(iframe);
 
     const cleanup = () => {
@@ -438,15 +421,49 @@ export class BillService {
     };
 
     const iDoc = iframe.contentWindow?.document;
-    if (!iDoc) { cleanup(); return; }
-    iDoc.open();
-    iDoc.write(html);
-    iDoc.close();
+    if (iDoc) {
+      iDoc.open();
+      iDoc.write(html);
+      iDoc.close();
 
-    const win = iframe.contentWindow!;
-    win.onafterprint = () => setTimeout(cleanup, 100);
-    setTimeout(() => {
-      try { win.focus(); win.print(); } catch { cleanup(); }
-    }, 300);
+      const win = iframe.contentWindow!;
+      win.onafterprint = () => setTimeout(cleanup, 100);
+
+      setTimeout(() => {
+        try {
+          win.focus();
+          win.print();
+          // If print() returns synchronously without dialog (e.g. Android WebView),
+          // fall through to the Blob-URL tab approach below after a short test.
+        } catch {
+          cleanup();
+          this.printViaBlob(html);
+        }
+      }, 300);
+      return;
+    }
+
+    cleanup();
+    this.printViaBlob(html);
+  }
+
+  /** Opens the receipt in a new tab, triggers print, then closes the tab. */
+  private printViaBlob(html: string): void {
+    const blob = new Blob([html], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    const newWin = window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+
+    if (!newWin) return;
+
+    // Inject a script that prints then closes so the tab doesn't linger.
+    newWin.addEventListener('load', () => {
+      try {
+        newWin.print();
+        newWin.onafterprint = () => newWin.close();
+        // Safety close if onafterprint never fires (some Android builds)
+        setTimeout(() => { try { newWin.close(); } catch { /* ignore */ } }, 8_000);
+      } catch { /* ignore */ }
+    }, { once: true });
   }
 }
