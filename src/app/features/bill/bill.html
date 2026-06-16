@@ -173,9 +173,11 @@
         <ul class="bill-items-list">
           @for (item of items(); track trackByIndex($index)) {
             <li class="bill-row" [class.bill-swipe-open]="bSwipeOpenIdx() === $index">
-              <div class="bill-swipe-bg">
-                <button type="button" class="bill-del-btn" (click)="removeItem($index)">🗑️ Delete</button>
-              </div>
+              @if (bSwipingIdx() === $index || bSwipeOpenIdx() === $index) {
+                <div class="bill-swipe-bg">
+                  <button type="button" class="bill-del-btn" (click)="removeItem($index)">🗑️ Delete</button>
+                </div>
+              }
               <div class="bill-swipe-content"
                    [style]="bSwipeRowStyle($index)"
                    (pointerdown)="bSwipeDown($event, $index)"

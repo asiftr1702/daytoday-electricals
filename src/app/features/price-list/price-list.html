@@ -233,10 +233,12 @@
         @for (line of billItems(); track line.name + line.category) {
           <li class="pl-bill-line" [class.pl-bill-line-editing]="editingLineIndex() === $index"
               [class.pl-bill-line-swipe-open]="blSwipeOpenIdx() === $index">
-            <!-- Red delete backdrop -->
-            <div class="pl-bl-swipe-bg">
-              <button type="button" class="pl-bl-del-btn" (click)="removeLine($index)">🗑️ Delete</button>
-            </div>
+            <!-- Red delete backdrop (only while swiping/open) -->
+            @if (blSwipingIdx() === $index || blSwipeOpenIdx() === $index) {
+              <div class="pl-bl-swipe-bg">
+                <button type="button" class="pl-bl-del-btn" (click)="removeLine($index)">🗑️ Delete</button>
+              </div>
+            }
             <!-- Sliding content -->
             <div class="pl-bl-swipe-content"
                  [style]="blSwipeRowStyle($index)"
@@ -332,8 +334,6 @@
                 title="Share bill as image">
           📲 Share
         </button>
-        <button type="button" class="pl-btn pl-btn-print" (click)="printBill()"
-                [disabled]="billSaving() || billItems().length === 0">🖨️ Print</button>
         <button type="button" class="pl-btn pl-btn-save" (click)="saveBill()"
                 [disabled]="billSaving() || billItems().length === 0">{{ billSaving() ? 'Saving…' : '✅ Save' }}</button>
       </div>

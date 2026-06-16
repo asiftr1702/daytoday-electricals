@@ -4,6 +4,7 @@ import { PriceListService, PriceListEntry } from '../../core/services/price-list
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
 import { CatalogueConfigService } from '../../core/services/catalogue-config.service';
 import { BillService } from '../../core/services/bill.service';
+import { StampService } from '../../core/services/stamp.service';
 import { Bill } from '../../core/models/bill.model';
 import { AnyProduct } from '../../core/models/any-product.model';
 
@@ -57,6 +58,7 @@ export class PriceListComponent implements OnInit {
   private readonly firebaseAdmin   = inject(FirebaseAdminService);
   private readonly catalogueConfig = inject(CatalogueConfigService);
   private readonly billService     = inject(BillService);
+  private readonly stampService    = inject(StampService);
 
   /** Today's date (YYYY-MM-DD) for bills created here. */
   private readonly today = new Date().toISOString().slice(0, 10);
@@ -517,35 +519,233 @@ export class PriceListComponent implements OnInit {
   }
 
   /** Whether a mobile number has been entered (enables WhatsApp share). */
-  readonly canWhatsApp = computed(() => this.billMobile().trim().length >= 10);
+  readonly canWhatsApp = computed(() => this.billItems().length > 0);
 
-  /** Share the bill as a WhatsApp message to the entered mobile number. */
-  shareOnWhatsApp(): void {
-    const mobile = this.billMobile().trim().replace(/\D/g, '');
-    if (!mobile) return;
+  /** Draw the current cart as a PNG receipt image. */
+  private buildBillImage(): Promise<File> {
     const lines = this.billItems();
-    const customer = this.billCustomer().trim();
-    const discount = this.billDiscount();
-    const total    = this.billTotal();
-    const final    = total - discount;
+    const cust  = this.billCustomer().trim();
+    const mob   = this.billMobile().trim();
+    const disc  = this.billDiscount();
+    const total = this.billTotal();
+    const final = total - disc;
+    const date  = this.today;
 
-    let msg = '🧾 *Bill from DayToDay Electricals*\n';
-    if (customer) msg += `Customer: ${customer}\n`;
-    msg += `Date: ${this.today}\n\n`;
+    const W   = 560;
+    const PAD = 22;
+    const S   = 2; // retina
 
-    lines.forEach(l => {
-      msg += `• ${l.name}  ×${l.qty}  @₹${l.sellPrice.toLocaleString('en-IN')}  = ₹${(l.sellPrice * l.qty).toLocaleString('en-IN')}\n`;
-    });
+    const H_HEAD  = 70;
+    const H_CUST  = (cust || mob) ? 34 : 0;
+    const H_GAP   = 6;
+    const H_CHEAD = 26;
+    const H_ITEM  = 26;
+    const H_DIV   = 2;
+    const H_SUB   = disc > 0 ? 24 : 0;
+    const H_DISC  = disc > 0 ? 24 : 0;
+    const H_TOTAL = 36;
+    const H_FOOT  = 42;
+    const H = H_HEAD + H_CUST + H_GAP + H_CHEAD + lines.length * H_ITEM
+            + H_DIV + H_SUB + H_DISC + H_TOTAL + H_GAP + H_FOOT;
 
-    msg += `\n*Total: ₹${total.toLocaleString('en-IN')}*`;
-    if (discount > 0) {
-      msg += `\nDiscount: −₹${discount.toLocaleString('en-IN')}`;
-      msg += `\n*Amount Payable: ₹${final.toLocaleString('en-IN')}*`;
+    const canvas = document.createElement('canvas');
+    canvas.width  = W * S;
+    canvas.height = H * S;
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(S, S);
+
+    const drawContent = () => {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, W, H);
+
+      // Header gradient
+      const grd = ctx.createLinearGradient(0, 0, W, 0);
+      grd.addColorStop(0, '#0c2340');
+      grd.addColorStop(1, '#144d30');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, W, H_HEAD);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 17px Arial';
+      ctx.fillText('DayToDay Electricals', PAD, 28);
+      ctx.fillStyle = 'rgba(255,255,255,0.65)';
+      ctx.font = '12px Arial';
+      ctx.fillText('Date: ' + date, PAD, 48);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.font = '10px Arial';
+      ctx.fillText('DayToDay Electricals', W - PAD, 62);
+      ctx.textAlign = 'left';
+
+      let y = H_HEAD;
+
+      // Customer strip
+      if (H_CUST) {
+        ctx.fillStyle = '#f0f3f7';
+        ctx.fillRect(0, y, W, H_CUST);
+        ctx.fillStyle = '#1a2736';
+        ctx.font = '12px Arial';
+        const parts: string[] = [];
+        if (cust) parts.push(cust);
+        if (mob)  parts.push(mob);
+        ctx.fillText(parts.join('   |   '), PAD, y + 22);
+        y += H_CUST;
+      }
+      y += H_GAP;
+
+      // Column headers
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, y, W, H_CHEAD);
+      ctx.fillStyle = '#e4eaf1';
+      ctx.fillRect(0, y + H_CHEAD - 1, W, 1);
+
+      const usableW = W - PAD * 2;
+      const qtyW    = 36;
+      const priceW  = 80;
+      const totW    = 80;
+      const nameW   = usableW - qtyW - priceW - totW;
+      const xName   = PAD;
+      const xQty    = xName + nameW;
+      const xPrice  = xQty  + qtyW;
+      const xTot    = xPrice + priceW;
+
+      ctx.fillStyle = '#617082';
+      ctx.font = 'bold 10px Arial';
+      ctx.fillText('ITEM', xName, y + 18);
+      ctx.textAlign = 'center';
+      ctx.fillText('QTY', xQty + qtyW / 2, y + 18);
+      ctx.textAlign = 'right';
+      ctx.fillText('PRICE', xPrice + priceW, y + 18);
+      ctx.fillText('TOTAL', xTot + totW, y + 18);
+      ctx.textAlign = 'left';
+      y += H_CHEAD;
+
+      // Item rows
+      lines.forEach((line, i) => {
+        if (i % 2 === 1) { ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, y, W, H_ITEM); }
+        ctx.font = '13px Arial';
+        let name = line.name;
+        while (ctx.measureText(name).width > nameW - 6 && name.length > 1) name = name.slice(0, -1);
+        if (name.length < line.name.length) name = name.slice(0, -1) + '…';
+
+        ctx.fillStyle = '#1a2736'; ctx.fillText(name, xName, y + 18);
+        ctx.textAlign = 'center'; ctx.fillStyle = '#617082';
+        ctx.fillText(String(line.qty), xQty + qtyW / 2, y + 18);
+        ctx.textAlign = 'right'; ctx.font = '12px Arial';
+        ctx.fillText('₹' + line.sellPrice.toLocaleString('en-IN'), xPrice + priceW, y + 18);
+        ctx.fillStyle = '#1a2736'; ctx.font = 'bold 13px Arial';
+        ctx.fillText('₹' + (line.sellPrice * line.qty).toLocaleString('en-IN'), xTot + totW, y + 18);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#e4eaf1'; ctx.fillRect(0, y + H_ITEM - 1, W, 1);
+        y += H_ITEM;
+      });
+
+      // Divider
+      ctx.fillStyle = '#1a2736'; ctx.fillRect(PAD, y, W - PAD * 2, H_DIV); y += H_DIV;
+
+      // Subtotal / Discount
+      if (disc > 0) {
+        ctx.textAlign = 'right'; ctx.fillStyle = '#617082'; ctx.font = '12px Arial';
+        ctx.fillText('Subtotal', W - PAD - totW - 6, y + H_SUB - 6);
+        ctx.fillText('₹' + total.toLocaleString('en-IN'), W - PAD, y + H_SUB - 6);
+        y += H_SUB;
+        ctx.fillStyle = '#b45309';
+        ctx.fillText('Discount', W - PAD - totW - 6, y + H_DISC - 6);
+        ctx.fillText('-₹' + disc.toLocaleString('en-IN'), W - PAD, y + H_DISC - 6);
+        ctx.textAlign = 'left'; y += H_DISC;
+      }
+
+      // Total row
+      ctx.fillStyle = '#e6f7ee'; ctx.fillRect(0, y, W, H_TOTAL);
+      ctx.fillStyle = '#047a42'; ctx.font = 'bold 15px Arial';
+      ctx.fillText(disc > 0 ? 'Amount Paid' : 'Total', PAD, y + 24);
+      ctx.textAlign = 'right'; ctx.font = 'bold 18px Arial';
+      ctx.fillText('₹' + final.toLocaleString('en-IN'), W - PAD, y + 24);
+      ctx.textAlign = 'left'; y += H_TOTAL + H_GAP;
+
+      // Footer
+      ctx.fillStyle = '#617082'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
+      ctx.fillText('Thank you for shopping with us!', W / 2, y + 18);
+      ctx.fillStyle = '#a0adb9'; ctx.font = '10px Arial';
+      ctx.fillText('DayToDay Electricals', W / 2, y + 32);
+      ctx.textAlign = 'left';
+    };
+
+    const stampUrl = this.stampService.stampUrl();
+
+    if (stampUrl) {
+      return new Promise<File>(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          drawContent();
+          // Draw stamp centred over the body area (below header) as watermark
+          const bodyTop = H_HEAD + H_CUST + H_GAP;
+          const bodyH   = H - bodyTop - H_FOOT;
+          const count = lines.length;
+          const stampSize = count <= 2 ? 200 : count <= 4 ? 300 : 400;
+          const scale   = Math.min(stampSize / img.width, stampSize / img.height);
+          const sw = img.width * scale;
+          const sh = img.height * scale;
+          const sx = (W - sw) / 2;
+          const sy = bodyTop + (bodyH - sh) / 2;
+          ctx.save();
+          ctx.globalAlpha = 0.30;
+          ctx.drawImage(img, sx, sy, sw, sh);
+          ctx.restore();
+          canvas.toBlob(blob => resolve(new File([blob!], 'bill.png', { type: 'image/png' })), 'image/png');
+        };
+        img.onerror = () => {
+          // Stamp failed to load — render without it
+          drawContent();
+          canvas.toBlob(blob => resolve(new File([blob!], 'bill.png', { type: 'image/png' })), 'image/png');
+        };
+        img.src = stampUrl;
+      });
     }
-    msg += '\n\nThank you for shopping with us! 🙏';
 
-    const url = `https://wa.me/91${mobile}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+    drawContent();
+    return new Promise<File>(resolve =>
+      canvas.toBlob(blob => resolve(new File([blob!], 'bill.png', { type: 'image/png' })), 'image/png'),
+    );
+  }
+
+  /**
+   * Share the bill as a PNG image via the native share sheet.
+   * Falls back to a wa.me text link if Web Share API is unavailable.
+   */
+  async shareOnWhatsApp(): Promise<void> {
+    if (!this.billItems().length) return;
+
+    try {
+      const file = await this.buildBillImage();
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Bill — DayToDay Electricals' });
+        return;
+      }
+    } catch (err: unknown) {
+      if ((err as Error)?.name === 'AbortError') return;
+    }
+
+    // Fallback: wa.me text link (needs mobile number)
+    const mobile = this.billMobile().trim().replace(/\D/g, '');
+    if (mobile.length >= 10) {
+      const lines = this.billItems();
+      const disc  = this.billDiscount();
+      const total = this.billTotal();
+      const final = total - disc;
+      const cust  = this.billCustomer().trim();
+      let msg = '🧾 *Bill from DayToDay Electricals*\n';
+      if (cust) msg += `Customer: ${cust}\n`;
+      msg += `Date: ${this.today}\n\n`;
+      lines.forEach(l => {
+        msg += `• ${l.name}  ×${l.qty}  = ₹${(l.sellPrice * l.qty).toLocaleString('en-IN')}\n`;
+      });
+      msg += `\n*Total: ₹${final.toLocaleString('en-IN')}*\n\nThank you! 🙏`;
+      window.open(`https://wa.me/91${mobile}?text=${encodeURIComponent(msg)}`, '_blank');
+    } else {
+      this.billMsg.set('Open in Chrome on Android to share as image, or enter a mobile number.');
+      setTimeout(() => this.billMsg.set(''), 4000);
+    }
   }
 
   /** Save the current bill to Firestore (records it in bill history). */
@@ -628,6 +828,7 @@ export class PriceListComponent implements OnInit {
       this.newCategory.set(first);
       this.loadCategory(first);
     });
+    this.stampService.loadStamp();
   }
 
   /** Fetch a category's rows once and cache them. */

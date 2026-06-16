@@ -881,6 +881,7 @@
   position: relative;
   overflow: hidden;
   border-bottom: 1px solid #eef2f7;
+  flex-shrink: 0;   /* don't shrink when list overflows — let it scroll instead */
 }
 
 /* Red backdrop revealed on left swipe */
