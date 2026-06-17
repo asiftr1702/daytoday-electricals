@@ -126,11 +126,14 @@
                         <img class="pl-image-preview" [src]="imageUrl" [alt]="editName() || 'Product image'" />
                       </button>
                     } @else {
-                      <div class="pl-image-preview-empty" aria-hidden="true">📷</div>
+                      <button type="button" class="pl-image-preview-empty"
+                              (click)="editImageInput.click()"
+                              aria-label="Add product photo">📷</button>
                     }
                     <div class="pl-image-controls">
                       <label class="pl-image-pick">
-                        <input type="file" accept="image/*" (change)="onImagePicked($event, 'edit')" />
+                        <input #editImageInput type="file" accept="image/*" capture="environment"
+                               (change)="onImagePicked($event, 'edit')" />
                         <span>{{ editImage() ? 'Change photo' : 'Add photo' }}</span>
                       </label>
                       @if (editImage()) {
@@ -518,11 +521,14 @@
             <img class="pl-image-preview" [src]="imageUrl" [alt]="newName() || 'Product image'" />
           </button>
         } @else {
-          <div class="pl-image-preview-empty" aria-hidden="true">📷</div>
+          <button type="button" class="pl-image-preview-empty"
+                  (click)="addImageInput.click()"
+                  aria-label="Add product photo">📷</button>
         }
         <div class="pl-image-controls">
           <label class="pl-image-pick">
-            <input type="file" accept="image/*" (change)="onImagePicked($event, 'add')" />
+            <input #addImageInput type="file" accept="image/*" capture="environment"
+                   (change)="onImagePicked($event, 'add')" />
             <span>{{ newImage() ? 'Change photo' : 'Add photo' }}</span>
           </label>
           @if (newImage()) {

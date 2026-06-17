@@ -747,7 +747,7 @@
 
 .pl-image-pick {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   min-height: 2rem;
@@ -758,6 +758,7 @@
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
+  z-index: 1;
 }
 
 .pl-image-pick input {
@@ -768,6 +769,13 @@
   height: 100%;
   opacity: 0;
   cursor: pointer;
+  z-index: 10;
+}
+
+.pl-image-pick span {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .pl-image-clear {
