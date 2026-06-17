@@ -473,12 +473,12 @@
       <!-- Category -->
       <label class="pl-edit-lbl">
         <span>Category</span>
-        <select class="pl-edit-input" [value]="newCategory()"
+        <select class="pl-edit-input"
                 (change)="newCategory.set($any($event.target).value)" aria-label="Category">
           @for (c of categoryOptions(); track c.id) {
-            <option [value]="c.id">{{ c.icon }} {{ c.name }}</option>
+            <option [value]="c.id" [selected]="newCategory() === c.id">{{ c.icon }} {{ c.name }}</option>
           }
-          <option value="other">📦 Other</option>
+          <option value="other" [selected]="newCategory() === 'other'">📦 Other</option>
         </select>
       </label>
 

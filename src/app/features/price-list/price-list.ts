@@ -1180,8 +1180,15 @@ export class PriceListComponent implements OnInit {
   setCategory(id: string): void {
     if (this.activeCat() === id) return;
     this.activeCat.set(id);
+    // Close and fully reset the add form when switching categories
     this.adding.set(false);
     this.editingId.set(null);
+    this.newName.set('');
+    this.newPrice.set('');
+    this.newCost.set('');
+    this.newUnit.set('pcs');
+    this.newStock.set('');
+    this.newCategory.set(id);
     this.loadCategory(id);
   }
 
@@ -1286,13 +1293,19 @@ export class PriceListComponent implements OnInit {
     this.newCost.set('');
     this.newUnit.set('pcs');
     this.newStock.set('');
-    if (!this.newCategory()) {
-      this.newCategory.set(this.activeCat() || this.categoryOptions()[0]?.id || 'other');
-    }
+    // Auto-select the active category when adding a new item
+    this.newCategory.set(this.activeCat() || this.categoryOptions()[0]?.id || 'other');
   }
 
   cancelAdd(): void {
     this.adding.set(false);
+    // Clear all form fields when closing
+    this.newName.set('');
+    this.newPrice.set('');
+    this.newCost.set('');
+    this.newUnit.set('pcs');
+    this.newStock.set('');
+    this.newCategory.set('');
   }
 
   async saveAdd(): Promise<void> {
