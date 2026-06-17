@@ -236,6 +236,62 @@
   border: 1px solid var(--pl-border);
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   DRAG & DROP to low stock
+   ════════════════════════════════════════════════════════════════════ */
+.pl-drop-zone {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 1.2rem;
+  margin: 0.6rem 0 0.8rem;
+  border: 2px dashed #cdd8e4;
+  border-radius: 0.8rem;
+  background: #f8fafc;
+  color: #617082;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: grab;
+  transition: all 0.15s ease;
+}
+
+.pl-drop-zone.pl-drop-zone-visible {
+  display: flex;
+}
+
+/* Show drop zone only when dragging */
+.pl-drop-zone.pl-drop-zone-active {
+  display: flex;
+  border-color: var(--pl-green);
+  background: #f0fdf4;
+  color: var(--pl-green-dark);
+  box-shadow: 0 0 0 3px rgba(5, 150, 82, 0.1);
+}
+
+.pl-drop-icon {
+  font-size: 1.4rem;
+  animation: pl-bounce 0.6s ease-in-out infinite;
+}
+
+@keyframes pl-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.pl-drop-text {
+  flex: 1;
+}
+
+.pl-group {
+  margin-bottom: 0.85rem;
+  background: var(--pl-surface);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: var(--pl-shadow-sm);
+  border: 1px solid var(--pl-border);
+}
+
 .pl-group-head {
   display: flex;
   align-items: center;
@@ -312,6 +368,7 @@
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -419,6 +476,12 @@
 }
 
 .pl-row:first-child { border-top: none; }
+
+/* Row being dragged */
+.pl-row-dragging {
+  opacity: 0.5;
+  background: #f5f9ff;
+}
 
 /* Swipe background (revealed when swiping) */
 .pl-swipe-bg {
@@ -555,7 +618,8 @@
 }
 
 .pl-edit-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.35rem;
 }
 
@@ -1344,9 +1408,14 @@
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
 }
 
 .pl-saved-btn:active { transform: scale(0.99); filter: brightness(0.97); }
+
+.pl-low-stock-btn {
+  margin-top: 0.45rem;
+}
 
 .pl-saved-date {
   display: flex;
@@ -1648,7 +1717,7 @@
     justify-content: space-between;
     gap: 1rem;
   }
-  .pl-name   { font-size: 1.08rem; -webkit-line-clamp: 1; }
+  .pl-name   { font-size: 1.08rem; -webkit-line-clamp: 1; line-clamp: 1; }
   .pl-price  { font-size: 1.25rem; }
 
   .pl-icon-btn:hover { background: #f0f4f8; }
@@ -1673,3 +1742,5 @@
 
   .pl-fab { right: 1.5rem; bottom: 1.5rem; }
 }
+
+

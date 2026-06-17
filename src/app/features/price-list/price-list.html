@@ -18,6 +18,9 @@
       <button type="button" class="pl-saved-btn" (click)="openSavedBills()">
         📋 Saved bills ›
       </button>
+      <a class="pl-saved-btn pl-low-stock-btn" routerLink="/price-low-stock">
+        ⚠️ Low stock list ›
+      </a>
     }
 
     <!-- ── Sticky search + chips ── -->
@@ -81,9 +84,25 @@
           <span class="pl-group-count">{{ activeItems().length }}</span>
         </h2>
 
+        <!-- Drop zone for moving items to low stock -->
+        <div class="pl-drop-zone"
+             [class.pl-drop-zone-visible]="!!draggedItem()"
+             [class.pl-drop-zone-active]="isDropZoneActive()"
+             (dragover)="onDropZoneDragOver($event)"
+             (dragleave)="onDropZoneDragLeave()"
+             (drop)="onDropZoneDrop($event)">
+          <span class="pl-drop-icon" aria-hidden="true">⬇️</span>
+          <span class="pl-drop-text">Drop to move to low stock</span>
+        </div>
+
         <ul class="pl-list">
           @for (item of activeItems(); track item.id) {
-            <li class="pl-row" [class.pl-row-editing]="editingId() === item.id">
+            <li class="pl-row"
+                [class.pl-row-editing]="editingId() === item.id"
+                [class.pl-row-dragging]="draggedItem()?.id === item.id"
+              [draggable]="editingId() !== item.id && !item.manualLowStock"
+                (dragstart)="onDragStart(item, $event)"
+                (dragend)="onDragEnd()">
               @if (editingId() === item.id) {
                 <!-- Edit mode — compact inline card -->
                 <div class="pl-edit-card">
@@ -136,10 +155,10 @@
                      [class.pl-swipe-open-delete]="swipeOpenId() === item.id && swipeDir() === 'delete'"
                      [class.pl-swipe-open-edit]="swipeOpenId() === item.id && swipeDir() === 'edit'"
                      [style]="swipeRowStyle(item.id)"
-                     (pointerdown)="swipePointerDown($event, item); pressStart(item)"
+                   (pointerdown)="onRowPointerDown($event, item)"
                      (pointermove)="swipePointerMove($event)"
-                     (pointerup)="swipePointerUp($event, item); pressEnd()"
-                     (pointercancel)="closeSwipe(); pressEnd()"
+                   (pointerup)="onRowPointerUp($event, item)"
+                   (pointercancel)="onRowPointerCancel($event)"
                      (contextmenu)="$event.preventDefault()">
 
                   <div class="pl-row-main"

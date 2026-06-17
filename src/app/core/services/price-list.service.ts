@@ -27,6 +27,8 @@ export interface PriceListEntry {
   unit?: string;
   /** Current stock count. null/undefined means not tracked. */
   stock?: number | null;
+  /** Manual low-stock flag for tracking items to reorder. */
+  manualLowStock?: boolean;
 }
 
 /**
@@ -78,5 +80,12 @@ export class PriceListService {
   /** Bulk-insert rows (used for the one-time import from the product catalogue). */
   async importMany(entries: Omit<PriceListEntry, 'id'>[]): Promise<void> {
     await Promise.all(entries.map(e => this.add(e)));
+  }
+
+  /** Get all items marked as manually low-stock (for the low-stock tracking page). */
+  async getManualLowStock(): Promise<PriceListEntry[]> {
+    const q = query(collection(this.firestore, this.col), where('manualLowStock', '==', true));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() as Omit<PriceListEntry, 'id'>) }));
   }
 }

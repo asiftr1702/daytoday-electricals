@@ -1,0 +1,79 @@
+<main class="pls-page">
+  <div class="pls-container">
+    <!-- Header -->
+    <header class="pls-title">
+      <a href="/prices" class="pls-back-link" title="Back to Price List">
+        <span aria-hidden="true">‹</span>
+      </a>
+      <div class="pls-title-text">
+        <h1>⚠️ Low Stock</h1>
+        <p>Items marked for reordering</p>
+      </div>
+    </header>
+
+    @if (loading()) {
+      <div class="pls-state">
+        <span class="pls-loading">Loading…</span>
+      </div>
+    } @else if (!items().length) {
+      <div class="pls-state pls-empty">
+        <span class="pls-empty-icon">✓</span>
+        <p>No items in low stock.</p>
+      </div>
+    } @else {
+      <!-- Search -->
+      <div class="pls-sticky">
+        <div class="pls-search">
+          <span class="pls-search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="search"
+            class="pls-search-input"
+            placeholder="Search items…"
+            [value]="search()"
+            (input)="onSearch($any($event.target).value)"
+            aria-label="Search low stock items" />
+          @if (search()) {
+            <button type="button" class="pls-search-clear" (click)="clearSearch()" aria-label="Clear search">
+              ✕
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Items list -->
+      <div class="pls-items">
+        @for (item of filteredItems(); track item.id) {
+          <div class="pls-item">
+            <div class="pls-item-main">
+              <div class="pls-item-name">{{ item.name }}</div>
+              <div class="pls-item-meta">
+                <span class="pls-category">{{ item.categoryName }}</span>
+                <span class="pls-stock">Stock: <strong>{{ item.stock ?? 0 }}</strong></span>
+              </div>
+            </div>
+            <div class="pls-item-price">
+              @if (item.sellPrice != null) {
+                <div class="pls-price">₹{{ item.sellPrice.toLocaleString('en-IN') }}</div>
+              }
+              <button
+                type="button"
+                class="pls-remove-btn"
+                (click)="removeFromLowStock(item)"
+                [disabled]="busy()"
+                aria-label="Remove from low stock">
+                Remove
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (!filteredItems().length && search()) {
+        <div class="pls-state pls-empty">
+          <span class="pls-empty-icon">🔍</span>
+          <p>No items match "{{ search() }}".</p>
+        </div>
+      }
+    }
+  </div>
+</main>

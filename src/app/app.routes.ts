@@ -33,6 +33,12 @@ export const routes: Routes = [
         title: 'Price List — DayToDay Electricals',
       },
       {
+        path: 'price-low-stock',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/price-low-stock/price-low-stock').then(m => m.PriceLowStockComponent),
+        title: 'Manual Low Stock — DayToDay Electricals',
+      },
+      {
         path: 'contact',
         loadComponent: () => import('./features/contact/contact').then(m => m.ContactComponent),
         title: 'Contact Us — DayToDay Electricals',

@@ -1,5 +1,6 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { PriceListService, PriceListEntry } from '../../core/services/price-list.service';
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
 import { CatalogueConfigService } from '../../core/services/catalogue-config.service';
@@ -55,7 +56,7 @@ const REVEAL_MS = 2000;
 @Component({
   selector: 'app-price-list',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './price-list.html',
   styleUrls: ['./price-list.css'],
 })
@@ -148,6 +149,12 @@ export class PriceListComponent implements OnInit {
   readonly warrantyEditIdx = signal<number | null>(null);
   /** Quick preset warranty options. */
   readonly warrantyPresets = ['6 Months', '1 Year', '2 Years', '5 Years'];
+
+  // ── Drag-and-drop to low stock ──
+  /** The item currently being dragged (null = not dragging). */
+  readonly draggedItem = signal<PriceListEntry | null>(null);
+  /** Whether the drop zone is active/hovered (true = user is dragging over it). */
+  readonly isDropZoneActive = signal(false);
 
   /** Warranty label — fans use "Stator Warranty", everything else "Warranty". */
   warrantyLabel(line: { category: string }): string {
@@ -284,6 +291,28 @@ export class PriceListComponent implements OnInit {
     this.clearPressTimer();
     this.clearHideTimer();
     this.revealedCostId.set(null);
+  }
+
+  /**
+   * Keep swipe/long-press gestures for touch and pen only.
+   * Mouse pointers are reserved for desktop drag-and-drop.
+   */
+  onRowPointerDown(event: PointerEvent, item: PriceListEntry): void {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+    this.swipePointerDown(event, item);
+    this.pressStart(item);
+  }
+
+  onRowPointerUp(event: PointerEvent, item: PriceListEntry): void {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+    this.swipePointerUp(event, item);
+    this.pressEnd();
+  }
+
+  onRowPointerCancel(event: PointerEvent): void {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+    this.closeSwipe();
+    this.pressEnd();
   }
 
   // ── Swipe gestures ────────────────────────────────────────────────────────
@@ -460,6 +489,71 @@ export class PriceListComponent implements OnInit {
   /** Live stock = row stock minus what's already in the cart (never below 0). */
   availableStock(item: PriceListEntry): number {
     return Math.max(0, (item.stock ?? 0) - this.cartQtyFor(item));
+  }
+
+  /** Called when user starts dragging a row. */
+  onDragStart(item: PriceListEntry, e: DragEvent): void {
+    if (!item.id || item.manualLowStock) {
+      e.preventDefault();
+      return;
+    }
+    this.draggedItem.set(item);
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', item.name);
+    }
+  }
+
+  /** Called when user ends dragging (whether dropped or cancelled). */
+  onDragEnd(): void {
+    this.draggedItem.set(null);
+    this.isDropZoneActive.set(false);
+  }
+
+  /** Called when user drags over the drop zone. */
+  onDropZoneDragOver(e: DragEvent): void {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'move';
+    }
+    this.isDropZoneActive.set(true);
+  }
+
+  /** Called when user leaves the drop zone. */
+  onDropZoneDragLeave(): void {
+    this.isDropZoneActive.set(false);
+  }
+
+  /** Called when user drops an item on the drop zone. */
+  async onDropZoneDrop(e: DragEvent): Promise<void> {
+    e.preventDefault();
+    this.isDropZoneActive.set(false);
+
+    const item = this.draggedItem();
+    if (item && item.id && !item.manualLowStock) {
+      await this.moveToLowStock(item);
+    }
+    this.draggedItem.set(null);
+  }
+
+  /** Move item to low stock list. */
+  async moveToLowStock(item: PriceListEntry): Promise<void> {
+    const id = item.id;
+    if (!id || item.manualLowStock) return;
+
+    this.busy.set(true);
+    try {
+      await this.priceList.update(id, { manualLowStock: true });
+      const cat = item.category || 'other';
+      const list = (this.cache().get(cat) ?? []).map(e =>
+        e.id === id ? { ...e, manualLowStock: true } : e,
+      );
+      this.setCatEntries(cat, list);
+      this.billMsg.set(`Moved to low stock list`);
+      setTimeout(() => this.billMsg.set(''), 1800);
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   incLine(index: number): void {
