@@ -43,10 +43,7 @@ function costPriceOf(p: AnyProduct): number | null {
   return typeof c === 'number' && Number.isFinite(c) ? c : null;
 }
 
-/** How long (ms) the card must be held to reveal the hidden cost. */
-const LONG_PRESS_MS = 500;
-/** How long (ms) the revealed cost stays visible before auto-hiding. */
-const REVEAL_MS = 2000;
+
 
 /**
  * A deliberately simple, large-text price list shown ONE CATEGORY AT A TIME, stored in
@@ -106,12 +103,6 @@ export class PriceListComponent implements OnInit {
   /** URL of the image shown full-screen (null = closed). */
   readonly lightboxUrl = signal<string | null>(null);
 
-  // ── Long-press "reveal cost" state ──
-  /** Id of the row whose hidden cost is currently revealed (null = none). */
-  readonly revealedCostId = signal<string | null>(null);
-  private pressTimer: ReturnType<typeof setTimeout> | null = null;
-  private hideTimer: ReturnType<typeof setTimeout> | null = null;
-  private qtyLongPressTriggered = false;
   // ── Swipe-to-edit / swipe-to-delete state ──
   /** Id of the row currently being swiped. */
   readonly swipingId    = signal<string | null>(null);
@@ -277,33 +268,7 @@ export class PriceListComponent implements OnInit {
   onSearch(value: string): void { this.search.set(value); }
   clearSearch(): void { this.search.set(''); }
 
-  // ── Long-press to reveal cost ─────────────────────────────────────────────
-  /** Begin the hold timer; reveals the cost once held long enough. */
-  pressStart(item: PriceListEntry): void {
-    if (!item.id || this.editingId() === item.id) return;
-    this.clearPressTimer();
-    this.qtyLongPressTriggered = false;
-    const id = item.id;
-    this.pressTimer = setTimeout(() => {
-      this.qtyLongPressTriggered = true;
-      this.revealedCostId.set(id);
-      this.pressTimer = null;
-      this.clearHideTimer();
-      this.hideTimer = setTimeout(() => this.hideCost(), REVEAL_MS);
-    }, LONG_PRESS_MS);
-  }
 
-  /** Cancel a hold that ended before the threshold (a normal tap). */
-  pressEnd(): void {
-    this.clearPressTimer();
-  }
-
-  /** Hide the revealed cost. */
-  hideCost(): void {
-    this.clearPressTimer();
-    this.clearHideTimer();
-    this.revealedCostId.set(null);
-  }
 
   /**
    * Keep swipe/long-press gestures for touch and pen only.
@@ -324,28 +289,7 @@ export class PriceListComponent implements OnInit {
     this.closeSwipe();
   }
 
-  onQtyPointerDown(event: PointerEvent, item: PriceListEntry): void {
-    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
-    this.pressStart(item);
-  }
-
-  onQtyPointerUp(event: PointerEvent): void {
-    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
-    this.pressEnd();
-  }
-
-  onQtyPointerCancel(event: PointerEvent): void {
-    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
-    this.pressEnd();
-  }
-
-  onQtyTap(item: PriceListEntry, event?: Event): void {
-    if (this.qtyLongPressTriggered) {
-      this.qtyLongPressTriggered = false;
-      event?.preventDefault();
-      event?.stopPropagation();
-      return;
-    }
+  onQtyTap(item: PriceListEntry): void {
     this.addToBill(item);
   }
 
@@ -448,19 +392,7 @@ export class PriceListComponent implements OnInit {
     return '';
   }
 
-  private clearPressTimer(): void {
-    if (this.pressTimer) {
-      clearTimeout(this.pressTimer);
-      this.pressTimer = null;
-    }
-  }
 
-  private clearHideTimer(): void {
-    if (this.hideTimer) {
-      clearTimeout(this.hideTimer);
-      this.hideTimer = null;
-    }
-  }
 
   // ── Quick bill (cart) ─────────────────────────────────────────────────────
   /** Add a price-list item to the bill (or bump its quantity if already added). */
@@ -1283,7 +1215,6 @@ export class PriceListComponent implements OnInit {
   // ── Edit ────────────────────────────────────────────────────────────────
   startEdit(entry: PriceListEntry): void {
     this.adding.set(false);
-    this.revealedCostId.set(null);
     this.editingId.set(entry.id ?? null);
     this.editName.set(entry.name);
     this.editPrice.set(entry.sellPrice != null ? String(entry.sellPrice) : '');
