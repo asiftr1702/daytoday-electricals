@@ -111,6 +111,7 @@ export class PriceListComponent implements OnInit {
   readonly revealedCostId = signal<string | null>(null);
   private pressTimer: ReturnType<typeof setTimeout> | null = null;
   private hideTimer: ReturnType<typeof setTimeout> | null = null;
+  private qtyLongPressTriggered = false;
   // ── Swipe-to-edit / swipe-to-delete state ──
   /** Id of the row currently being swiped. */
   readonly swipingId    = signal<string | null>(null);
@@ -281,8 +282,10 @@ export class PriceListComponent implements OnInit {
   pressStart(item: PriceListEntry): void {
     if (!item.id || this.editingId() === item.id) return;
     this.clearPressTimer();
+    this.qtyLongPressTriggered = false;
     const id = item.id;
     this.pressTimer = setTimeout(() => {
+      this.qtyLongPressTriggered = true;
       this.revealedCostId.set(id);
       this.pressTimer = null;
       this.clearHideTimer();
@@ -309,19 +312,41 @@ export class PriceListComponent implements OnInit {
   onRowPointerDown(event: PointerEvent, item: PriceListEntry): void {
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
     this.swipePointerDown(event, item);
-    this.pressStart(item);
   }
 
   onRowPointerUp(event: PointerEvent, item: PriceListEntry): void {
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
     this.swipePointerUp(event, item);
-    this.pressEnd();
   }
 
   onRowPointerCancel(event: PointerEvent): void {
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
     this.closeSwipe();
+  }
+
+  onQtyPointerDown(event: PointerEvent, item: PriceListEntry): void {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+    this.pressStart(item);
+  }
+
+  onQtyPointerUp(event: PointerEvent): void {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
     this.pressEnd();
+  }
+
+  onQtyPointerCancel(event: PointerEvent): void {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+    this.pressEnd();
+  }
+
+  onQtyTap(item: PriceListEntry, event?: Event): void {
+    if (this.qtyLongPressTriggered) {
+      this.qtyLongPressTriggered = false;
+      event?.preventDefault();
+      event?.stopPropagation();
+      return;
+    }
+    this.addToBill(item);
   }
 
   // ── Swipe gestures ────────────────────────────────────────────────────────
@@ -360,7 +385,6 @@ export class PriceListComponent implements OnInit {
     }
 
     event.preventDefault();
-    this.clearPressTimer(); // cancel long-press if swiping
     // Clamp: max 100px either side
     const clamped = Math.max(-100, Math.min(100, dx));
     this.swipeOffset.set(clamped);

@@ -84,17 +84,6 @@
           <span class="pl-group-count">{{ activeItems().length }}</span>
         </h2>
 
-        <!-- Drop zone for moving items to low stock -->
-        <div class="pl-drop-zone"
-             [class.pl-drop-zone-visible]="!!draggedItem()"
-             [class.pl-drop-zone-active]="isDropZoneActive()"
-             (dragover)="onDropZoneDragOver($event)"
-             (dragleave)="onDropZoneDragLeave()"
-             (drop)="onDropZoneDrop($event)">
-          <span class="pl-drop-icon" aria-hidden="true">⬇️</span>
-          <span class="pl-drop-text">Drop to move to low stock</span>
-        </div>
-
         <ul class="pl-list">
           @for (item of activeItems(); track item.id) {
             <li class="pl-row"
@@ -223,8 +212,11 @@
                               [class.pl-stock-count-out]="availableStock(item) === 0"
                               [class.pl-stock-count-low]="availableStock(item) > 0 && availableStock(item) <= 3"
                               [class.pl-stock-count-add]="availableStock(item) > 0 && item.sellPrice != null"
-                              [disabled]="busy() || item.sellPrice == null"
-                              (click)="addToBill(item)"
+                              [attr.aria-disabled]="busy() || item.sellPrice == null ? 'true' : null"
+                              (pointerdown)="onQtyPointerDown($event, item)"
+                              (pointerup)="onQtyPointerUp($event)"
+                              (pointercancel)="onQtyPointerCancel($event)"
+                              (click)="onQtyTap(item, $event)"
                               aria-label="Tap to add to bill">
                         {{ availableStock(item) }}
                       </button>
@@ -240,6 +232,17 @@
       <p class="pl-foot-note">{{ activeItems().length }} item(s) in {{ activeMeta().name }}.</p>
     }
 
+  </div>
+
+  <!-- Drop zone for moving items to low stock -->
+  <div class="pl-drop-zone"
+       [class.pl-drop-zone-visible]="!!draggedItem()"
+       [class.pl-drop-zone-active]="isDropZoneActive()"
+       (dragover)="onDropZoneDragOver($event)"
+       (dragleave)="onDropZoneDragLeave()"
+       (drop)="onDropZoneDrop($event)">
+    <span class="pl-drop-icon" aria-hidden="true">⬇️</span>
+    <span class="pl-drop-text">Drop here to move item to low stock</span>
   </div>
 
   <!-- ── Floating add button ── -->
