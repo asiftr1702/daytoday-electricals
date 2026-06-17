@@ -129,6 +129,26 @@
                              placeholder="0" aria-label="Stock qty" />
                     </label>
                   </div>
+                  <div class="pl-image-field">
+                    @if (editImage(); as imageUrl) {
+                      <button type="button" class="pl-image-preview-btn"
+                              (click)="openLightbox(imageUrl)"
+                              aria-label="View product image">
+                        <img class="pl-image-preview" [src]="imageUrl" [alt]="editName() || 'Product image'" />
+                      </button>
+                    } @else {
+                      <div class="pl-image-preview-empty" aria-hidden="true">📷</div>
+                    }
+                    <div class="pl-image-controls">
+                      <label class="pl-image-pick">
+                        <input type="file" accept="image/*" (change)="onImagePicked($event, 'edit')" />
+                        <span>{{ editImage() ? 'Change photo' : 'Add photo' }}</span>
+                      </label>
+                      @if (editImage()) {
+                        <button type="button" class="pl-image-clear" (click)="clearImage('edit')">Remove</button>
+                      }
+                    </div>
+                  </div>
                   <div class="pl-edit-actions">
                     <button type="button" class="pl-edit-save" (click)="saveEdit(item)"
                             [disabled]="busy() || !editName().trim()">✅ Save</button>
@@ -163,28 +183,37 @@
 
                   <div class="pl-row-main"
                        [class.pl-row-revealed]="revealedCostId() === item.id">
-                    <span class="pl-name">{{ item.name }}</span>
-                    @if (revealedCostId() === item.id) {
-                      <span class="pl-row-cost" (click)="hideCost()">
-                        @if (item.costPrice != null) {
-                          <span class="pl-cost-label">Cost</span>
-                          <span class="pl-cost">₹{{ item.costPrice.toLocaleString('en-IN') }}</span>
-                        } @else {
-                          <span class="pl-cost-label">Cost not set</span>
-                        }
-                      </span>
-                    } @else {
-                      <div class="pl-row-info-line">
-                        <span class="pl-row-price">
-                          @if (item.sellPrice != null) {
-                            <span class="pl-price">₹{{ item.sellPrice.toLocaleString('en-IN') }}</span>
-                            <span class="pl-unit">/ {{ item.unit || 'pcs' }}</span>
+                    @if (item.imageUrl; as imageUrl) {
+                      <button type="button" class="pl-thumb-btn"
+                              (click)="openLightbox(imageUrl); $event.stopPropagation()"
+                              aria-label="Show product image">
+                        <img class="pl-thumb-img" [src]="imageUrl" [alt]="item.name" loading="lazy" />
+                      </button>
+                    }
+                    <div class="pl-row-copy">
+                      <span class="pl-name">{{ item.name }}</span>
+                      @if (revealedCostId() === item.id) {
+                        <span class="pl-row-cost" (click)="hideCost()">
+                          @if (item.costPrice != null) {
+                            <span class="pl-cost-label">Cost</span>
+                            <span class="pl-cost">₹{{ item.costPrice.toLocaleString('en-IN') }}</span>
                           } @else {
-                            <span class="pl-price pl-price-na">No price set</span>
+                            <span class="pl-cost-label">Cost not set</span>
                           }
                         </span>
-                      </div>
-                    }
+                      } @else {
+                        <div class="pl-row-info-line">
+                          <span class="pl-row-price">
+                            @if (item.sellPrice != null) {
+                              <span class="pl-price">₹{{ item.sellPrice.toLocaleString('en-IN') }}</span>
+                              <span class="pl-unit">/ {{ item.unit || 'pcs' }}</span>
+                            } @else {
+                              <span class="pl-price pl-price-na">No price set</span>
+                            }
+                          </span>
+                        </div>
+                      }
+                    </div>
                   </div>
 
                   <!-- Single action column: tap stock to add to bill -->
@@ -482,12 +511,42 @@
         </select>
       </label>
 
+      <div class="pl-image-field">
+        @if (newImage(); as imageUrl) {
+          <button type="button" class="pl-image-preview-btn"
+                  (click)="openLightbox(imageUrl)"
+                  aria-label="View selected image">
+            <img class="pl-image-preview" [src]="imageUrl" [alt]="newName() || 'Product image'" />
+          </button>
+        } @else {
+          <div class="pl-image-preview-empty" aria-hidden="true">📷</div>
+        }
+        <div class="pl-image-controls">
+          <label class="pl-image-pick">
+            <input type="file" accept="image/*" (change)="onImagePicked($event, 'add')" />
+            <span>{{ newImage() ? 'Change photo' : 'Add photo' }}</span>
+          </label>
+          @if (newImage()) {
+            <button type="button" class="pl-image-clear" (click)="clearImage('add')">Remove</button>
+          }
+          <span class="pl-image-note">Optional</span>
+        </div>
+      </div>
+
       <!-- Actions -->
       <div class="pl-edit-actions">
         <button type="button" class="pl-edit-cancel" (click)="cancelAdd()" [disabled]="busy()">Done</button>
         <button type="button" class="pl-edit-save" (click)="saveAdd()"
                 [disabled]="busy() || !newName().trim()">✅ Save &amp; add</button>
       </div>
+    </div>
+  }
+
+  @if (lightboxUrl(); as imageUrl) {
+    <div class="pl-modal-backdrop pl-lightbox-backdrop" (click)="closeLightbox()" aria-hidden="true"></div>
+    <div class="pl-lightbox" role="dialog" aria-label="Product image viewer">
+      <button type="button" class="pl-lightbox-close" (click)="closeLightbox()" aria-label="Close image">✕</button>
+      <img class="pl-lightbox-img" [src]="imageUrl" alt="Product image" />
     </div>
   }
 

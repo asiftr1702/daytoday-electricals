@@ -29,6 +29,8 @@ export interface PriceListEntry {
   stock?: number | null;
   /** Manual low-stock flag for tracking items to reorder. */
   manualLowStock?: boolean;
+  /** Optional product image stored as a base64 data URL. */
+  imageUrl?: string | null;
 }
 
 /**

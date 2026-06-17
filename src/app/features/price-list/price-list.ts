@@ -8,6 +8,7 @@ import { BillService } from '../../core/services/bill.service';
 import { StampService } from '../../core/services/stamp.service';
 import { Bill } from '../../core/models/bill.model';
 import { AnyProduct } from '../../core/models/any-product.model';
+import { compressImage } from '../../core/utils/image.util';
 
 /** A single line in the quick bill built from the price list. */
 interface BillLine {
@@ -87,6 +88,8 @@ export class PriceListComponent implements OnInit {
   readonly editPrice  = signal<string>('');
   readonly editCost   = signal<string>('');
   readonly editStock  = signal<string>('');
+  /** Image for the row currently being edited (data URL or null). */
+  readonly editImage  = signal<string | null>(null);
 
   // ── Add-row state ──
   readonly adding      = signal(false);
@@ -96,6 +99,12 @@ export class PriceListComponent implements OnInit {
   readonly newCategory = signal('');
   readonly newUnit     = signal('pcs');
   readonly newStock    = signal<string>('');
+  /** Image for the row being added (data URL or null). */
+  readonly newImage    = signal<string | null>(null);
+
+  // ── Image lightbox ──
+  /** URL of the image shown full-screen (null = closed). */
+  readonly lightboxUrl = signal<string | null>(null);
 
   // ── Long-press "reveal cost" state ──
   /** Id of the row whose hidden cost is currently revealed (null = none). */
@@ -1188,6 +1197,7 @@ export class PriceListComponent implements OnInit {
     this.newCost.set('');
     this.newUnit.set('pcs');
     this.newStock.set('');
+    this.newImage.set(null);
     this.newCategory.set(id);
     this.loadCategory(id);
   }
@@ -1255,10 +1265,12 @@ export class PriceListComponent implements OnInit {
     this.editPrice.set(entry.sellPrice != null ? String(entry.sellPrice) : '');
     this.editCost.set(entry.costPrice != null ? String(entry.costPrice) : '');
     this.editStock.set(entry.stock != null ? String(entry.stock) : '');
+    this.editImage.set(entry.imageUrl ?? null);
   }
 
   cancelEdit(): void {
     this.editingId.set(null);
+    this.editImage.set(null);
   }
 
   async saveEdit(entry: PriceListEntry): Promise<void> {
@@ -1266,22 +1278,53 @@ export class PriceListComponent implements OnInit {
     if (!id) return;
     const name = this.editName().trim();
     if (!name) return;
-    const price = this.parsePrice(this.editPrice());
-    const cost  = this.parsePrice(this.editCost());
-    const stock = this.parseStock(this.editStock());
+    const price    = this.parsePrice(this.editPrice());
+    const cost     = this.parsePrice(this.editCost());
+    const stock    = this.parseStock(this.editStock());
+    const imageUrl = this.editImage() ?? null;
 
     this.busy.set(true);
     try {
-      await this.priceList.update(id, { name, sellPrice: price, costPrice: cost, stock });
+      await this.priceList.update(id, { name, sellPrice: price, costPrice: cost, stock, imageUrl });
       const cat = entry.category || 'other';
       const list = (this.cache().get(cat) ?? []).map(e =>
-        e.id === id ? { ...e, name, sellPrice: price, costPrice: cost, stock } : e,
+        e.id === id ? { ...e, name, sellPrice: price, costPrice: cost, stock, imageUrl } : e,
       );
       this.setCatEntries(cat, list);
       this.editingId.set(null);
+      this.editImage.set(null);
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Handle image file selected in the add/edit form. */
+  async onImagePicked(event: Event, mode: 'add' | 'edit'): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const url = await compressImage(file, { maxDimension: 480, quality: 0.78 });
+      if (mode === 'add') this.newImage.set(url);
+      else this.editImage.set(url);
+    } catch { /* ignore bad files */ }
+    input.value = '';
+  }
+
+  /** Remove the image from the add/edit form. */
+  clearImage(mode: 'add' | 'edit'): void {
+    if (mode === 'add') this.newImage.set(null);
+    else this.editImage.set(null);
+  }
+
+  /** Open the image lightbox. */
+  openLightbox(url: string): void {
+    this.lightboxUrl.set(url);
+  }
+
+  /** Close the image lightbox. */
+  closeLightbox(): void {
+    this.lightboxUrl.set(null);
   }
 
   // ── Add ─────────────────────────────────────────────────────────────────
@@ -1293,6 +1336,7 @@ export class PriceListComponent implements OnInit {
     this.newCost.set('');
     this.newUnit.set('pcs');
     this.newStock.set('');
+    this.newImage.set(null);
     // Auto-select the active category when adding a new item
     this.newCategory.set(this.activeCat() || this.categoryOptions()[0]?.id || 'other');
   }
@@ -1306,6 +1350,7 @@ export class PriceListComponent implements OnInit {
     this.newUnit.set('pcs');
     this.newStock.set('');
     this.newCategory.set('');
+    this.newImage.set(null);
   }
 
   async saveAdd(): Promise<void> {
@@ -1318,6 +1363,7 @@ export class PriceListComponent implements OnInit {
       category: this.newCategory() || 'other',
       unit: this.newUnit().trim() || 'pcs',
       stock: this.parseStock(this.newStock()),
+      imageUrl: this.newImage() ?? null,
     };
 
     this.busy.set(true);
@@ -1331,6 +1377,8 @@ export class PriceListComponent implements OnInit {
       this.newName.set('');
       this.newPrice.set('');
       this.newCost.set('');
+      this.newStock.set('');
+      this.newImage.set(null);
     } finally {
       this.busy.set(false);
     }
