@@ -103,6 +103,11 @@ export class PriceListComponent implements OnInit {
   /** URL of the image shown full-screen (null = closed). */
   readonly lightboxUrl = signal<string | null>(null);
 
+  // ── Swipe-up to reveal cost ──
+  /** Id of the row whose cost is currently revealed (null = none). */
+  readonly revealedCostId = signal<string | null>(null);
+  private hideTimer: ReturnType<typeof setTimeout> | null = null;
+
   // ── Swipe-to-edit / swipe-to-delete state ──
   /** Id of the row currently being swiped. */
   readonly swipingId    = signal<string | null>(null);
@@ -324,7 +329,7 @@ export class PriceListComponent implements OnInit {
     }
 
     if (this.swipeAxisLocked === 'v') {
-      this.cancelSwipe();
+      // Vertical swipe detected — allow upward to reveal cost
       return;
     }
 
@@ -336,6 +341,20 @@ export class PriceListComponent implements OnInit {
 
   swipePointerUp(event: PointerEvent, item: PriceListEntry): void {
     if (event.pointerId !== this.swipePointerId) return;
+
+    // Check for upward swipe (vertical axis locked, negative dy = upward)
+    if (this.swipeAxisLocked === 'v') {
+      const dy = event.clientY - this.swipeStartY;
+      // Upward swipe (dy < -50px means significant upward motion)
+      if (dy < -50) {
+        this.revealCost(item);
+        this.cancelSwipe();
+        return;
+      }
+      this.cancelSwipe();
+      return;
+    }
+
     const offset = this.swipeOffset();
 
     if (Math.abs(offset) >= PriceListComponent.SWIPE_THRESHOLD) {
@@ -392,7 +411,24 @@ export class PriceListComponent implements OnInit {
     return '';
   }
 
+  /** Reveal cost for an item and auto-hide after 2 seconds. */
+  private revealCost(item: PriceListEntry): void {
+    if (!item.id) return;
+    this.clearHideTimer();
+    this.revealedCostId.set(item.id);
+    this.hideTimer = setTimeout(() => {
+      this.revealedCostId.set(null);
+      this.hideTimer = null;
+    }, 2000);
+  }
 
+  /** Hide the revealed cost immediately. */
+  private clearHideTimer(): void {
+    if (this.hideTimer) {
+      clearTimeout(this.hideTimer);
+      this.hideTimer = null;
+    }
+  }
 
   // ── Quick bill (cart) ─────────────────────────────────────────────────────
   /** Add a price-list item to the bill (or bump its quantity if already added). */
@@ -1215,6 +1251,8 @@ export class PriceListComponent implements OnInit {
   // ── Edit ────────────────────────────────────────────────────────────────
   startEdit(entry: PriceListEntry): void {
     this.adding.set(false);
+    this.clearHideTimer();
+    this.revealedCostId.set(null);
     this.editingId.set(entry.id ?? null);
     this.editName.set(entry.name);
     this.editPrice.set(entry.sellPrice != null ? String(entry.sellPrice) : '');

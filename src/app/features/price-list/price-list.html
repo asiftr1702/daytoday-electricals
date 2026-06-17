@@ -180,16 +180,27 @@
                     }
                     <div class="pl-row-copy">
                       <span class="pl-name">{{ item.name }}</span>
-                      <div class="pl-row-info-line">
-                        <span class="pl-row-price">
-                          @if (item.sellPrice != null) {
-                            <span class="pl-price">₹{{ item.sellPrice.toLocaleString('en-IN') }}</span>
-                            <span class="pl-unit">/ {{ item.unit || 'pcs' }}</span>
+                      @if (revealedCostId() === item.id) {
+                        <span class="pl-row-cost">
+                          @if (item.costPrice != null) {
+                            <span class="pl-cost-label">Cost</span>
+                            <span class="pl-cost">₹{{ item.costPrice.toLocaleString('en-IN') }}</span>
                           } @else {
-                            <span class="pl-price pl-price-na">No price set</span>
+                            <span class="pl-cost-label">Cost not set</span>
                           }
                         </span>
-                      </div>
+                      } @else {
+                        <div class="pl-row-info-line">
+                          <span class="pl-row-price">
+                            @if (item.sellPrice != null) {
+                              <span class="pl-price">₹{{ item.sellPrice.toLocaleString('en-IN') }}</span>
+                              <span class="pl-unit">/ {{ item.unit || 'pcs' }}</span>
+                            } @else {
+                              <span class="pl-price pl-price-na">No price set</span>
+                            }
+                          </span>
+                        </div>
+                      }
                     </div>
                   </div>
 
