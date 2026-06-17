@@ -23,6 +23,8 @@ export interface PriceListEntry {
   costPrice?: number | null;
   /** Category id used only for grouping on the page. */
   category: string;
+  /** Optional subcategory label (used for fan section mapping). */
+  subcategory?: string;
   /** Optional unit label (e.g. pcs, mtr). */
   unit?: string;
   /** Current stock count. null/undefined means not tracked. */

@@ -40,13 +40,39 @@
           }
         </div>
 
-        <div class="pl-chips" role="tablist" aria-label="Choose a category">
-          @for (c of categoryOptions(); track c.id) {
-            <button type="button" class="pl-chip" [class.pl-chip-active]="activeCat() === c.id"
-                    [style.--chip]="c.color" (click)="setCategory(c.id)">
-              <span aria-hidden="true">{{ c.icon }}</span> {{ c.name }}
+        <div class="pl-category-select-wrap">
+          <label class="pl-category-select-label" for="pl-category-select">Category</label>
+          <div class="pl-category-dropdown">
+            <button
+              id="pl-category-select"
+              type="button"
+              class="pl-category-select-shell"
+              [class.pl-category-select-open]="isCategoryMenuOpen()"
+              (click)="toggleCategoryMenu()"
+              aria-haspopup="listbox"
+              [attr.aria-expanded]="isCategoryMenuOpen()"
+              aria-controls="pl-category-menu"
+              aria-label="Choose a category">
+              <span class="pl-category-select-value">{{ activeMeta().name }}</span>
+              <span class="pl-category-select-arrow" aria-hidden="true">▾</span>
             </button>
-          }
+
+            @if (isCategoryMenuOpen()) {
+              <div class="pl-category-menu" id="pl-category-menu" role="listbox" aria-label="Category list">
+                @for (c of categoryOptions(); track c.id) {
+                  <button
+                    type="button"
+                    class="pl-category-menu-item"
+                    [class.pl-category-menu-item-active]="activeCat() === c.id"
+                    (click)="pickCategory(c.id)"
+                    role="option"
+                    [attr.aria-selected]="activeCat() === c.id">
+                    {{ c.name }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
         </div>
       </div>
     }
@@ -77,15 +103,37 @@
       </div>
     } @else {
 
-      <section class="pl-group">
-        <h2 class="pl-group-head" [style.--accent]="activeMeta().color">
-          <span class="pl-group-icon" aria-hidden="true">{{ activeMeta().icon }}</span>
-          <span class="pl-group-name">{{ activeMeta().name }}</span>
-          <span class="pl-group-count">{{ activeItems().length }}</span>
-        </h2>
+      <div class="pl-fan-layout" [class.pl-fan-layout-active]="isTabbedCategory(activeCat())">
+        @if (isTabbedCategory(activeCat())) {
+          <div class="pl-fan-tabs" role="tablist" [attr.aria-label]="activeCat() === 'fans' ? 'Fan sections' : 'Repaid sections'">
+            @for (section of activeSections(); track section.id) {
+              <button
+                type="button"
+                class="pl-fan-tab"
+                [class.pl-fan-tab-active]="activeFanTab() === section.id"
+                (click)="setFanTab($any(section.id))"
+                role="tab"
+                [attr.aria-selected]="activeFanTab() === section.id"
+                [attr.aria-controls]="'pl-fan-panel-' + section.id">
+                  <span class="pl-fan-tab-name">{{ section.heading }}</span>
+              </button>
+            }
+          </div>
+        }
 
-        <ul class="pl-list">
-          @for (item of activeItems(); track item.id) {
+        <div class="pl-fan-panels">
+          @for (section of visibleSections(); track section.id) {
+            <section class="pl-group">
+          @if (!isTabbedCategory(activeCat())) {
+          <h2 class="pl-group-head" [style.--accent]="activeMeta().color" [id]="'pl-fan-panel-' + section.id">
+            <span class="pl-group-icon" aria-hidden="true">{{ activeMeta().icon }}</span>
+            <span class="pl-group-name">{{ section.heading }}</span>
+            <span class="pl-group-count">{{ section.items.length }}</span>
+          </h2>
+          }
+
+          <ul class="pl-list">
+            @for (item of section.items; track item.id) {
             <li class="pl-row"
                 [class.pl-row-editing]="editingId() === item.id"
                 [class.pl-row-dragging]="draggedItem()?.id === item.id"
@@ -117,7 +165,36 @@
                              [value]="editStock()" (input)="editStock.set($any($event.target).value)"
                              placeholder="0" aria-label="Stock qty" />
                     </label>
+                    <label class="pl-edit-lbl">
+                      <span>Unit</span>
+                      <select class="pl-edit-input"
+                              [value]="editUnit()"
+                              (change)="editUnit.set($any($event.target).value)"
+                              aria-label="Unit">
+                        @for (u of unitOptions; track u) {
+                          <option [value]="u">{{ u }}</option>
+                        }
+                      </select>
+                    </label>
                   </div>
+                  @if (item.category === 'fans' || item.category === 'repair-items' || item.category === 'repaid-items') {
+                    <label class="pl-edit-lbl">
+                      <span>Section</span>
+                      <select class="pl-edit-input"
+                              [value]="editFanSubcategory()"
+                              (change)="editFanSubcategory.set($any($event.target).value)"
+                              aria-label="Section">
+                        @if (item.category === 'repair-items' || item.category === 'repaid-items') {
+                          <option value="Fan Parts">Fan Parts</option>
+                          <option value="Mixer/Iron Parts">Mixer/Iron Parts</option>
+                        } @else {
+                          <option value="Ceiling Fan">Ceiling Fan</option>
+                          <option value="Stand Fan">Stand Fan</option>
+                          <option value="Exhaust Fan">Exhaust Fan</option>
+                        }
+                      </select>
+                    </label>
+                  }
                   <div class="pl-image-field">
                     @if (editImage(); as imageUrl) {
                       <button type="button" class="pl-image-preview-btn"
@@ -224,9 +301,12 @@
                 </div>
               }
             </li>
+            }
+          </ul>
+            </section>
           }
-        </ul>
-      </section>
+        </div>
+      </div>
 
       <p class="pl-foot-note">{{ activeItems().length }} item(s) in {{ activeMeta().name }}.</p>
     }
@@ -495,9 +575,14 @@
         </label>
         <label class="pl-edit-lbl">
           <span>Unit</span>
-          <input class="pl-edit-input" type="text" placeholder="pcs"
-                 [value]="newUnit()" (input)="newUnit.set($any($event.target).value)"
-                 aria-label="Unit" />
+          <select class="pl-edit-input"
+                  [value]="newUnit()"
+                  (change)="newUnit.set($any($event.target).value)"
+                  aria-label="Unit">
+            @for (u of unitOptions; track u) {
+              <option [value]="u">{{ u }}</option>
+            }
+          </select>
         </label>
       </div>
 
@@ -505,13 +590,32 @@
       <label class="pl-edit-lbl">
         <span>Category</span>
         <select class="pl-edit-input"
-                (change)="newCategory.set($any($event.target).value)" aria-label="Category">
+                (change)="onNewCategoryChange($any($event.target).value)" aria-label="Category">
           @for (c of categoryOptions(); track c.id) {
             <option [value]="c.id" [selected]="newCategory() === c.id">{{ c.icon }} {{ c.name }}</option>
           }
           <option value="other" [selected]="newCategory() === 'other'">📦 Other</option>
         </select>
       </label>
+
+      @if (newCategory() === 'fans' || newCategory() === 'repair-items') {
+        <label class="pl-edit-lbl">
+          <span>Section</span>
+          <select class="pl-edit-input"
+                  [value]="newFanSubcategory()"
+                  (change)="newFanSubcategory.set($any($event.target).value)"
+                  aria-label="Section">
+            @if (newCategory() === 'repair-items') {
+              <option value="Fan Parts">Fan Parts</option>
+              <option value="Mixer/Iron Parts">Mixer/Iron Parts</option>
+            } @else {
+              <option value="Ceiling Fan">Ceiling Fan</option>
+              <option value="Stand Fan">Stand Fan</option>
+              <option value="Exhaust Fan">Exhaust Fan</option>
+            }
+          </select>
+        </label>
+      }
 
       <div class="pl-image-field">
         @if (newImage(); as imageUrl) {

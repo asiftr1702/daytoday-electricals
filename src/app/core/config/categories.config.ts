@@ -19,6 +19,15 @@ export const CATEGORIES: readonly Category[] = [
     subcategories: ['Ceiling Fan', 'Pedestal Fan', 'Table Fan', 'AP Fan', 'Exhaust Fan', 'Wall Fan'],
   },
   {
+    id: 'repair-items',
+    name: 'Repair Items',
+    description: 'Spare parts and repaired-item accessories',
+    icon: '🧰',
+    sheetName: 'RepairItems',
+    color: '#D1C4E9',
+    subcategories: ['Fan Parts', 'Mixer/Iron Parts'],
+  },
+  {
     id: 'lights',
     name: 'Lights',
     description: 'LED, tube lights & lighting solutions',

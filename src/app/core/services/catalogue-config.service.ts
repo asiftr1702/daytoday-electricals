@@ -22,6 +22,19 @@ function withFieldConfig(cat: DynamicCategory): DynamicCategory {
   return { ...cat, fieldConfig: cat.fieldConfig ?? defaultFieldConfig(cat.id) };
 }
 
+/** Migrates legacy category ids to the latest naming. */
+function normalizeCategory(cat: DynamicCategory): DynamicCategory {
+  if (cat.id === 'repaid-items') {
+    return {
+      ...cat,
+      id: 'repair-items',
+      name: 'Repair Items',
+      sheetName: cat.sheetName === 'RepaidItems' ? 'RepairItems' : cat.sheetName,
+    };
+  }
+  return cat;
+}
+
 export interface DynamicWarrantyOption {
   value: string;
   label: string;
@@ -47,9 +60,18 @@ export class CatalogueConfigService {
       if (snap.exists()) {
         const data = snap.data();
         if (Array.isArray(data['categories']) && data['categories'].length) {
-          // ensure legacy entries without brands / fieldConfig get sensible defaults
-          this.categories.set(data['categories'].map((c: DynamicCategory) =>
-            withFieldConfig({ ...c, brands: c.brands ?? [] })));
+          // Keep remote ordering/config, but ensure new default categories are still available.
+          const remote = data['categories'].map((c: DynamicCategory) =>
+            withFieldConfig(normalizeCategory({ ...c, brands: c.brands ?? [] })));
+          const defaults = CATEGORIES.map(c =>
+            withFieldConfig(normalizeCategory({ ...c, subcategories: [...c.subcategories], brands: [] })));
+
+          const merged = new Map<string, DynamicCategory>();
+          for (const c of remote) merged.set(c.id, c);
+          for (const c of defaults) {
+            if (!merged.has(c.id)) merged.set(c.id, c);
+          }
+          this.categories.set(Array.from(merged.values()));
         }
         if (Array.isArray(data['units']) && data['units'].length) {
           this.units.set(data['units']);

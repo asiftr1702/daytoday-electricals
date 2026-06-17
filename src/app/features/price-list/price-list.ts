@@ -29,6 +29,14 @@ interface BillLine {
   warranty?: string;
 }
 
+interface PriceListSection {
+  id: 'default' | 'ceiling' | 'stand' | 'exhaust' | 'fan-parts' | 'mixer-iron-parts';
+  heading: string;
+  items: PriceListEntry[];
+}
+
+type FanTab = 'ceiling' | 'stand' | 'exhaust' | 'fan-parts' | 'mixer-iron-parts';
+
 /** Selling price the customer pays — discounted price when it is the cheaper one. */
 function sellingPrice(p: AnyProduct): number | null {
   const price = p.price;
@@ -57,6 +65,10 @@ function costPriceOf(p: AnyProduct): number | null {
   imports: [FormsModule, RouterLink],
   templateUrl: './price-list.html',
   styleUrls: ['./price-list.css'],
+  host: {
+    '(document:click)': 'onDocumentClick($event)',
+    '(document:keydown.escape)': 'closeCategoryMenu()',
+  },
 })
 export class PriceListComponent implements OnInit {
   private readonly priceList       = inject(PriceListService);
@@ -75,6 +87,8 @@ export class PriceListComponent implements OnInit {
   readonly busy       = signal(false);
   readonly search     = signal('');
   readonly activeCat  = signal('');
+  readonly activeFanTab = signal<FanTab>('ceiling');
+  readonly isCategoryMenuOpen = signal(false);
 
   /** Per-category cache of fetched rows. A present key means that category is loaded. */
   private readonly cache = signal<Map<string, PriceListEntry[]>>(new Map());
@@ -85,6 +99,8 @@ export class PriceListComponent implements OnInit {
   readonly editPrice  = signal<string>('');
   readonly editCost   = signal<string>('');
   readonly editStock  = signal<string>('');
+  readonly editUnit   = signal('pcs');
+  readonly editFanSubcategory = signal<string>('Ceiling Fan');
   /** Image for the row currently being edited (data URL or null). */
   readonly editImage  = signal<string | null>(null);
 
@@ -94,8 +110,10 @@ export class PriceListComponent implements OnInit {
   readonly newPrice    = signal<string>('');
   readonly newCost     = signal<string>('');
   readonly newCategory = signal('');
+  readonly newFanSubcategory = signal<string>('Ceiling Fan');
   readonly newUnit     = signal('pcs');
   readonly newStock    = signal<string>('');
+  readonly unitOptions = ['pcs', 'mtr', 'bundle', 'packet'] as const;
   /** Image for the row being added (data URL or null). */
   readonly newImage    = signal<string | null>(null);
 
@@ -272,6 +290,40 @@ export class PriceListComponent implements OnInit {
 
   onSearch(value: string): void { this.search.set(value); }
   clearSearch(): void { this.search.set(''); }
+  private isRepairCategory(categoryId: string): boolean {
+    return categoryId === 'repair-items' || categoryId === 'repaid-items';
+  }
+
+  isTabbedCategory(categoryId: string): boolean {
+    return categoryId === 'fans' || this.isRepairCategory(categoryId);
+  }
+
+  private resetTabForCategory(categoryId: string): void {
+    if (this.isRepairCategory(categoryId)) {
+      this.activeFanTab.set('fan-parts');
+      return;
+    }
+    this.activeFanTab.set('ceiling');
+  }
+
+  toggleCategoryMenu(): void { this.isCategoryMenuOpen.update(v => !v); }
+  closeCategoryMenu(): void { this.isCategoryMenuOpen.set(false); }
+
+  pickCategory(id: string): void {
+    this.setCategory(id);
+    this.closeCategoryMenu();
+  }
+
+  onDocumentClick(event: Event): void {
+    if (!this.isCategoryMenuOpen()) return;
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      this.closeCategoryMenu();
+      return;
+    }
+    if (target.closest('.pl-category-dropdown')) return;
+    this.closeCategoryMenu();
+  }
 
 
 
@@ -1179,8 +1231,10 @@ export class PriceListComponent implements OnInit {
 
   /** Switch to a category, fetching it from the backend the first time. */
   setCategory(id: string): void {
+    this.closeCategoryMenu();
     if (this.activeCat() === id) return;
     this.activeCat.set(id);
+    this.resetTabForCategory(id);
     // Close and fully reset the add form when switching categories
     this.adding.set(false);
     this.editingId.set(null);
@@ -1191,6 +1245,7 @@ export class PriceListComponent implements OnInit {
     this.newStock.set('');
     this.newImage.set(null);
     this.newCategory.set(id);
+    this.newFanSubcategory.set(this.fanSubcategoryFromTab(this.activeFanTab(), id));
     this.loadCategory(id);
   }
 
@@ -1216,6 +1271,121 @@ export class PriceListComponent implements OnInit {
       .sort((a, b) => a.name.localeCompare(b.name));
   });
 
+  setFanTab(tab: FanTab): void {
+    this.activeFanTab.set(tab);
+  }
+
+  onNewCategoryChange(category: string): void {
+    this.newCategory.set(category);
+    if (this.isTabbedCategory(category)) {
+      this.resetTabForCategory(category);
+      this.newFanSubcategory.set(this.fanSubcategoryFromTab(this.activeFanTab(), category));
+    }
+  }
+
+  private fanSubcategoryFromTab(tab: FanTab, categoryId: string = this.activeCat()): string {
+    if (this.isRepairCategory(categoryId)) {
+      if (tab === 'mixer-iron-parts') return 'Mixer/Iron Parts';
+      return 'Fan Parts';
+    }
+    if (tab === 'ceiling') return 'Ceiling Fan';
+    if (tab === 'stand') return 'Stand Fan';
+    return 'Exhaust Fan';
+  }
+
+  private fanTabFromSubcategory(subcategory?: string, categoryId: string = this.activeCat()): FanTab | null {
+    const sub = (subcategory ?? '').toLowerCase();
+    if (!sub) return null;
+    if (this.isRepairCategory(categoryId)) {
+      if (sub.includes('mixer') || sub.includes('iron')) return 'mixer-iron-parts';
+      if (sub.includes('fan') || sub.includes('part')) return 'fan-parts';
+      return null;
+    }
+    if (sub.includes('ceiling')) return 'ceiling';
+    if (sub.includes('stand') || sub.includes('pedestal') || sub.includes('table') || sub.includes('wall')) return 'stand';
+    if (sub.includes('exhaust')) return 'exhaust';
+    if (sub.includes('part')) return 'exhaust';
+    return null;
+  }
+
+  private fanTabForItem(item: PriceListEntry): FanTab {
+    const categoryId = item.category || this.activeCat();
+    const fromSubcategory = this.fanTabFromSubcategory(item.subcategory, categoryId);
+    if (fromSubcategory) return fromSubcategory;
+    const normalized = item.name.toLowerCase();
+    if (this.isRepairCategory(categoryId)) {
+      if (normalized.includes('mixer') || normalized.includes('iron')) return 'mixer-iron-parts';
+      return 'fan-parts';
+    }
+    if (normalized.includes('ceiling')) return 'ceiling';
+    if (
+      normalized.includes('stand') ||
+      normalized.includes('pedestal') ||
+      normalized.includes('table') ||
+      normalized.includes('wall')
+    ) {
+      return 'stand';
+    }
+    if (normalized.includes('exhaust')) return 'exhaust';
+    return 'exhaust';
+  }
+
+  /**
+   * Sections shown in the list area.
+   * Fans are split into 3 vertical sections; other categories stay as a single section.
+   */
+  readonly activeSections = computed<PriceListSection[]>(() => {
+    const items = this.activeItems();
+    if (!this.isTabbedCategory(this.activeCat())) {
+      return [{ id: 'default', heading: this.activeMeta().name, items }];
+    }
+
+    if (this.isRepairCategory(this.activeCat())) {
+      const fanParts: PriceListEntry[] = [];
+      const mixerIronParts: PriceListEntry[] = [];
+
+      for (const item of items) {
+        const tab = this.fanTabForItem(item);
+        if (tab === 'mixer-iron-parts') mixerIronParts.push(item);
+        else fanParts.push(item);
+      }
+
+      return [
+        { id: 'fan-parts', heading: 'Fan Parts', items: fanParts },
+        { id: 'mixer-iron-parts', heading: 'Mixer/Iron Parts', items: mixerIronParts },
+      ];
+    }
+
+    const ceiling: PriceListEntry[] = [];
+    const stand: PriceListEntry[] = [];
+    const exhaust: PriceListEntry[] = [];
+
+    for (const item of items) {
+      const tab = this.fanTabForItem(item);
+      if (tab === 'ceiling') {
+        ceiling.push(item);
+      } else if (tab === 'stand') {
+        stand.push(item);
+      } else {
+        exhaust.push(item);
+      }
+    }
+
+    return [
+      { id: 'ceiling', heading: 'Ceiling Fan', items: ceiling },
+      { id: 'stand', heading: 'Stand Fan', items: stand },
+      { id: 'exhaust', heading: 'Exhaust Fan', items: exhaust },
+    ];
+  });
+
+  /** Sections that should be rendered in the list area. */
+  readonly visibleSections = computed<PriceListSection[]>(() => {
+    const sections = this.activeSections();
+    if (!this.isTabbedCategory(this.activeCat())) return sections;
+    const selected = this.activeFanTab();
+    return sections.filter(section => section.id === selected);
+  });
+
   /** Total rows in the active category (ignoring search). */
   readonly activeCount = computed(() => (this.cache().get(this.activeCat()) ?? []).length);
 
@@ -1225,7 +1395,9 @@ export class PriceListComponent implements OnInit {
       const cats = this.catalogueConfig.categories();
       const first = cats.find(c => c.id === 'fans')?.id ?? cats[0]?.id ?? 'fans';
       this.activeCat.set(first);
+      this.resetTabForCategory(first);
       this.newCategory.set(first);
+      this.newFanSubcategory.set(this.fanSubcategoryFromTab(this.activeFanTab(), first));
       this.loadCategory(first);
     });
     this.stampService.loadStamp();
@@ -1236,7 +1408,12 @@ export class PriceListComponent implements OnInit {
     if (this.cache().has(catId)) { this.loadingCat.set(false); return; }
     this.loadingCat.set(true);
     try {
-      const list = await this.priceList.getByCategory(catId);
+      const list = this.isRepairCategory(catId)
+        ? [
+            ...(await this.priceList.getByCategory('repair-items')),
+            ...(await this.priceList.getByCategory('repaid-items')),
+          ]
+        : await this.priceList.getByCategory(catId);
       this.cache.update(m => new Map(m).set(catId, list));
     } finally {
       this.loadingCat.set(false);
@@ -1258,11 +1435,15 @@ export class PriceListComponent implements OnInit {
     this.editPrice.set(entry.sellPrice != null ? String(entry.sellPrice) : '');
     this.editCost.set(entry.costPrice != null ? String(entry.costPrice) : '');
     this.editStock.set(entry.stock != null ? String(entry.stock) : '');
+    this.editUnit.set(this.normalizeUnit(entry.unit));
+    this.editFanSubcategory.set(this.fanSubcategoryFromTab(this.fanTabForItem(entry), entry.category || this.activeCat()));
     this.editImage.set(entry.imageUrl ?? null);
   }
 
   cancelEdit(): void {
     this.editingId.set(null);
+    this.editUnit.set('pcs');
+    this.editFanSubcategory.set('Ceiling Fan');
     this.editImage.set(null);
   }
 
@@ -1274,17 +1455,34 @@ export class PriceListComponent implements OnInit {
     const price    = this.parsePrice(this.editPrice());
     const cost     = this.parsePrice(this.editCost());
     const stock    = this.parseStock(this.editStock());
+    const unit     = this.normalizeUnit(this.editUnit());
     const imageUrl = this.editImage() ?? null;
+    const isSectionedCategory = this.isTabbedCategory(entry.category || '');
+    const subcategory = isSectionedCategory ? this.editFanSubcategory().trim() : entry.subcategory;
 
     this.busy.set(true);
     try {
-      await this.priceList.update(id, { name, sellPrice: price, costPrice: cost, stock, imageUrl });
+      const patch: Partial<Omit<PriceListEntry, 'id'>> = {
+        name,
+        sellPrice: price,
+        costPrice: cost,
+        stock,
+        unit,
+        imageUrl,
+      };
+      if (isSectionedCategory) {
+        patch.subcategory = subcategory || this.fanSubcategoryFromTab(this.fanTabForItem(entry), entry.category || this.activeCat());
+      }
+
+      await this.priceList.update(id, patch);
       const cat = entry.category || 'other';
       const list = (this.cache().get(cat) ?? []).map(e =>
-        e.id === id ? { ...e, name, sellPrice: price, costPrice: cost, stock, imageUrl } : e,
+        e.id === id ? { ...e, name, sellPrice: price, costPrice: cost, stock, unit, imageUrl, ...(isSectionedCategory ? { subcategory: patch.subcategory } : {}) } : e,
       );
       this.setCatEntries(cat, list);
       this.editingId.set(null);
+      this.editUnit.set('pcs');
+      this.editFanSubcategory.set('Ceiling Fan');
       this.editImage.set(null);
     } finally {
       this.busy.set(false);
@@ -1332,6 +1530,7 @@ export class PriceListComponent implements OnInit {
     this.newImage.set(null);
     // Auto-select the active category when adding a new item
     this.newCategory.set(this.activeCat() || this.categoryOptions()[0]?.id || 'other');
+    this.newFanSubcategory.set(this.fanSubcategoryFromTab(this.activeFanTab(), this.newCategory()));
   }
 
   cancelAdd(): void {
@@ -1343,6 +1542,7 @@ export class PriceListComponent implements OnInit {
     this.newUnit.set('pcs');
     this.newStock.set('');
     this.newCategory.set('');
+    this.newFanSubcategory.set('Ceiling Fan');
     this.newImage.set(null);
   }
 
@@ -1354,7 +1554,8 @@ export class PriceListComponent implements OnInit {
       sellPrice: this.parsePrice(this.newPrice()),
       costPrice: this.parsePrice(this.newCost()),
       category: this.newCategory() || 'other',
-      unit: this.newUnit().trim() || 'pcs',
+      ...(this.isTabbedCategory(this.newCategory()) ? { subcategory: this.newFanSubcategory().trim() || this.fanSubcategoryFromTab(this.activeFanTab(), this.newCategory()) } : {}),
+      unit: this.normalizeUnit(this.newUnit()),
       stock: this.parseStock(this.newStock()),
       imageUrl: this.newImage() ?? null,
     };
@@ -1371,6 +1572,7 @@ export class PriceListComponent implements OnInit {
       this.newPrice.set('');
       this.newCost.set('');
       this.newStock.set('');
+      this.newFanSubcategory.set(this.fanSubcategoryFromTab(this.activeFanTab(), this.newCategory()));
       this.newImage.set(null);
     } finally {
       this.busy.set(false);
@@ -1414,6 +1616,7 @@ export class PriceListComponent implements OnInit {
           sellPrice: sellingPrice(p),
           costPrice: costPriceOf(p),
           category: (p['category'] as string) || 'other',
+          ...(p.subcategory ? { subcategory: p.subcategory } : {}),
           unit: p.unit || 'pcs',
           stock: typeof p.stockQty === 'number' ? p.stockQty : null,
         }));
@@ -1460,5 +1663,10 @@ export class PriceListComponent implements OnInit {
   private parseStock(value: string): number | null {
     const n = parseInt(String(value).replace(/[^0-9]/g, ''), 10);
     return Number.isFinite(n) ? n : null;
+  }
+
+  private normalizeUnit(value: string | null | undefined): string {
+    const v = (value ?? '').trim().toLowerCase();
+    return this.unitOptions.includes(v as (typeof this.unitOptions)[number]) ? v : 'pcs';
   }
 }
