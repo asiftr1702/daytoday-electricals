@@ -34,6 +34,12 @@ export class BillComponent implements OnInit {
   expandedBillId = signal<string | null>(null);
   deletingBillId = signal<string | null>(null);
 
+  // ── Returns (on a saved bill) ─────────────────────────────────────────────
+  returningBillId = signal<string | null>(null);
+  returnQtys = signal<Record<number, number>>({});
+  returnProcessing = signal(false);
+  returnError = signal('');
+
   // Edit mode for an item
   editingIndex = signal<number | null>(null);
 
@@ -312,6 +318,75 @@ export class BillComponent implements OnInit {
   billTotalItems(bill: Bill): number {
     return bill.items.reduce((s, i) => s + i.qty, 0);
   }
+
+  // ─── Returns ──────────────────────────────────────────────────────────────
+  startReturn(bill: Bill): void {
+    this.expandedBillId.set(bill.id!);
+    this.returningBillId.set(bill.id!);
+    this.returnQtys.set({});
+    this.returnError.set('');
+  }
+
+  cancelReturn(): void {
+    this.returningBillId.set(null);
+    this.returnQtys.set({});
+    this.returnError.set('');
+  }
+
+  /** Units of an item still eligible for return. */
+  returnableQty(item: BillItem): number {
+    return this.billService.returnableQty(item);
+  }
+
+  /** True when the bill still has at least one returnable unit. */
+  canReturn(bill: Bill): boolean {
+    return bill.items.some(i => this.billService.returnableQty(i) > 0);
+  }
+
+  returnQty(index: number): number {
+    return this.returnQtys()[index] ?? 0;
+  }
+
+  setReturnQty(index: number, value: number, max: number): void {
+    const qty = Math.max(0, Math.min(max, Math.floor(value || 0)));
+    this.returnQtys.update(m => ({ ...m, [index]: qty }));
+  }
+
+  private returnRows(): { index: number; qty: number }[] {
+    return Object.entries(this.returnQtys())
+      .map(([index, qty]) => ({ index: +index, qty }))
+      .filter(r => r.qty > 0);
+  }
+
+  /** Live rounded refund preview for the bill currently being returned. */
+  refundPreview(bill: Bill): number {
+    return this.billService.computeRefund(bill, this.returnRows());
+  }
+
+  hasReturnSelection(): boolean {
+    return this.returnRows().length > 0;
+  }
+
+  processReturn(bill: Bill): void {
+    const rows = this.returnRows();
+    if (!rows.length) { this.returnError.set('Select at least one item to return.'); return; }
+    this.returnProcessing.set(true);
+    this.returnError.set('');
+    this.billService.processReturn(bill, rows, this.billDate()).subscribe({
+      next: updated => {
+        this.pastBills.update(list => list.map(b => (b.id === updated.id ? updated : b)));
+        this.returnProcessing.set(false);
+        this.cancelReturn();
+        this.successMsg.set('✅ Return processed & items restocked!');
+        setTimeout(() => this.successMsg.set(''), 3000);
+      },
+      error: err => {
+        this.returnProcessing.set(false);
+        this.returnError.set('❌ ' + (err?.message ?? 'Failed to process return'));
+      },
+    });
+  }
+
 
   formatCurrency(n: number): string {
     return (

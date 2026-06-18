@@ -6,7 +6,7 @@ import { FirebaseAdminService } from '../../core/services/firebase-admin.service
 import { CatalogueConfigService } from '../../core/services/catalogue-config.service';
 import { BillService } from '../../core/services/bill.service';
 import { StampService } from '../../core/services/stamp.service';
-import { Bill } from '../../core/models/bill.model';
+import { Bill, BillItem } from '../../core/models/bill.model';
 import { AnyProduct } from '../../core/models/any-product.model';
 import { compressImage } from '../../core/utils/image.util';
 
@@ -178,6 +178,12 @@ export class PriceListComponent implements OnInit {
   readonly savedBillsDate    = signal<string>(this.today);
   /** Saved bill opened in the detail modal (null = none). */
   readonly selectedBill      = signal<Bill | null>(null);
+
+  // ── Returns (on a saved bill) ──
+  readonly returning       = signal(false);
+  readonly returnQtys      = signal<Record<number, number>>({});
+  readonly returnProcessing = signal(false);
+  readonly returnError     = signal('');
 
   // ── Per-line price editing ──
   readonly editingLineIndex = signal<number | null>(null);
@@ -1037,12 +1043,13 @@ export class PriceListComponent implements OnInit {
 
   /** Draw a receipt image from explicit data (used by both cart + saved bills). */
   private renderBillImage(data: {
-    lines: { name: string; qty: number; sellPrice: number; warranty?: string; category: string }[];
+    lines: { name: string; qty: number; sellPrice: number; warranty?: string; category: string; returnedQty?: number }[];
     cust: string;
     mob: string;
     disc: number;
     due: number;
     advance: number;
+    refund: number;
     total: number;
     date: string;
   }): Promise<File> {
@@ -1052,8 +1059,9 @@ export class PriceListComponent implements OnInit {
     const disc  = data.disc;
     const due   = data.due;
     const advance = data.advance;
+    const refund = data.refund;
     const total = data.total;
-    const final = total - disc;
+    const final = total - disc - refund;
     const paid  = due > 0 ? Math.max(0, final - due) : final;
     const date  = data.date;
 
@@ -1066,18 +1074,21 @@ export class PriceListComponent implements OnInit {
     const H_GAP   = 6;
     const H_CHEAD = 26;
     const H_ITEM  = 26;
-    const H_WARR  = 15; // extra height for a line that carries a warranty
+    const H_WARR  = 15; // extra height for a sub-line (warranty / returned note)
     const H_DIV   = 2;
     const H_SUB   = disc > 0 ? 24 : 0;
     const H_DISC  = disc > 0 ? 24 : 0;
+    const H_RET   = refund > 0 ? 24 : 0;
     const H_PAID  = due > 0 ? 24 : 0;
     const H_DUE   = due > 0 ? 26 : 0;
     const H_ADV   = advance > 0 ? 26 : 0;
     const H_TOTAL = 36;
     const H_FOOT  = 42;
-    const itemsH  = lines.reduce((s, l) => s + H_ITEM + (l.warranty ? H_WARR : 0), 0);
+    const subLines = (l: { warranty?: string; returnedQty?: number }) =>
+      (l.warranty ? 1 : 0) + (l.returnedQty ? 1 : 0);
+    const itemsH  = lines.reduce((s, l) => s + H_ITEM + subLines(l) * H_WARR, 0);
     const H = H_HEAD + H_CUST + H_GAP + H_CHEAD + itemsH
-            + H_DIV + H_SUB + H_DISC + H_TOTAL + H_PAID + H_DUE + H_ADV + H_GAP + H_FOOT;
+            + H_DIV + H_SUB + H_DISC + H_RET + H_TOTAL + H_PAID + H_DUE + H_ADV + H_GAP + H_FOOT;
 
     const canvas = document.createElement('canvas');
     canvas.width  = W * S;
@@ -1153,7 +1164,7 @@ export class PriceListComponent implements OnInit {
 
       // Item rows
       lines.forEach((line, i) => {
-        const rowH = H_ITEM + (line.warranty ? H_WARR : 0);
+        const rowH = H_ITEM + subLines(line) * H_WARR;
         if (i % 2 === 1) { ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, y, W, rowH); }
         ctx.font = '13px Arial';
         let name = line.name;
@@ -1161,9 +1172,15 @@ export class PriceListComponent implements OnInit {
         if (name.length < line.name.length) name = name.slice(0, -1) + '…';
 
         ctx.fillStyle = '#1a2736'; ctx.fillText(name, xName, y + 18);
+        let subY = y + 31;
         if (line.warranty) {
           ctx.font = '10px Arial'; ctx.fillStyle = '#047a42';
-          ctx.fillText(this.warrantyLabel(line) + ': ' + line.warranty, xName, y + 31);
+          ctx.fillText(this.warrantyLabel(line) + ': ' + line.warranty, xName, subY);
+          subY += H_WARR;
+        }
+        if (line.returnedQty) {
+          ctx.font = '10px Arial'; ctx.fillStyle = '#c0392b';
+          ctx.fillText('↩ ' + line.returnedQty + ' returned', xName, subY);
         }
         ctx.font = '13px Arial';
         ctx.textAlign = 'center'; ctx.fillStyle = '#617082';
@@ -1192,10 +1209,18 @@ export class PriceListComponent implements OnInit {
         ctx.textAlign = 'left'; y += H_DISC;
       }
 
+      // Returns / refund
+      if (refund > 0) {
+        ctx.textAlign = 'right'; ctx.fillStyle = '#c0392b'; ctx.font = '12px Arial';
+        ctx.fillText('Returns refund', W - PAD - totW - 6, y + H_RET - 6);
+        ctx.fillText('-₹' + refund.toLocaleString('en-IN'), W - PAD, y + H_RET - 6);
+        ctx.textAlign = 'left'; y += H_RET;
+      }
+
       // Total row
       ctx.fillStyle = '#e6f7ee'; ctx.fillRect(0, y, W, H_TOTAL);
       ctx.fillStyle = '#047a42'; ctx.font = 'bold 15px Arial';
-      ctx.fillText(disc > 0 ? 'Amount Paid' : 'Total', PAD, y + 24);
+      ctx.fillText(disc > 0 || refund > 0 ? 'Amount Paid' : 'Total', PAD, y + 24);
       ctx.textAlign = 'right'; ctx.font = 'bold 18px Arial';
       ctx.fillText('₹' + final.toLocaleString('en-IN'), W - PAD, y + 24);
       ctx.textAlign = 'left'; y += H_TOTAL;
@@ -1285,6 +1310,7 @@ export class PriceListComponent implements OnInit {
       disc: this.billDiscount(),
       due: this.billDue(),
       advance: this.billAdvance(),
+      refund: 0,
       total: this.billTotal(),
       date: this.today,
     });
@@ -1292,12 +1318,13 @@ export class PriceListComponent implements OnInit {
 
   /** Share an explicit bill (cart or saved) as an image, with a wa.me text fallback. */
   private async shareBillData(data: {
-    lines: { name: string; qty: number; sellPrice: number; warranty?: string; category: string }[];
+    lines: { name: string; qty: number; sellPrice: number; warranty?: string; category: string; returnedQty?: number }[];
     cust: string;
     mob: string;
     disc: number;
     due: number;
     advance: number;
+    refund: number;
     total: number;
     date: string;
   }): Promise<void> {
@@ -1314,8 +1341,8 @@ export class PriceListComponent implements OnInit {
     // Fallback: wa.me text link (needs mobile number)
     const mobile = data.mob.replace(/\D/g, '');
     if (mobile.length >= 10) {
-      const { lines, disc, due, advance, total, cust } = data;
-      const final = total - disc;
+      const { lines, disc, due, advance, refund, total, cust } = data;
+      const final = total - disc - refund;
       const paid  = due > 0 ? Math.max(0, final - due) : final;
       let msg = '🧾 *Bill from DayToDay Electricals*\n';
       if (cust) msg += `Customer: ${cust}\n`;
@@ -1323,7 +1350,9 @@ export class PriceListComponent implements OnInit {
       lines.forEach(l => {
         msg += `• ${l.name}  ×${l.qty}  = ₹${(l.sellPrice * l.qty).toLocaleString('en-IN')}\n`;
         if (l.warranty) msg += `   🛡 ${this.warrantyLabel(l)}: ${l.warranty}\n`;
+        if (l.returnedQty) msg += `   ↩ ${l.returnedQty} returned\n`;
       });
+      if (refund > 0) msg += `\nReturns refund: -₹${refund.toLocaleString('en-IN')}\n`;
       msg += `\n*Total: ₹${final.toLocaleString('en-IN')}*\n`;
       if (due > 0) {
         msg += `Paid: ₹${paid.toLocaleString('en-IN')}\n`;
@@ -1410,10 +1439,10 @@ export class PriceListComponent implements OnInit {
   closeSavedBills(): void { this.showSavedBills.set(false); }
 
   /** Open a saved bill in the detail modal. */
-  openBillDetail(bill: Bill): void { this.selectedBill.set(bill); }
+  openBillDetail(bill: Bill): void { this.cancelReturn(); this.selectedBill.set(bill); }
 
   /** Close the bill detail modal. */
-  closeBillDetail(): void { this.selectedBill.set(null); }
+  closeBillDetail(): void { this.cancelReturn(); this.selectedBill.set(null); }
 
   /** Share a saved bill as an image (same as the cart Share button). */
   shareSavedBill(bill: Bill): void {
@@ -1423,6 +1452,7 @@ export class PriceListComponent implements OnInit {
         qty: it.qty,
         sellPrice: it.sellPrice,
         ...(it.warranty ? { warranty: it.warranty } : {}),
+        ...(it.returnedQty ? { returnedQty: it.returnedQty } : {}),
         category: it.category ?? '',
       })),
       cust: bill.customerName?.trim() ?? '',
@@ -1430,6 +1460,7 @@ export class PriceListComponent implements OnInit {
       disc: bill.discountAmount ?? 0,
       due: bill.dueAmount ?? 0,
       advance: bill.advanceAmount ?? 0,
+      refund: bill.refundedAmount ?? 0,
       total: bill.totalAmount ?? 0,
       date: bill.date,
     });
@@ -1437,6 +1468,105 @@ export class PriceListComponent implements OnInit {
 
   /** Net amount kept for a saved bill (after any refunds). */
   netPaid(bill: Bill): number { return this.billService.netPaid(bill); }
+
+  // ─── Returns (restock + refund on a saved bill) ──────────────────────────
+  startReturn(): void {
+    this.returning.set(true);
+    this.returnQtys.set({});
+    this.returnError.set('');
+  }
+
+  cancelReturn(): void {
+    this.returning.set(false);
+    this.returnQtys.set({});
+    this.returnError.set('');
+  }
+
+  /** Units of an item still eligible for return. */
+  returnableQty(item: BillItem): number {
+    return this.billService.returnableQty(item);
+  }
+
+  /** True when the bill still has at least one returnable unit. */
+  canReturn(bill: Bill): boolean {
+    return bill.items.some(i => this.billService.returnableQty(i) > 0);
+  }
+
+  returnQty(index: number): number {
+    return this.returnQtys()[index] ?? 0;
+  }
+
+  setReturnQty(index: number, value: number, max: number): void {
+    const qty = Math.max(0, Math.min(max, Math.floor(value || 0)));
+    this.returnQtys.update(m => ({ ...m, [index]: qty }));
+  }
+
+  private returnRows(): { index: number; qty: number }[] {
+    return Object.entries(this.returnQtys())
+      .map(([index, qty]) => ({ index: +index, qty }))
+      .filter(r => r.qty > 0);
+  }
+
+  hasReturnSelection(): boolean {
+    return this.returnRows().length > 0;
+  }
+
+  /** Live rounded refund preview for the bill being returned. */
+  refundPreview(bill: Bill): number {
+    return this.billService.computeRefund(bill, this.returnRows());
+  }
+
+  processReturn(bill: Bill): void {
+    const rows = this.returnRows();
+    if (!rows.length) { this.returnError.set('Select at least one item to return.'); return; }
+    this.returnProcessing.set(true);
+    this.returnError.set('');
+    this.billService.processReturn(bill, rows, bill.date).subscribe({
+      next: updated => {
+        this.savedBills.update(list => list.map(b => (b.id === updated.id ? updated : b)));
+        this.selectedBill.set(updated);
+        this.restockReturnedLines(bill, rows);
+        this.returnProcessing.set(false);
+        this.cancelReturn();
+        this.billMsg.set('✅ Return processed & items restocked');
+        setTimeout(() => this.billMsg.set(''), 3000);
+      },
+      error: err => {
+        this.returnProcessing.set(false);
+        this.returnError.set('❌ ' + (err?.message ?? 'Failed to process return'));
+      },
+    });
+  }
+
+  /** Add returned units back to the price-list stock (matched by name + category). */
+  private async restockReturnedLines(bill: Bill, rows: { index: number; qty: number }[]): Promise<void> {
+    const byCat = new Map<string, { name: string; qty: number }[]>();
+    for (const r of rows) {
+      const it = bill.items[r.index];
+      if (!it || r.qty <= 0) continue;
+      const cat = it.category || 'other';
+      const arr = byCat.get(cat) ?? [];
+      arr.push({ name: it.productName, qty: r.qty });
+      byCat.set(cat, arr);
+    }
+    for (const [cat, wanted] of byCat) {
+      let entries: PriceListEntry[];
+      try { entries = await this.priceList.getByCategory(cat); } catch { continue; }
+      for (const w of wanted) {
+        const entry = entries.find(e => e.name === w.name && e.stock != null);
+        if (!entry?.id) continue;
+        const next = (entry.stock ?? 0) + w.qty;
+        try {
+          await this.priceList.update(entry.id, { stock: next });
+          const cached = this.cache().get(cat);
+          if (cached) {
+            this.setCatEntries(cat, cached.map(e => (e.id === entry.id ? { ...e, stock: next } : e)));
+          }
+        } catch { /* ignore individual failures */ }
+      }
+    }
+  }
+
 
   /** After a bill is saved, reduce the price-list stock for each sold line. */
   private decrementStockForLines(lines: BillLine[]): void {

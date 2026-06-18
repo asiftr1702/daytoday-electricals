@@ -2227,6 +2227,45 @@
 }
 
 .pl-modal-foot .pl-btn-whatsapp { flex: 0 0 auto; }
+.pl-modal-foot-actions { display: flex; gap: 0.5rem; flex: 0 0 auto; }
+.pl-btn-return {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
+}
+
+.pl-returned { color: #9b1c1c; font-weight: 600; }
+
+/* Return form inside the bill detail modal */
+.pl-return-box {
+  margin-top: 0.8rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #bfdbfe;
+  background: #f8fbff;
+  border-radius: 10px;
+}
+.pl-return-title { font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; }
+.pl-return-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.pl-return-table th,
+.pl-return-table td { padding: 0.3rem 0.35rem; text-align: left; border-bottom: 1px solid #e6eef8; }
+.pl-return-table th:nth-child(2),
+.pl-return-table td:nth-child(2),
+.pl-return-table th:nth-child(3),
+.pl-return-table td:nth-child(3) { text-align: center; width: 4rem; }
+.pl-return-qty {
+  width: 56px;
+  padding: 0.25rem 0.35rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  text-align: center;
+}
+.pl-return-refund { margin-top: 0.55rem; font-size: 0.9rem; }
+.pl-return-error { color: #9b1c1c; font-size: 0.8rem; margin: 0.4rem 0 0; }
+.pl-return-actions { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+.pl-return-actions .pl-btn { flex: 1; }
+.pl-btn-confirm-return { background: #16a34a; color: #fff; }
+.pl-btn-confirm-return:disabled { opacity: 0.5; }
 
 .pl-lightbox-backdrop {
   z-index: 70;

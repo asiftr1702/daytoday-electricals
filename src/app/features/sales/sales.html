@@ -193,54 +193,7 @@
                     </div>
                   }
 
-                  <!-- ── Return form ── -->
-                  @if (returningBillId() === bill.id) {
-                    <div class="return-box">
-                      <div class="return-box-title">↩️ Return items</div>
-                      <table class="return-table">
-                        <thead>
-                          <tr><th>Item</th><th>Left</th><th>Return qty</th></tr>
-                        </thead>
-                        <tbody>
-                          @for (item of bill.items; track $index) {
-                            @if (returnableQty(item) > 0) {
-                              <tr>
-                                <td>
-                                  {{ itemLabel(item) }}
-                                  @if (item.brand) { <span class="mini-brand-tag">{{ item.brand }}</span> }
-                                </td>
-                                <td>{{ returnableQty(item) }}</td>
-                                <td>
-                                  <input type="number" min="0" [max]="returnableQty(item)"
-                                         [value]="returnQty($index)"
-                                         (input)="setReturnQty($index, +$any($event.target).value, returnableQty(item))"
-                                         class="return-qty-input" />
-                                </td>
-                              </tr>
-                            }
-                          }
-                        </tbody>
-                      </table>
-                      <div class="return-refund-row">
-                        Refund (after discount): <strong>{{ formatCurrency(refundPreview(bill)) }}</strong>
-                      </div>
-                      @if (returnError()) { <p class="return-error">{{ returnError() }}</p> }
-                      <div class="return-actions">
-                        <button type="button" class="btn-cancel-return" (click)="cancelReturn()"
-                                [disabled]="returnProcessing()">Cancel</button>
-                        <button type="button" class="btn-confirm-return"
-                                [disabled]="returnProcessing() || !hasReturnSelection()"
-                                (click)="processReturn(bill)">
-                          {{ returnProcessing() ? '⏳ Processing…' : '✅ Process Return' }}
-                        </button>
-                      </div>
-                    </div>
-                  }
-
                   <div class="past-bill-actions">
-                    @if (returningBillId() !== bill.id && canReturn(bill)) {
-                      <button type="button" class="btn-return-bill" (click)="startReturn(bill)">↩️ Return items</button>
-                    }
                     <button type="button" class="btn-print-bill" (click)="printBill(bill)">🖨️ Print</button>
                     <button
                       type="button"

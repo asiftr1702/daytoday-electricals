@@ -786,12 +786,51 @@
             <li class="pl-modal-line">
               <div class="pl-modal-line-info">
                 <span class="pl-modal-line-name">{{ it.productName }}</span>
-                <span class="pl-modal-line-rate">₹{{ it.sellPrice.toLocaleString('en-IN') }} × {{ it.qty }}</span>
+                <span class="pl-modal-line-rate">₹{{ it.sellPrice.toLocaleString('en-IN') }} × {{ it.qty }}@if (it.returnedQty) { · <span class="pl-returned">{{ it.returnedQty }} returned</span> }</span>
               </div>
               <span class="pl-modal-line-amt">₹{{ (it.sellPrice * it.qty).toLocaleString('en-IN') }}</span>
             </li>
           }
         </ul>
+
+        <!-- ── Return form ── -->
+        @if (returning()) {
+          <div class="pl-return-box">
+            <div class="pl-return-title">↩️ Return items</div>
+            <table class="pl-return-table">
+              <thead>
+                <tr><th>Item</th><th>Left</th><th>Return</th></tr>
+              </thead>
+              <tbody>
+                @for (it of bill.items; track $index) {
+                  @if (returnableQty(it) > 0) {
+                    <tr>
+                      <td>{{ it.productName }}</td>
+                      <td>{{ returnableQty(it) }}</td>
+                      <td>
+                        <input type="number" min="0" [max]="returnableQty(it)"
+                               [value]="returnQty($index)"
+                               (input)="setReturnQty($index, +$any($event.target).value, returnableQty(it))"
+                               class="pl-return-qty" />
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+            <div class="pl-return-refund">Refund: <strong>₹{{ refundPreview(bill).toLocaleString('en-IN') }}</strong></div>
+            @if (returnError()) { <p class="pl-return-error">{{ returnError() }}</p> }
+            <div class="pl-return-actions">
+              <button type="button" class="pl-btn pl-btn-cancel" (click)="cancelReturn()"
+                      [disabled]="returnProcessing()">Cancel</button>
+              <button type="button" class="pl-btn pl-btn-confirm-return"
+                      [disabled]="returnProcessing() || !hasReturnSelection()"
+                      (click)="processReturn(bill)">
+                {{ returnProcessing() ? '⏳ Processing…' : '✅ Process Return' }}
+              </button>
+            </div>
+          </div>
+        }
       </div>
 
       <footer class="pl-modal-foot">
@@ -799,7 +838,12 @@
           <span>Total</span>
           <span class="pl-modal-grand">₹{{ netPaid(bill).toLocaleString('en-IN') }}</span>
         </div>
-        <button type="button" class="pl-btn pl-btn-whatsapp" (click)="shareSavedBill(bill)">📲 Share</button>
+        <div class="pl-modal-foot-actions">
+          @if (!returning() && canReturn(bill)) {
+            <button type="button" class="pl-btn pl-btn-return" (click)="startReturn()">↩️ Return</button>
+          }
+          <button type="button" class="pl-btn pl-btn-whatsapp" (click)="shareSavedBill(bill)">📲 Share</button>
+        </div>
       </footer>
     </div>
   }
