@@ -38,11 +38,11 @@
   gap: 0.75rem;
   background: linear-gradient(135deg, #0c2340 0%, #144d30 100%);
   margin: 0 -0.9rem 1rem;
-  padding: calc(0.9rem + env(safe-area-inset-top)) 1.1rem calc(1rem + env(safe-area-inset-top));
+  padding: calc(0.6rem + env(safe-area-inset-top)) 1rem calc(0.65rem + env(safe-area-inset-top));
 }
 
 .pl-title-icon {
-  font-size: 2.2rem;
+  font-size: 1.6rem;
   line-height: 1;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
 }
@@ -54,18 +54,11 @@
 
 .pl-title h1 {
   margin: 0;
-  font-size: 1.45rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.02em;
   line-height: 1.2;
-}
-
-.pl-title p {
-  margin: 0.2rem 0 0;
-  color: rgba(255,255,255,0.65);
-  font-size: 0.8rem;
-  line-height: 1.4;
 }
 
 .pl-title-count {
@@ -172,13 +165,39 @@
   min-width: 0;
 }
 
+.pl-category-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+}
+
+.pl-cat-action-btn {
+  border: 1px solid var(--pl-border);
+  background: #ffffff;
+  color: var(--pl-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 0.55rem;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  box-shadow: var(--pl-shadow-sm);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pl-cat-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .pl-category-select-shell {
   position: relative;
   width: 100%;
   min-width: 0;
   border-radius: 4px;
   background: #ffffff;
-  box-shadow: none;
+  box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.85);
   border: 1px solid var(--pl-border);
   box-sizing: border-box;
   text-align: left;
@@ -298,7 +317,7 @@
 
 .pl-fan-layout-active {
   display: block;
-  margin-top: -1px;
+  margin-top: -2px;
   background: #ffffff;
   border: 1px solid var(--pl-border);
   border-radius: 0.25rem;
@@ -381,6 +400,48 @@
 
 .pl-fan-tab-name {
   text-align: center;
+}
+
+.pl-fan-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #eef2f7;
+  color: #4e6175;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.pl-fan-tab-active .pl-fan-tab-count {
+  background: #dff3ea;
+  color: #047a42;
+}
+
+.pl-fan-tab-edit {
+  display: none;
+  border: none;
+  background: transparent;
+  padding: 0.2rem 0.35rem;
+  margin-left: 0.3rem;
+  border-radius: 0.3rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.pl-fan-tab:hover .pl-fan-tab-edit {
+  display: inline-block;
+}
+
+.pl-fan-tab-edit:hover {
+  opacity: 1;
+  background: rgba(5, 150, 82, 0.15);
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1729,16 +1790,29 @@
 /* ════════════════════════════════════════════════════════════════════
    SAVED BILLS (today)
    ════════════════════════════════════════════════════════════════════ */
+.pl-action-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.pl-action-row .pl-saved-btn {
+  flex: 1;
+  width: auto;
+  margin: 0;
+  text-align: center;
+}
+
 .pl-saved-btn {
   display: block;
   width: 100%;
-  margin: 0.6rem 0 0;
-  padding: 0.7rem 1rem;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.8rem;
   border: 1.5px solid #cdd8e4;
-  border-radius: 0.9rem;
+  border-radius: 0.5rem;
   background: #fff;
   color: #3a4e62;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 700;
   text-align: left;
   cursor: pointer;
@@ -1751,6 +1825,16 @@
 
 .pl-low-stock-btn {
   margin-top: 0.45rem;
+}
+
+.pl-action-row .pl-low-stock-btn {
+  margin-top: 0;
+}
+
+.pl-manage-cat-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  text-align: center;
 }
 
 .pl-saved-date {

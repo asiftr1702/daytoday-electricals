@@ -5,8 +5,7 @@
     <header class="pl-title">
       <span class="pl-title-icon" aria-hidden="true">🧾</span>
       <div class="pl-title-text">
-        <h1>Price List</h1>
-        <p>Tap 🧾 to add to bill · ✏️ to edit · hold a row to see cost</p>
+        <h1>Day To Day Electrical</h1>
       </div>
       @if (!loading() && activeCount()) {
         <span class="pl-title-count">{{ activeCount() }}</span>
@@ -15,31 +14,22 @@
 
     <!-- ── Saved bills button ── -->
     @if (!loading()) {
-      <button type="button" class="pl-saved-btn" (click)="openSavedBills()">
-        📋 Saved bills ›
-      </button>
-      <a class="pl-saved-btn pl-low-stock-btn" routerLink="/price-low-stock">
-        ⚠️ Low stock list ›
+      <div class="pl-action-row">
+        <button type="button" class="pl-saved-btn" (click)="openSavedBills()">
+          📋 Saved bills ›
+        </button>
+        <a class="pl-saved-btn pl-low-stock-btn" routerLink="/price-low-stock">
+          ⚠️ Low stock list ›
+        </a>
+      </div>
+      <a class="pl-saved-btn pl-manage-cat-btn" routerLink="/categories">
+        ⚙️ Manage categories ›
       </a>
     }
 
-    <!-- ── Sticky search + chips ── -->
+    <!-- ── Sticky category selector ── -->
     @if (!loading()) {
       <div class="pl-sticky">
-        <div class="pl-search">
-          <span class="pl-search-icon" aria-hidden="true">🔍</span>
-          <input
-            type="search"
-            class="pl-search-input"
-            placeholder="Search in {{ activeMeta().name }}…"
-            [value]="search()"
-            (input)="onSearch($any($event.target).value)"
-            aria-label="Search products" />
-          @if (search()) {
-            <button type="button" class="pl-search-clear" (click)="clearSearch()" aria-label="Clear search">✕</button>
-          }
-        </div>
-
         <div class="pl-category-select-wrap">
           <label class="pl-category-select-label" for="pl-category-select">Category</label>
           <div class="pl-category-dropdown">
@@ -99,23 +89,24 @@
     } @else if (!activeItems().length) {
       <div class="pl-state pl-empty">
         <span class="pl-empty-icon">🔍</span>
-        <p>No products match “{{ search() }}”.</p>
+        <p>No products in this section.</p>
       </div>
     } @else {
 
       <div class="pl-fan-layout" [class.pl-fan-layout-active]="isTabbedCategory(activeCat())">
         @if (isTabbedCategory(activeCat())) {
-          <div class="pl-fan-tabs" role="tablist" [attr.aria-label]="activeCat() === 'fans' ? 'Fan sections' : 'Repaid sections'">
+          <div class="pl-fan-tabs" role="tablist" aria-label="Subcategories">
             @for (section of activeSections(); track section.id) {
               <button
                 type="button"
                 class="pl-fan-tab"
-                [class.pl-fan-tab-active]="activeFanTab() === section.id"
-                (click)="setFanTab($any(section.id))"
+                [class.pl-fan-tab-active]="activeSubcategoryTab() === section.id"
+                (click)="setActiveSubcategoryTab(section.id)"
                 role="tab"
-                [attr.aria-selected]="activeFanTab() === section.id"
+                [attr.aria-selected]="activeSubcategoryTab() === section.id"
                 [attr.aria-controls]="'pl-fan-panel-' + section.id">
                   <span class="pl-fan-tab-name">{{ section.heading }}</span>
+                  <span class="pl-fan-tab-count">{{ section.items.length }}</span>
               </button>
             }
           </div>
@@ -177,20 +168,15 @@
                       </select>
                     </label>
                   </div>
-                  @if (item.category === 'fans' || item.category === 'repair-items' || item.category === 'repaid-items') {
+                  @if (categorySubcategories(item.category).length) {
                     <label class="pl-edit-lbl">
                       <span>Section</span>
                       <select class="pl-edit-input"
-                              [value]="editFanSubcategory()"
-                              (change)="editFanSubcategory.set($any($event.target).value)"
+                              [value]="editSubcategory()"
+                              (change)="editSubcategory.set($any($event.target).value)"
                               aria-label="Section">
-                        @if (item.category === 'repair-items' || item.category === 'repaid-items') {
-                          <option value="Fan Parts">Fan Parts</option>
-                          <option value="Mixer/Iron Parts">Mixer/Iron Parts</option>
-                        } @else {
-                          <option value="Ceiling Fan">Ceiling Fan</option>
-                          <option value="Stand Fan">Stand Fan</option>
-                          <option value="Exhaust Fan">Exhaust Fan</option>
+                        @for (sub of categorySubcategories(item.category); track sub) {
+                          <option [value]="sub">{{ sub }}</option>
                         }
                       </select>
                     </label>
@@ -308,7 +294,14 @@
         </div>
       </div>
 
-      <p class="pl-foot-note">{{ activeItems().length }} item(s) in {{ activeMeta().name }}.</p>
+      <p class="pl-foot-note">
+        {{ activeTabCount() }} item(s)
+        @if (isTabbedCategory(activeCat())) {
+          in {{ activeSubcategoryTab() }}
+        } @else {
+          in {{ activeMeta().name }}
+        }.
+      </p>
     }
 
   </div>
@@ -598,20 +591,15 @@
         </select>
       </label>
 
-      @if (newCategory() === 'fans' || newCategory() === 'repair-items') {
+      @if (categorySubcategories(newCategory()).length) {
         <label class="pl-edit-lbl">
           <span>Section</span>
           <select class="pl-edit-input"
-                  [value]="newFanSubcategory()"
-                  (change)="newFanSubcategory.set($any($event.target).value)"
+                  [value]="newSubcategory()"
+                  (change)="newSubcategory.set($any($event.target).value)"
                   aria-label="Section">
-            @if (newCategory() === 'repair-items') {
-              <option value="Fan Parts">Fan Parts</option>
-              <option value="Mixer/Iron Parts">Mixer/Iron Parts</option>
-            } @else {
-              <option value="Ceiling Fan">Ceiling Fan</option>
-              <option value="Stand Fan">Stand Fan</option>
-              <option value="Exhaust Fan">Exhaust Fan</option>
+            @for (sub of categorySubcategories(newCategory()); track sub) {
+              <option [value]="sub">{{ sub }}</option>
             }
           </select>
         </label>
@@ -738,6 +726,87 @@
         </div>
         <button type="button" class="pl-btn pl-btn-whatsapp" (click)="shareSavedBill(bill)">📲 Share</button>
       </footer>
+    </div>
+  }
+
+  @if (showAddCategory()) {
+    <div class="pl-sheet-backdrop" (click)="closeAddCategory()" aria-hidden="true"></div>
+    <div class="pl-sheet pl-add-sheet" role="dialog" aria-label="Add category">
+      <div class="pl-sheet-handle" aria-hidden="true"></div>
+      <h3 class="pl-sheet-title">+ New category</h3>
+
+      <label class="pl-edit-lbl">
+        <span>Category name</span>
+        <input class="pl-edit-input" type="text" placeholder="Example: Coolers"
+               [value]="newCategoryName()"
+               (input)="newCategoryName.set($any($event.target).value)"
+               aria-label="Category name" />
+      </label>
+
+      <label class="pl-edit-lbl">
+        <span>Subcategories (comma separated)</span>
+        <input class="pl-edit-input" type="text" placeholder="Example: Desert, Personal"
+               [value]="newCategorySubcategories()"
+               (input)="newCategorySubcategories.set($any($event.target).value)"
+               aria-label="Subcategories" />
+      </label>
+
+      <div class="pl-edit-actions">
+        <button type="button" class="pl-edit-cancel" (click)="closeAddCategory()" [disabled]="busy()">Cancel</button>
+        <button type="button" class="pl-edit-save" (click)="saveCategory()" [disabled]="busy() || !newCategoryName().trim()">✅ Save</button>
+      </div>
+    </div>
+  }
+
+  @if (showAddSubcategory()) {
+    <div class="pl-sheet-backdrop" (click)="closeAddSubcategory()" aria-hidden="true"></div>
+    <div class="pl-sheet pl-add-sheet" role="dialog" aria-label="Add subcategory">
+      <div class="pl-sheet-handle" aria-hidden="true"></div>
+      <h3 class="pl-sheet-title">+ New subcategory</h3>
+
+      <label class="pl-edit-lbl">
+        <span>Category</span>
+        <input class="pl-edit-input" type="text" [value]="activeMeta().name" disabled aria-label="Category" />
+      </label>
+
+      <label class="pl-edit-lbl">
+        <span>Subcategory name</span>
+        <input class="pl-edit-input" type="text" placeholder="Example: Led, Roll, Junction"
+               [value]="newSubcategoryName()"
+               (input)="newSubcategoryName.set($any($event.target).value)"
+               aria-label="Subcategory name" />
+      </label>
+
+      <div class="pl-edit-actions">
+        <button type="button" class="pl-edit-cancel" (click)="closeAddSubcategory()" [disabled]="busy()">Cancel</button>
+        <button type="button" class="pl-edit-save" (click)="saveSubcategory()" [disabled]="busy() || !newSubcategoryName().trim()">✅ Save</button>
+      </div>
+    </div>
+  }
+
+  @if (showEditSubcategory()) {
+    <div class="pl-sheet-backdrop" (click)="closeEditSubcategory()" aria-hidden="true"></div>
+    <div class="pl-sheet pl-add-sheet" role="dialog" aria-label="Edit subcategory">
+      <div class="pl-sheet-handle" aria-hidden="true"></div>
+      <h3 class="pl-sheet-title">✏️ Edit subcategory</h3>
+
+      <label class="pl-edit-lbl">
+        <span>Category</span>
+        <input class="pl-edit-input" type="text" [value]="activeMeta().name" disabled aria-label="Category" />
+      </label>
+
+      <label class="pl-edit-lbl">
+        <span>Subcategory name</span>
+        <input class="pl-edit-input" type="text" placeholder="Enter new name"
+               [value]="editingSubcategoryName()"
+               (input)="editingSubcategoryName.set($any($event.target).value)"
+               aria-label="Subcategory name" />
+      </label>
+
+      <div class="pl-edit-actions">
+        <button type="button" class="pl-edit-cancel" (click)="closeEditSubcategory()" [disabled]="busy()">Cancel</button>
+        <button type="button" class="pl-edit-save" (click)="saveEditSubcategory()" [disabled]="busy() || !editingSubcategoryName().trim()">✅ Save</button>
+      </div>
     </div>
   }
 </main>

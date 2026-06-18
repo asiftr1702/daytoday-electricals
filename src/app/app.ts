@@ -14,7 +14,7 @@ export class App {
   readonly router = inject(Router);
 
   /** Pages that render standalone, without the DayToDay Electricals header/footer chrome. */
-  private readonly chromelessPaths = ['/login', '/prices'];
+  private readonly chromelessPaths = ['/login', '/prices', '/categories', '/price-low-stock'];
 
   get isChromeless(): boolean {
     const url = this.router.url.split('?')[0].split('#')[0];

@@ -1,0 +1,138 @@
+<main class="cm-page">
+  <div class="cm-container">
+
+    <!-- Header -->
+    <header class="cm-title">
+      <a class="cm-back" routerLink="/prices" aria-label="Back to price list">‹</a>
+      <div class="cm-title-text">
+        <h1>Categories</h1>
+        <p>Manage categories and subcategories</p>
+      </div>
+    </header>
+
+    @if (loading()) {
+      <div class="cm-state">Loading categories…</div>
+    } @else {
+
+      <button type="button" class="cm-add-cat-btn" (click)="openAddCategory()" [disabled]="busy()">
+        ➕ Add category
+      </button>
+
+      @if (!sortedCategories().length) {
+        <div class="cm-state cm-empty">
+          <span class="cm-empty-icon">📂</span>
+          <p>No categories yet. Add your first one.</p>
+        </div>
+      }
+
+      <div class="cm-list">
+        @for (cat of sortedCategories(); track cat.id) {
+          <div class="cm-card">
+
+            <!-- Category row -->
+            <div class="cm-card-head">
+              @if (editingCategoryId() === cat.id) {
+                <input class="cm-inline-input" type="text"
+                       [value]="editCategoryName()"
+                       (input)="editCategoryName.set($any($event.target).value)"
+                       aria-label="Category name" />
+                <div class="cm-inline-actions">
+                  <button type="button" class="cm-icon-btn cm-save" (click)="saveEditCategory()"
+                          [disabled]="busy() || !editCategoryName().trim()" aria-label="Save">✅</button>
+                  <button type="button" class="cm-icon-btn" (click)="closeEditCategory()"
+                          [disabled]="busy()" aria-label="Cancel">✖️</button>
+                </div>
+              } @else {
+                <button type="button" class="cm-cat-name" (click)="toggleExpand(cat.id)">
+                  <span class="cm-chevron" [class.cm-chevron-open]="expandedId() === cat.id">▸</span>
+                  <span>{{ cat.name }}</span>
+                  <span class="cm-sub-count">{{ cat.subcategories.length }}</span>
+                </button>
+                <div class="cm-inline-actions">
+                  <button type="button" class="cm-icon-btn" (click)="openEditCategory(cat)"
+                          [disabled]="busy()" aria-label="Edit category">✏️</button>
+                  <button type="button" class="cm-icon-btn cm-delete" (click)="deleteCategory(cat)"
+                          [disabled]="busy()" aria-label="Delete category">🗑️</button>
+                </div>
+              }
+            </div>
+
+            <!-- Subcategories panel -->
+            @if (expandedId() === cat.id) {
+              <div class="cm-subs">
+                @if (!cat.subcategories.length) {
+                  <p class="cm-subs-empty">No subcategories yet.</p>
+                }
+                @for (sub of cat.subcategories; track sub) {
+                  <div class="cm-sub-row">
+                    @if (editingSub()?.categoryId === cat.id && editingSub()?.oldName === sub) {
+                      <input class="cm-inline-input" type="text"
+                             [value]="editSubName()"
+                             (input)="editSubName.set($any($event.target).value)"
+                             aria-label="Subcategory name" />
+                      <div class="cm-inline-actions">
+                        <button type="button" class="cm-icon-btn cm-save" (click)="saveEditSubcategory()"
+                                [disabled]="busy() || !editSubName().trim()" aria-label="Save">✅</button>
+                        <button type="button" class="cm-icon-btn" (click)="closeEditSubcategory()"
+                                [disabled]="busy()" aria-label="Cancel">✖️</button>
+                      </div>
+                    } @else {
+                      <span class="cm-sub-name">{{ sub }}</span>
+                      <div class="cm-inline-actions">
+                        <button type="button" class="cm-icon-btn" (click)="openEditSubcategory(cat.id, sub)"
+                                [disabled]="busy()" aria-label="Edit subcategory">✏️</button>
+                        <button type="button" class="cm-icon-btn cm-delete" (click)="deleteSubcategory(cat.id, sub)"
+                                [disabled]="busy()" aria-label="Delete subcategory">🗑️</button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Add subcategory -->
+                @if (addingSubFor() === cat.id) {
+                  <div class="cm-sub-add">
+                    <input class="cm-inline-input" type="text" placeholder="Example: Led, Roll, Junction"
+                           [value]="newSubcategoryName()"
+                           (input)="newSubcategoryName.set($any($event.target).value)"
+                           aria-label="New subcategory" />
+                    <div class="cm-inline-actions">
+                      <button type="button" class="cm-icon-btn cm-save" (click)="saveAddSubcategory()"
+                              [disabled]="busy() || !newSubcategoryName().trim()" aria-label="Save">✅</button>
+                      <button type="button" class="cm-icon-btn" (click)="closeAddSubcategory()"
+                              [disabled]="busy()" aria-label="Cancel">✖️</button>
+                    </div>
+                  </div>
+                } @else {
+                  <button type="button" class="cm-add-sub-btn" (click)="openAddSubcategory(cat.id)"
+                          [disabled]="busy()">+ Add subcategory</button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Add category dialog -->
+    @if (showAddCategory()) {
+      <div class="cm-backdrop" (click)="closeAddCategory()" aria-hidden="true"></div>
+      <div class="cm-sheet" role="dialog" aria-label="Add category">
+        <div class="cm-sheet-handle" aria-hidden="true"></div>
+        <h3 class="cm-sheet-title">➕ New category</h3>
+        <label class="cm-lbl">
+          <span>Category name</span>
+          <input class="cm-input" type="text" placeholder="Example: Fans"
+                 [value]="newCategoryName()"
+                 (input)="newCategoryName.set($any($event.target).value)"
+                 aria-label="Category name" />
+        </label>
+        <div class="cm-sheet-actions">
+          <button type="button" class="cm-cancel" (click)="closeAddCategory()" [disabled]="busy()">Cancel</button>
+          <button type="button" class="cm-save-btn" (click)="saveAddCategory()"
+                  [disabled]="busy() || !newCategoryName().trim()">✅ Save</button>
+        </div>
+      </div>
+    }
+
+  </div>
+</main>
