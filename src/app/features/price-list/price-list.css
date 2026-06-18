@@ -1319,6 +1319,152 @@
   gap: 0.35rem;
 }
 
+/* ── Wire/cable per-metre pricing ── */
+.pl-wire-row {
+  align-items: stretch;
+}
+
+.pl-permtr-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.55rem;
+  background: #eef7f0;
+  border: 1px solid #cfe9d6;
+}
+
+.pl-permtr-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #6b8a76;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pl-permtr-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--pl-green);
+  letter-spacing: -0.02em;
+}
+
+.pl-permtr-unit {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: #98a8b5;
+  margin-left: 0.15rem;
+}
+
+.pl-row-permtr {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--pl-green);
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.4rem;
+  background: #eef7f0;
+}
+
+/* ── Wire/cable: bundle-vs-metre picker ── */
+.pl-wire-choice {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  z-index: 1001;
+  background: #fff;
+  border-radius: 1.1rem 1.1rem 0 0;
+  padding: 0.75rem 1rem 1.2rem;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.18);
+  animation: pl-wire-choice-up 0.18s ease-out;
+}
+
+@keyframes pl-wire-choice-up {
+  from { transform: translate(-50%, 100%); }
+  to   { transform: translate(-50%, 0); }
+}
+
+.pl-wire-choice-title {
+  margin: 0.35rem 0 0.1rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-align: center;
+  color: #1f2a33;
+}
+
+.pl-wire-choice-sub {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  text-align: center;
+  color: #8595a1;
+}
+
+.pl-wire-choice-opts {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.pl-wire-choice-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.85rem 0.5rem;
+  border: 1.5px solid #cfe9d6;
+  border-radius: 0.85rem;
+  background: #f4fbf6;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.pl-wire-choice-btn:active {
+  transform: scale(0.97);
+  box-shadow: inset 0 0 0 2px var(--pl-green);
+}
+
+.pl-wire-choice-mode {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1f2a33;
+}
+
+.pl-wire-choice-price {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--pl-green);
+  letter-spacing: -0.02em;
+}
+
+.pl-wire-choice-unit {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #98a8b5;
+  margin-left: 0.15rem;
+}
+
+.pl-wire-choice-meta {
+  font-size: 0.68rem;
+  color: #8595a1;
+}
+
+.pl-wire-choice-cancel {
+  width: 100%;
+  margin-top: 0.85rem;
+  padding: 0.7rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: #eef2f5;
+  color: #5a6b78;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .pl-sheet-row {
   display: flex;
   gap: 0.65rem;

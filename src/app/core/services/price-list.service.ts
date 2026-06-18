@@ -30,6 +30,8 @@ export interface PriceListEntry {
   subcategory?: string;
   /** Optional unit label (e.g. pcs, mtr). */
   unit?: string;
+  /** Wire/cable bundle length in metres — used to derive the per-metre price. */
+  bundleLength?: number | null;
   /** Current stock count. null/undefined means not tracked. */
   stock?: number | null;
   /** Manual low-stock flag for tracking items to reorder. */

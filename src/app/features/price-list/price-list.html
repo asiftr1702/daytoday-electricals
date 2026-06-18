@@ -168,6 +168,26 @@
                       </select>
                     </label>
                   </div>
+                  @if (isWireCategory(item.category)) {
+                    <div class="pl-edit-row pl-wire-row">
+                      <label class="pl-edit-lbl">
+                        <span>Length (mtr)</span>
+                        <input class="pl-edit-input" type="number" inputmode="decimal" placeholder="0"
+                               [value]="editLength()" (input)="editLength.set($any($event.target).value)"
+                               aria-label="Wire length in metres" />
+                      </label>
+                      <div class="pl-permtr-box">
+                        <span class="pl-permtr-label">Per metre</span>
+                        <span class="pl-permtr-value">
+                          @if (editPerMetre() != null) {
+                            ₹{{ editPerMetre()!.toLocaleString('en-IN') }}<span class="pl-permtr-unit">/ mtr</span>
+                          } @else {
+                            —
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  }
                   @if (categorySubcategories(item.category).length) {
                     <label class="pl-edit-lbl">
                       <span>Section</span>
@@ -267,6 +287,9 @@
                               <span class="pl-price pl-price-na">No price set</span>
                             }
                           </span>
+                          @if (entryPerMetre(item); as perMtr) {
+                            <span class="pl-row-permtr">₹{{ perMtr.toLocaleString('en-IN') }}<span class="pl-unit">/ mtr</span></span>
+                          }
                         </div>
                       }
                     </div>
@@ -341,6 +364,31 @@
     <div class="pl-toast" role="status">{{ billMsg() }}</div>
   }
 
+  <!-- ── Wire/cable: add as bundle or per metre ── -->
+  @if (wireBillItem(); as wi) {
+    <div class="pl-sheet-backdrop" (click)="closeWireBillChoice()" aria-hidden="true"></div>
+    <div class="pl-wire-choice" role="dialog" aria-label="Add wire to bill">
+      <div class="pl-sheet-handle" aria-hidden="true"></div>
+      <h3 class="pl-wire-choice-title">{{ wi.name }}</h3>
+      <p class="pl-wire-choice-sub">Add to bill as</p>
+      <div class="pl-wire-choice-opts">
+        <button type="button" class="pl-wire-choice-btn" (click)="chooseWireBillMode('bundle')">
+          <span class="pl-wire-choice-mode">📦 Per bundle</span>
+          <span class="pl-wire-choice-price">₹{{ (wi.sellPrice ?? 0).toLocaleString('en-IN') }}</span>
+          @if (wi.bundleLength) {
+            <span class="pl-wire-choice-meta">{{ wi.bundleLength }} mtr bundle</span>
+          }
+        </button>
+        <button type="button" class="pl-wire-choice-btn" (click)="chooseWireBillMode('metre')">
+          <span class="pl-wire-choice-mode">📏 Per metre</span>
+          <span class="pl-wire-choice-price">₹{{ (entryPerMetre(wi) ?? 0).toLocaleString('en-IN') }}<span class="pl-wire-choice-unit">/ mtr</span></span>
+          <span class="pl-wire-choice-meta">Set metres in the bill</span>
+        </button>
+      </div>
+      <button type="button" class="pl-wire-choice-cancel" (click)="closeWireBillChoice()">Cancel</button>
+    </div>
+  }
+
   <!-- ── Bill bottom sheet ── -->
   @if (showBill()) {
     <div class="pl-sheet-backdrop" (click)="closeBill()" aria-hidden="true"></div>
@@ -364,7 +412,7 @@
       </div>
 
       <ul class="pl-bill-lines">
-        @for (line of billItems(); track line.name + line.category; let lineIdx = $index) {
+        @for (line of billItems(); track line.name + line.category + line.unit; let lineIdx = $index) {
           <li class="pl-bill-line" [class.pl-bill-line-editing]="editingLineIndex() === $index"
               [class.pl-bill-line-swipe-open]="blSwipeOpenIdx() === $index">
             <!-- Red delete backdrop (only while swiping/open) -->
@@ -416,22 +464,24 @@
                   </button>
                 }
 
-                <!-- Warranty: compact chip / add link / preset editor -->
-                @if (warrantyEditIdx() === $index) {
-                  <div class="pl-warranty-edit">
-                    @for (w of warrantyPresets; track w) {
-                      <button type="button" class="pl-warr-preset"
-                              [class.pl-warr-preset-active]="line.warranty === w"
-                              (click)="setLineWarranty(lineIdx, w)">{{ w }}</button>
-                    }
-                    @if (line.warranty) {
-                      <button type="button" class="pl-warr-clear" (click)="setLineWarranty(lineIdx, '')">✕ Clear</button>
-                    }
-                  </div>
-                } @else if (line.warranty) {
-                  <button type="button" class="pl-warr-chip" (click)="toggleWarrantyEdit($index)">🛡 {{ warrantyLabel(line) }}: {{ line.warranty }}</button>
-                } @else {
-                  <button type="button" class="pl-warr-add" (click)="toggleWarrantyEdit($index)">+ {{ warrantyLabel(line) }}</button>
+                <!-- Warranty: compact chip / add link / preset editor (not for wires/cables) -->
+                @if (!isWireCategory(line.category)) {
+                  @if (warrantyEditIdx() === $index) {
+                    <div class="pl-warranty-edit">
+                      @for (w of warrantyPresets; track w) {
+                        <button type="button" class="pl-warr-preset"
+                                [class.pl-warr-preset-active]="line.warranty === w"
+                                (click)="setLineWarranty(lineIdx, w)">{{ w }}</button>
+                      }
+                      @if (line.warranty) {
+                        <button type="button" class="pl-warr-clear" (click)="setLineWarranty(lineIdx, '')">✕ Clear</button>
+                      }
+                    </div>
+                  } @else if (line.warranty) {
+                    <button type="button" class="pl-warr-chip" (click)="toggleWarrantyEdit($index)">🛡 {{ warrantyLabel(line) }}: {{ line.warranty }}</button>
+                  } @else {
+                    <button type="button" class="pl-warr-add" (click)="toggleWarrantyEdit($index)">+ {{ warrantyLabel(line) }}</button>
+                  }
                 }
               </div>
               <div class="pl-qty">
@@ -559,6 +609,27 @@
                  aria-label="Cost price" />
         </label>
       </div>
+
+      @if (isWireCategory(newCategory())) {
+        <div class="pl-add-row pl-wire-row">
+          <label class="pl-edit-lbl">
+            <span>Length (mtr)</span>
+            <input class="pl-edit-input" type="number" inputmode="decimal" placeholder="0"
+                   [value]="newLength()" (input)="newLength.set($any($event.target).value)"
+                   aria-label="Wire length in metres" />
+          </label>
+          <div class="pl-permtr-box">
+            <span class="pl-permtr-label">Per metre</span>
+            <span class="pl-permtr-value">
+              @if (newPerMetre() != null) {
+                ₹{{ newPerMetre()!.toLocaleString('en-IN') }}<span class="pl-permtr-unit">/ mtr</span>
+              } @else {
+                —
+              }
+            </span>
+          </div>
+        </div>
+      }
 
       <!-- Stock / Unit -->
       <div class="pl-add-row">

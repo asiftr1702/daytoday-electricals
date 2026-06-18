@@ -100,7 +100,11 @@ export class CategoryAdminComponent implements OnInit {
   );
 
   /** Wires category using the standard pricing block → enable box-price ⇒ per-metre helper. */
-  readonly isWireStandard = computed(() => false);
+  readonly isWireStandard = computed(() => {
+    const cat = this.category();
+    if (!cat) return false;
+    return /wire|cable/i.test(cat.id) || /wire|cable/i.test(cat.name ?? '');
+  });
 
   // ── Pill selections (single-select chips, not form controls) ─────────────
   readonly pills = signal<Record<string, string>>({});

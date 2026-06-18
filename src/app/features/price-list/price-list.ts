@@ -102,6 +102,8 @@ export class PriceListComponent implements OnInit {
   readonly editStock  = signal<string>('');
   readonly editUnit   = signal('pcs');
   readonly editSubcategory = signal<string>('General');
+  /** Wire/cable bundle length (mtr) being edited. */
+  readonly editLength = signal<string>('');
   /** Image for the row currently being edited (data URL or null). */
   readonly editImage  = signal<string | null>(null);
 
@@ -114,6 +116,8 @@ export class PriceListComponent implements OnInit {
   readonly newSubcategory = signal<string>('General');
   readonly newUnit     = signal('pcs');
   readonly newStock    = signal<string>('');
+  /** Wire/cable bundle length (mtr) for the row being added. */
+  readonly newLength   = signal<string>('');
   readonly unitOptions = ['pcs', 'mtr', 'bundle', 'packet'] as const;
   /** Image for the row being added (data URL or null). */
   readonly newImage    = signal<string | null>(null);
@@ -345,6 +349,35 @@ export class PriceListComponent implements OnInit {
     return this.categorySubcategories(categoryId).length > 1;
   }
 
+  /** True when the category uses wire/cable per-metre pricing. */
+  isWireCategory(categoryId: string): boolean {
+    const id = this.normalizeCategoryId(categoryId);
+    const name = (this.categoryOptions().find(c => c.id === id)?.name ?? id).toLowerCase();
+    return /wire|cable/.test(id) || /wire|cable/.test(name);
+  }
+
+  /** Per-metre price = (bundle sell price / length) × 1.1, rounded. null when not computable. */
+  perMetrePrice(sellPrice: number | null | undefined, length: number | null | undefined): number | null {
+    if (sellPrice == null || length == null || length <= 0) return null;
+    return Math.round((sellPrice / length) * 1.1);
+  }
+
+  /** Per-metre price for a stored wire/cable entry (null for non-wire rows). */
+  entryPerMetre(item: PriceListEntry): number | null {
+    if (!this.isWireCategory(item.category)) return null;
+    return this.perMetrePrice(item.sellPrice, item.bundleLength ?? null);
+  }
+
+  /** Live per-metre price for the add form. */
+  readonly newPerMetre = computed(() =>
+    this.perMetrePrice(this.parsePrice(this.newPrice()), this.parsePrice(this.newLength())),
+  );
+
+  /** Live per-metre price for the inline edit form. */
+  readonly editPerMetre = computed(() =>
+    this.perMetrePrice(this.parsePrice(this.editPrice()), this.parsePrice(this.editLength())),
+  );
+
   private resetTabForCategory(categoryId: string): void {
     this.activeSubcategoryTab.set(this.categorySubcategories(categoryId)[0] ?? 'General');
   }
@@ -516,6 +549,11 @@ export class PriceListComponent implements OnInit {
   }
 
   onQtyTap(item: PriceListEntry): void {
+    // Wire/cable rows with a known bundle length can be billed per bundle OR per metre.
+    if (this.entryPerMetre(item) != null) {
+      this.wireBillItem.set(item);
+      return;
+    }
     this.addToBill(item);
   }
 
@@ -652,17 +690,38 @@ export class PriceListComponent implements OnInit {
   }
 
   // ── Quick bill (cart) ─────────────────────────────────────────────────────
+  /** Wire/cable row awaiting a "per bundle vs per metre" choice (null = none). */
+  readonly wireBillItem = signal<PriceListEntry | null>(null);
+
+  /** Dismiss the wire/cable bundle-or-metre picker without adding anything. */
+  closeWireBillChoice(): void {
+    this.wireBillItem.set(null);
+  }
+
+  /** Resolve the wire/cable picker by adding the item in the chosen mode. */
+  chooseWireBillMode(mode: 'bundle' | 'metre'): void {
+    const item = this.wireBillItem();
+    this.wireBillItem.set(null);
+    if (item) this.addToBill(item, mode);
+  }
+
   /** Add a price-list item to the bill (or bump its quantity if already added). */
-  addToBill(item: PriceListEntry): void {
+  addToBill(item: PriceListEntry, mode: 'bundle' | 'metre' = 'bundle'): void {
     if (item.sellPrice == null) return;
-    const sell = item.sellPrice;
-    const stock = item.stock ?? null;
-    if (this.availableStock(item) <= 0) {
+    const perMetre = this.entryPerMetre(item);
+    const useMetre = mode === 'metre' && perMetre != null;
+    const sell  = useMetre ? perMetre : item.sellPrice;
+    const unit  = useMetre ? 'mtr' : (item.unit || 'pcs');
+    // Per-metre sales are not tracked against whole-bundle stock.
+    const stock = useMetre ? null : (item.stock ?? null);
+
+    // Bundle sales respect stock; per-metre sales are always allowed.
+    if (!useMetre && this.availableStock(item) <= 0) {
       this.flashStockLimit(0);
       return;
     }
     this.billItems.update(lines => {
-      const idx = lines.findIndex(l => l.name === item.name && l.category === item.category);
+      const idx = lines.findIndex(l => l.name === item.name && l.category === item.category && l.unit === unit);
       if (idx >= 0) {
         const line = lines[idx];
         if (line.stock != null && line.qty >= line.stock) {
@@ -682,7 +741,7 @@ export class PriceListComponent implements OnInit {
           sellPrice: sell,
           originalPrice: sell,
           costPrice: item.costPrice ?? null,
-          unit: item.unit || 'pcs',
+          unit,
           category: item.category,
           qty: 1,
           stock,
@@ -704,7 +763,7 @@ export class PriceListComponent implements OnInit {
   /** Quantity of this item already sitting in the cart. */
   private cartQtyFor(item: PriceListEntry): number {
     return this.billItems()
-      .filter(l => l.name === item.name && l.category === item.category)
+      .filter(l => l.name === item.name && l.category === item.category && l.unit !== 'mtr')
       .reduce((sum, l) => sum + l.qty, 0);
   }
 
@@ -1413,6 +1472,7 @@ export class PriceListComponent implements OnInit {
     this.newCost.set('');
     this.newUnit.set('pcs');
     this.newStock.set('');
+    this.newLength.set('');
     this.newImage.set(null);
     this.newCategory.set(categoryId);
     this.newSubcategory.set(this.categorySubcategories(categoryId)[0] ?? 'General');
@@ -1594,6 +1654,7 @@ export class PriceListComponent implements OnInit {
     this.editStock.set(entry.stock != null ? String(entry.stock) : '');
     this.editUnit.set(this.normalizeUnit(entry.unit));
     this.editSubcategory.set((entry.subcategory ?? '').trim() || this.categorySubcategories(entry.category || this.activeCat())[0] || 'General');
+    this.editLength.set(entry.bundleLength != null ? String(entry.bundleLength) : '');
     this.editImage.set(entry.imageUrl ?? null);
   }
 
@@ -1601,6 +1662,7 @@ export class PriceListComponent implements OnInit {
     this.editingId.set(null);
     this.editUnit.set('pcs');
     this.editSubcategory.set('General');
+    this.editLength.set('');
     this.editImage.set(null);
   }
 
@@ -1615,6 +1677,7 @@ export class PriceListComponent implements OnInit {
     const unit     = this.normalizeUnit(this.editUnit());
     const imageUrl = this.editImage() ?? null;
     const subcategory = this.editSubcategory().trim() || 'General';
+    const bundleLength = this.isWireCategory(entry.category) ? this.parsePrice(this.editLength()) : null;
 
     this.busy.set(true);
     try {
@@ -1626,17 +1689,19 @@ export class PriceListComponent implements OnInit {
         unit,
         imageUrl,
         subcategory,
+        bundleLength,
       };
 
       await this.priceList.update(id, patch);
       const cat = entry.category || 'other';
       const list = (this.cache().get(cat) ?? []).map(e =>
-        e.id === id ? { ...e, name, sellPrice: price, costPrice: cost, stock, unit, imageUrl, subcategory } : e,
+        e.id === id ? { ...e, name, sellPrice: price, costPrice: cost, stock, unit, imageUrl, subcategory, bundleLength } : e,
       );
       this.setCatEntries(cat, list);
       this.editingId.set(null);
       this.editUnit.set('pcs');
       this.editSubcategory.set('General');
+      this.editLength.set('');
       this.editImage.set(null);
     } finally {
       this.busy.set(false);
@@ -1681,6 +1746,7 @@ export class PriceListComponent implements OnInit {
     this.newCost.set('');
     this.newUnit.set('pcs');
     this.newStock.set('');
+    this.newLength.set('');
     this.newImage.set(null);
     // Auto-select the active category when adding a new item
     this.newCategory.set(this.activeCat() || this.categoryOptions()[0]?.id || 'other');
@@ -1695,6 +1761,7 @@ export class PriceListComponent implements OnInit {
     this.newCost.set('');
     this.newUnit.set('pcs');
     this.newStock.set('');
+    this.newLength.set('');
     this.newCategory.set('');
     this.newSubcategory.set('General');
     this.newImage.set(null);
@@ -1714,6 +1781,9 @@ export class PriceListComponent implements OnInit {
       stock: this.parseStock(this.newStock()),
       imageUrl: this.newImage() ?? null,
     };
+    if (this.isWireCategory(category)) {
+      entry.bundleLength = this.parsePrice(this.newLength());
+    }
 
     this.busy.set(true);
     try {
@@ -1729,6 +1799,7 @@ export class PriceListComponent implements OnInit {
       this.newPrice.set('');
       this.newCost.set('');
       this.newStock.set('');
+      this.newLength.set('');
       this.newSubcategory.set(this.categorySubcategories(this.newCategory())[0] ?? 'General');
       this.newImage.set(null);
     } finally {
