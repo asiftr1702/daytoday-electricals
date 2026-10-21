@@ -5,6 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, map, startWith, catchError, distinctUntilChanged } from 'rxjs/operators';
@@ -24,7 +25,7 @@ interface ProductsState {
 @Component({
   selector: 'app-products',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ProductCardComponent, RouterLink],
+  imports: [ProductCardComponent, RouterLink, DecimalPipe],
   templateUrl: './products.html',
   styleUrl: './products.css',
 })
@@ -42,6 +43,7 @@ export class ProductsComponent {
   readonly categories = this.catalogueConfig.categories;
   readonly searchQuery = signal('');
   readonly selectedSubcategory = signal<string>('all');
+  readonly viewMode = signal<'card' | 'list'>('card');
 
   private readonly queryParams$ = this.route.queryParamMap;
 
@@ -213,6 +215,88 @@ export class ProductsComponent {
 
   clearOffersFilter(): void {
     this.router.navigate([], { queryParams: { category: this.selectedCategoryId() } });
+  }
+
+  getProductMeta(product: Product, key: 'wattage' | 'color'): string {
+    const value = (product as any)[key];
+    return value == null || value === '' ? '' : String(value);
+  }
+
+  hasProductMeta(product: Product, key: 'wattage' | 'color'): boolean {
+    return this.getProductMeta(product, key) !== '';
+  }
+
+  getShortDescription(description?: string): string {
+    if (!description) {
+      return '';
+    }
+
+    const plainText = description.replace(/\s+/g, ' ').trim();
+    return plainText.length > 34 ? `${plainText.slice(0, 34).trim()}...` : plainText;
+  }
+
+  getColorSwatch(colorName: string): string {
+    const value = colorName.trim().toLowerCase();
+    const swatches: Record<string, string> = {
+      black: '#111827',
+      brown: '#8b5e3c',
+      blue: '#2563eb',
+      red: '#dc2626',
+      white: '#f8fafc',
+      cream: '#f5e6c8',
+      silver: '#cbd5e1',
+      gold: '#d4af37',
+      green: '#16a34a',
+      yellow: '#facc15',
+      orange: '#f97316',
+      grey: '#6b7280',
+      gray: '#6b7280',
+      maroon: '#7f1d1d',
+      pink: '#ec4899',
+      purple: '#7c3aed',
+    };
+
+    return swatches[value] ?? '#d1d5db';
+  }
+
+  readonly colorSwatchOpen = signal<Record<string, boolean>>({});
+
+  toggleColorSwatch(productId: string): void {
+    const key = String(productId ?? 'default');
+    const next = { ...this.colorSwatchOpen() };
+    next[key] = !next[key];
+    this.colorSwatchOpen.set(next);
+  }
+
+  isColorSwatchOpen(productId: string): boolean {
+    return !!this.colorSwatchOpen()[String(productId ?? 'default')];
+  }
+
+  toggleView(mode: 'card' | 'list'): void {
+    this.viewMode.set(mode);
+  }
+
+  addToBill(product: Product): void {
+    if (!product.available) return;
+
+    const stock = product.stockQty ?? null;
+    if (stock != null && stock <= 0) return;
+
+    const sellPrice = product.discountedPrice && product.price && product.discountedPrice < product.price
+      ? product.discountedPrice
+      : (product.price ?? 0);
+
+    this.billService.addItem({
+      productId: product.id,
+      productName: product.name,
+      ...(product.brand ? { brand: product.brand } : {}),
+      ...(product.subcategory ? { subcategory: product.subcategory } : {}),
+      category: (product as any)['category'] ?? '',
+      unit: product.unit,
+      qty: 1,
+      costPrice: product.costPrice ?? 0,
+      sellPrice,
+    });
   }
 
   selectSubcategory(sub: string): void {

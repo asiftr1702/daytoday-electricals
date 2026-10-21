@@ -92,20 +92,43 @@
     }
   </div>
 
-  <!-- Result count -->
+  <!-- View toggle + Result count -->
   @if (!loading() && !error()) {
-    <p class="result-count" aria-live="polite">
-      @if (offersOnly()) {
-        {{ filteredProducts().length }} discounted item{{ filteredProducts().length !== 1 ? 's' : '' }} found
-      } @else if (searchQuery()) {
-        {{ filteredProducts().length }} result{{ filteredProducts().length !== 1 ? 's' : '' }}
-        for "<strong>{{ searchQuery() }}</strong>"
-        in {{ selectedCategory().name }}
-      } @else {
-        {{ filteredProducts().length }} item{{ filteredProducts().length !== 1 ? 's' : '' }}
-        in {{ selectedCategory().name }}
-      }
-    </p>
+    <div class="products-toolbar">
+      <p class="result-count" aria-live="polite">
+        @if (offersOnly()) {
+          {{ filteredProducts().length }} discounted item{{ filteredProducts().length !== 1 ? 's' : '' }} found
+        } @else if (searchQuery()) {
+          {{ filteredProducts().length }} result{{ filteredProducts().length !== 1 ? 's' : '' }}
+          for "<strong>{{ searchQuery() }}</strong>"
+          in {{ selectedCategory().name }}
+        } @else {
+          {{ filteredProducts().length }} item{{ filteredProducts().length !== 1 ? 's' : '' }}
+          in {{ selectedCategory().name }}
+        }
+      </p>
+
+      <div class="view-toggle" role="tablist" aria-label="Product display mode">
+        <button
+          type="button"
+          class="view-toggle-btn"
+          [class.active]="viewMode() === 'card'"
+          (click)="toggleView('card')"
+          aria-pressed="{{ viewMode() === 'card' }}"
+        >
+          Card view
+        </button>
+        <button
+          type="button"
+          class="view-toggle-btn"
+          [class.active]="viewMode() === 'list'"
+          (click)="toggleView('list')"
+          aria-pressed="{{ viewMode() === 'list' }}"
+        >
+          List view
+        </button>
+      </div>
+    </div>
   }
 
   <!-- Loading skeletons -->
@@ -166,21 +189,151 @@
             <span class="subcat-group-count">{{ group.products.length }}</span>
           </button>
           @if (!isGroupCollapsed(group.subcategory)) {
-            <div class="products-grid">
-              @for (product of group.products; track product.name + (product.brand ?? '') + (product.subcategory ?? '')) {
-                <app-product-card [product]="product" />
-              }
-            </div>
+            @if (viewMode() === 'list') {
+              <div class="products-list">
+                @for (product of group.products; track product.name + (product.brand ?? '') + (product.subcategory ?? '')) {
+                  <article class="product-list-row" [class.unavailable]="!product.available">
+                    <div class="product-list-main">
+                      <div class="product-list-header">
+                        <div class="product-list-name-wrap">
+                          <h3>{{ product.name }}</h3>
+                          @if (product.subcategory) {
+                            <span class="product-list-subcat">{{ product.subcategory }}</span>
+                          }
+                        </div>
+                        @if (!product.available) {
+                          <span class="list-stock-badge unavailable">Out of stock</span>
+                        }
+                      </div>
+                      @if (product.description) {
+                        <p class="product-list-description">{{ getShortDescription(product.description) }}</p>
+                      }
+                      <div class="product-list-meta">
+                        <div class="meta-row">
+                          @if (product.brand) {
+                            <span>{{ product.brand }}</span>
+                          }
+                          @if (hasProductMeta(product, 'wattage')) {
+                            <span>{{ getProductMeta(product, 'wattage') }}</span>
+                          }
+                          @if (hasProductMeta(product, 'color')) {
+                            <button
+                              type="button"
+                              class="color-swatch"
+                              [style.background]="getColorSwatch(getProductMeta(product, 'color'))"
+                              [attr.aria-label]="'Color: ' + getProductMeta(product, 'color')"
+                              (click)="toggleColorSwatch(product.id ?? product.name)"
+                            >
+                              <span class="sr-only">{{ getProductMeta(product, 'color') }}</span>
+                            </button>
+                            @if (isColorSwatchOpen(product.id ?? product.name)) {
+                              <span class="color-label">{{ getProductMeta(product, 'color') }}</span>
+                            }
+                          }
+                          @if (product.stockQty != null) {
+                            <span>Stock: {{ product.stockQty }}</span>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                    <div class="product-list-side">
+                      <div class="product-list-price">
+                        @if (product.discountedPrice && product.price && product.discountedPrice < product.price) {
+                          <span class="old-price">₹{{ product.price | number:'1.0-0' }}</span>
+                          <strong>₹{{ product.discountedPrice | number:'1.0-0' }}</strong>
+                        } @else if (product.price) {
+                          <strong>₹{{ product.price | number:'1.0-0' }}</strong>
+                        }
+                      </div>
+                      <button type="button" class="add-list-btn" [disabled]="!product.available || (product.stockQty != null && product.stockQty <= 0)" (click)="addToBill(product)">
+                        Add to bill
+                      </button>
+                    </div>
+                  </article>
+                }
+              </div>
+            } @else {
+              <div class="products-grid">
+                @for (product of group.products; track product.name + (product.brand ?? '') + (product.subcategory ?? '')) {
+                  <app-product-card [product]="product" />
+                }
+              </div>
+            }
           }
         </section>
       }
     } @else {
-      <!-- Products grid -->
-      <div class="products-grid">
-        @for (product of filteredProducts(); track product.name + (product.brand ?? '') + (product.subcategory ?? '')) {
-          <app-product-card [product]="product" />
-        }
-      </div>
+      @if (viewMode() === 'list') {
+        <div class="products-list">
+          @for (product of filteredProducts(); track product.name + (product.brand ?? '') + (product.subcategory ?? '')) {
+            <article class="product-list-row" [class.unavailable]="!product.available">
+              <div class="product-list-main">
+                <div class="product-list-header">
+                  <div class="product-list-name-wrap">
+                    <h3>{{ product.name }}</h3>
+                    @if (product.subcategory) {
+                      <span class="product-list-subcat">{{ product.subcategory }}</span>
+                    }
+                  </div>
+                  @if (!product.available) {
+                    <span class="list-stock-badge unavailable">Out of stock</span>
+                  }
+                </div>
+                @if (product.description) {
+                  <p class="product-list-description">{{ getShortDescription(product.description) }}</p>
+                }
+                <div class="product-list-meta">
+                  <div class="meta-row">
+                    @if (product.brand) {
+                      <span>{{ product.brand }}</span>
+                    }
+                    @if (hasProductMeta(product, 'wattage')) {
+                      <span>{{ getProductMeta(product, 'wattage') }}</span>
+                    }
+                    @if (hasProductMeta(product, 'color')) {
+                      <button
+                        type="button"
+                        class="color-swatch"
+                        [style.background]="getColorSwatch(getProductMeta(product, 'color'))"
+                        [attr.aria-label]="'Color: ' + getProductMeta(product, 'color')"
+                        (click)="toggleColorSwatch(product.id ?? product.name)"
+                      >
+                        <span class="sr-only">{{ getProductMeta(product, 'color') }}</span>
+                      </button>
+                      @if (isColorSwatchOpen(product.id ?? product.name)) {
+                        <span class="color-label">{{ getProductMeta(product, 'color') }}</span>
+                      }
+                    }
+                    @if (product.stockQty != null) {
+                      <span>Stock: {{ product.stockQty }}</span>
+                    }
+                  </div>
+                </div>
+              </div>
+              <div class="product-list-side">
+                <div class="product-list-price">
+                  @if (product.discountedPrice && product.price && product.discountedPrice < product.price) {
+                    <span class="old-price">₹{{ product.price | number:'1.0-0' }}</span>
+                    <strong>₹{{ product.discountedPrice | number:'1.0-0' }}</strong>
+                  } @else if (product.price) {
+                    <strong>₹{{ product.price | number:'1.0-0' }}</strong>
+                  }
+                </div>
+                <button type="button" class="add-list-btn" [disabled]="!product.available || (product.stockQty != null && product.stockQty <= 0)" (click)="addToBill(product)">
+                  Add to bill
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <!-- Products grid -->
+        <div class="products-grid">
+          @for (product of filteredProducts(); track product.name + (product.brand ?? '') + (product.subcategory ?? '')) {
+            <app-product-card [product]="product" />
+          }
+        </div>
+      }
     }
   }
 </main>

@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow the app to read and write config values such as admin password hash.
+    match /config/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Allow the app to read/write product, sales, bills, price lists, and category data.
+    match /{collectionName}/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}
