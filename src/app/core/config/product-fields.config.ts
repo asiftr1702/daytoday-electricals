@@ -76,8 +76,6 @@ export interface CategoryFieldConfig {
   ropeSubcategory?: string;
 }
 
-const STANDARD_WARRANTY = ['No warranty', '6 months', '1 year', '2 years', '3 years'];
-
 // ── Wire size + colour spec fields (shared so they apply to any wire/cable category) ──
 export const WIRE_COLOR_OPTIONS: ColorOption[] = [
   { label: 'Red',    hex: '#ef4444' },
@@ -116,8 +114,6 @@ export function colorNameToHex(label: string): string {
 export const GENERIC_FIELD_CONFIG: CategoryFieldConfig = {
   pricingMode: 'standard',
   defaultUnit: 'Piece',
-  warrantyOptions: STANDARD_WARRANTY,
-  unitOptions: ['Piece', 'Roll', 'Bundle', 'Meter', 'Pack', 'Box', 'Dozen'],
   fields: [],
 };
 
@@ -222,4 +218,3 @@ export function formulaKeys(formula: string | undefined): string[] {
   for (const m of formula.matchAll(/\{([^}]+)\}/g)) keys.add(m[1].trim());
   return [...keys];
 }
-

@@ -568,7 +568,7 @@
            Declared INSIDE the form so formControlName resolves the productForm FormGroup. -->
       <ng-template #specField let-f>
       @if (f.type === 'color-pills') {
-        <div class="pill-section-label">{{ f.label }}</div>
+        <div class="pill-section-label">{{ f.label }} @if (f.required) { <span class="req" aria-hidden="true">*</span> }</div>
         <div class="pill-group" role="group" [attr.aria-label]="f.label">
           @for (c of f.colorOptions; track c.label) {
             <button type="button" class="pill color-pill"
@@ -583,7 +583,7 @@
           }
         </div>
       } @else if (f.type === 'pills') {
-        <div class="pill-section-label">{{ f.label }}</div>
+        <div class="pill-section-label">{{ f.label }} @if (f.required) { <span class="req" aria-hidden="true">*</span> }</div>
         <div class="pill-group" role="group" [attr.aria-label]="f.label">
           @for (opt of fieldOptions(f); track opt) {
             <button type="button" class="pill"
@@ -597,7 +597,7 @@
         </div>
       } @else if (f.type === 'computed') {
         <div class="field">
-          <label>{{ f.label }}</label>
+          <label>{{ f.label }} @if (f.required) { <span class="req" aria-hidden="true">*</span> }</label>
           <div class="computed-display">
             @if (computedValue(f.key) != null) {
               <span class="computed-value">{{ f.prefix }}{{ computedValue(f.key) | number:'1.0-' + (f.decimals ?? 2) }}{{ f.suffix ? ' ' + f.suffix : '' }}</span>
@@ -666,7 +666,7 @@
                   @if (p.subcategory) { <span class="sheet-card-sub">{{ p.subcategory }}</span> }
                 </div>
                 <div class="sheet-card-specs">
-                  @for (f of fieldConfig()?.fields || []; track f.key) {
+                  @for (f of allFields(); track f.key) {
                     @if (p[f.key]) {
                       <span class="spec-chip">{{ p[f.key] }}{{ f.suffix ? ' ' + f.suffix : '' }}</span>
                     }
@@ -740,7 +740,7 @@
                   <td>{{ p.subcategory || '—' }}</td>
                   <td class="col-specs">
                     <div class="spec-chips-row">
-                      @for (f of fieldConfig()?.fields || []; track f.key) {
+                      @for (f of allFields(); track f.key) {
                         @if (p[f.key]) { <span class="spec-chip sm">{{ p[f.key] }}{{ f.suffix ? ' ' + f.suffix : '' }}</span> }
                       }
                     </div>

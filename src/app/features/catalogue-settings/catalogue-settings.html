@@ -1,390 +1,499 @@
-<div class="cs-container">
-
-  <!-- ── Sticky Header ── -->
-  <div class="cs-header">
-    <button class="cs-back-btn" type="button" (click)="goBack()" aria-label="Back to Admin">←</button>
-    <div class="cs-header-title">
-      <span class="cs-header-icon" aria-hidden="true">📂</span>
-      <div>
-        <h1>Catalogue Settings</h1>
-        <p>Categories · Subcategories · Brands · Units · Warranty</p>
-      </div>
+<main class="studio">
+  <header class="studio-header">
+    <button class="back-button" type="button" (click)="goBack()" aria-label="Back to admin">←</button>
+    <div class="brand-mark" aria-hidden="true">✳</div>
+    <div class="header-copy">
+      <span class="eyebrow">SHOP CONTROL CENTER</span>
+      <h1>Catalogue studio</h1>
+      <p>Shape the products, options and details that make your shop yours.</p>
     </div>
-  </div>
+    <div class="save-status" aria-live="polite">
+      @if (saving()) { <span class="status-dot is-saving"></span> Saving changes }
+      @else if (saveSuccess()) { <span class="status-dot is-saved"></span> All changes saved }
+      @else { <span class="status-dot"></span> Changes save automatically }
+    </div>
+  </header>
 
-  <!-- ── Save toast ── -->
-  @if (saving()) {
-    <div class="cs-toast cs-toast-saving" aria-live="polite">💾 Saving…</div>
-  }
-  @if (saveSuccess()) {
-    <div class="cs-toast cs-toast-success" aria-live="polite">✅ Saved!</div>
-  }
   @if (saveError()) {
-    <div class="cs-toast cs-toast-error" role="alert">⚠️ {{ saveError() }}</div>
+    <div class="alert alert-error" role="alert">{{ saveError() }}</div>
   }
 
-  <div class="cs-body">
-
-    <!-- ── Section tabs ── -->
-    <div class="cs-tabs" role="tablist">
-      <button class="cs-tab" [class.active]="section() === 'categories'" (click)="section.set('categories')">📦 Categories</button>
-      <button class="cs-tab" [class.active]="section() === 'units'"      (click)="section.set('units')">📏 Units</button>
-      <button class="cs-tab" [class.active]="section() === 'warranty'"   (click)="section.set('warranty')">🛡️ Warranty</button>
-    </div>
-
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <!-- CATEGORIES                                                 -->
-    <!-- ══════════════════════════════════════════════════════════ -->
-    @if (section() === 'categories') {
-      <div class="cs-section">
-
-        <div class="cs-section-actions">
-          <button class="cs-btn cs-btn-primary" (click)="startAddCategory()">+ Add Category</button>
+  <section class="studio-layout">
+    <aside class="studio-sidebar" aria-label="Catalogue navigation">
+      <div class="sidebar-heading">
+        <div>
+          <span class="eyebrow">YOUR SHOP</span>
+          <h2>Catalogue</h2>
         </div>
+        <span class="count-pill">{{ config.categories().length }}</span>
+      </div>
 
-        <!-- Add / Edit form -->
+      <nav class="workspace-nav" aria-label="Catalogue settings">
+        @for (menu of visibleMenus(); track menu.id) {
+          <button type="button" class="workspace-link" [class.selected]="section() === menu.id"
+                  (click)="openMenu(menu.id)">
+            <span class="nav-icon">{{ menuIcon(menu.id) }}</span><span>{{ menu.label }}</span>
+          </button>
+        }
+      </nav>
+
+      <button type="button" class="manage-menus-link" [class.selected]="section() === 'menuSetup'"
+              (click)="openMenuSettings()">
+        <span aria-hidden="true">⚙</span> Manage catalogue menus
+      </button>
+
+      @if (section() === 'categories') {
+        <div class="sidebar-list-heading">
+          <span>PRODUCT GROUPS</span>
+          <button type="button" class="text-action" (click)="startAddCategory()">+ Add</button>
+        </div>
+        <label class="category-search">
+          <span aria-hidden="true">⌕</span>
+          <input type="search" [value]="categorySearch()" (input)="categorySearch.set($any($event.target).value)"
+                 placeholder="Find a category" aria-label="Find a product category" />
+        </label>
+        <div class="category-nav-list">
+          @for (cat of filteredCategories(); track cat.id) {
+            <button type="button" class="category-nav-item"
+                    [class.selected]="activeCategory()?.id === cat.id && !showCatForm()"
+                    (click)="selectCategory(cat.id)">
+              <span class="category-icon" [style.background]="cat.color">{{ cat.icon }}</span>
+              <span class="category-nav-copy">
+                <strong>{{ cat.name }}</strong>
+                <small>{{ cat.subcategories.length }} subcategories · {{ fieldsOf(cat).length }} fields</small>
+              </span>
+              <span class="nav-chevron" aria-hidden="true">›</span>
+            </button>
+          }
+          @if (config.categories().length === 0) {
+            <p class="empty-note">Add your first category to start building your catalogue.</p>
+          } @else if (filteredCategories().length === 0) {
+            <p class="empty-note">No categories match your search.</p>
+          }
+        </div>
+        <div class="sidebar-tip">
+          <span aria-hidden="true">✦</span>
+          <p>Each category can have its own fields, units and warranty choices.</p>
+        </div>
+      }
+    </aside>
+
+    <section class="studio-workspace">
+      @if (section() === 'categories') {
         @if (showCatForm()) {
-          <div class="cs-form-card">
-            <h3>{{ editingCatId() ? '✏️ Edit Category' : '➕ New Category' }}</h3>
-            <div class="cs-form-row">
-              <div class="cs-field cs-field-grow">
-                <label>Name *</label>
-                <input type="text" class="cs-input" [value]="catFormName()"
-                       (input)="catFormName.set($any($event.target).value)"
-                       placeholder="e.g., MCBs" />
+          <article class="workspace-card">
+            <div class="page-heading">
+              <div>
+                <span class="eyebrow">CATEGORY DETAILS</span>
+                <h2>{{ editingCatId() ? 'Edit category' : 'Create a category' }}</h2>
+                <p>Give this group a name and identity customers will recognize.</p>
               </div>
-              <div class="cs-field cs-field-sm">
-                <label>Icon *</label>
-                <input type="text" class="cs-input" [value]="catFormIcon()"
-                       (input)="catFormIcon.set($any($event.target).value)"
-                       placeholder="e.g., ⚡" />
-              </div>
-              <div class="cs-field cs-field-sm">
-                <label>Colour</label>
-                <input type="color" class="cs-input cs-color-input" [value]="catFormColor()"
+              <button type="button" class="quiet-button" (click)="cancelCatForm()">Cancel</button>
+            </div>
+            <div class="form-grid category-form">
+              <label class="form-field">
+                <span>Category name <b>*</b></span>
+                <input class="studio-input" [value]="catFormName()"
+                       (input)="catFormName.set($any($event.target).value)" placeholder="e.g. Ceiling fans" />
+              </label>
+              <label class="form-field">
+                <span>Icon</span>
+                <input class="studio-input" [value]="catFormIcon()"
+                       (input)="catFormIcon.set($any($event.target).value)" placeholder="📦" />
+              </label>
+              <label class="form-field color-field">
+                <span>Category colour</span>
+                <input type="color" class="color-input" [value]="catFormColor()"
                        (input)="catFormColor.set($any($event.target).value)" />
-              </div>
+              </label>
+              <label class="form-field full-field">
+                <span>Description</span>
+                <input class="studio-input" [value]="catFormDesc()"
+                       (input)="catFormDesc.set($any($event.target).value)" placeholder="A short description of this product group" />
+              </label>
+              <label class="form-field full-field">
+                <span>Inventory sheet name</span>
+                <input class="studio-input" [value]="catFormSheetName()"
+                       (input)="catFormSheetName.set($any($event.target).value)" placeholder="Defaults to the category name" />
+                <small>Used to organize this category in your inventory.</small>
+              </label>
             </div>
-            <div class="cs-form-row">
-              <div class="cs-field cs-field-grow">
-                <label>Description</label>
-                <input type="text" class="cs-input" [value]="catFormDesc()"
-                       (input)="catFormDesc.set($any($event.target).value)"
-                       placeholder="e.g., Circuit breakers and protection" />
-              </div>
-              <div class="cs-field cs-field-grow">
-                <label>Sheet Name <span class="cs-hint">(no spaces)</span></label>
-                <input type="text" class="cs-input" [value]="catFormSheetName()"
-                       (input)="catFormSheetName.set($any($event.target).value)"
-                       placeholder="e.g., MCBs" />
-              </div>
-            </div>
-            <div class="cs-form-actions">
-              <button class="cs-btn cs-btn-outline" (click)="cancelCatForm()">Cancel</button>
-              <button class="cs-btn cs-btn-primary" (click)="saveCatForm()">
-                {{ editingCatId() ? '💾 Update' : '➕ Add' }} Category
+            <div class="form-actions">
+              <button type="button" class="primary-button" (click)="saveCatForm()">
+                {{ editingCatId() ? 'Save category' : 'Create category' }}
               </button>
             </div>
+          </article>
+        } @else if (activeCategory(); as cat) {
+          <div class="page-heading category-heading">
+            <div class="heading-icon" [style.background]="cat.color">{{ cat.icon }}</div>
+            <div class="heading-copy">
+              <span class="eyebrow">CATEGORY BUILDER</span>
+              <h2>{{ cat.name }}</h2>
+              <p>{{ cat.description || 'Configure the way products in this group are added and displayed.' }}</p>
+            </div>
+            <div class="heading-actions">
+              <button type="button" class="quiet-button" (click)="startEditCategory(cat)">Edit details</button>
+              <button type="button" class="danger-button" (click)="deleteCategory(cat.id)" [attr.aria-label]="'Delete ' + cat.name">Delete</button>
+            </div>
           </div>
-        }
 
-        <!-- Category list -->
-        @for (cat of config.categories(); track cat.id) {
-          <div class="cs-card">
-            <div class="cs-card-row">
-              <div class="cs-cat-icon" [style.background]="cat.color">{{ cat.icon }}</div>
-              <div class="cs-card-meta">
-                <span class="cs-card-name">{{ cat.name }}</span>
-                @if (cat.description) {
-                  <span class="cs-card-desc cs-desc-desktop">{{ cat.description }}</span>
-                }
+          <div class="summary-grid">
+            <div class="summary-card"><span class="summary-icon purple">⌘</span><span><strong>{{ cat.subcategories.length }}</strong><small>Subcategories</small></span></div>
+            <div class="summary-card"><span class="summary-icon amber">◇</span><span><strong>{{ cat.brands.length }}</strong><small>Brands</small></span></div>
+            <div class="summary-card"><span class="summary-icon blue">▤</span><span><strong>{{ fieldsOf(cat).length }}</strong><small>Custom fields</small></span></div>
+            <div class="summary-card"><span class="summary-icon green">▣</span><span><strong>{{ cat.sheetName }}</strong><small>Inventory sheet</small></span></div>
+          </div>
+
+          <article class="workspace-card category-editor">
+            <nav class="editor-tabs" aria-label="Category configuration">
+              <button type="button" [class.active]="expandedTab() === 'subs'" (click)="expandedTab.set('subs')">
+                Subcategories <span>{{ cat.subcategories.length }}</span>
+              </button>
+              <button type="button" [class.active]="expandedTab() === 'brands'" (click)="expandedTab.set('brands')">
+                Brands <span>{{ cat.brands.length }}</span>
+              </button>
+              <button type="button" [class.active]="expandedTab() === 'fields'" (click)="expandedTab.set('fields')">
+                Product fields <span>{{ fieldsOf(cat).length }}</span>
+              </button>
+              <button type="button" [class.active]="expandedTab() === 'setup'" (click)="expandedTab.set('setup'); editCategorySetup(cat)">
+                Form setup
+              </button>
+            </nav>
+
+            @if (expandedTab() === 'subs') {
+              <div class="editor-content">
+                <div class="content-heading">
+                  <div><h3>Organize with subcategories</h3><p>Help customers and staff find products faster.</p></div>
+                  <span class="helper-badge">For {{ cat.name }}</span>
+                </div>
+                <div class="chip-list">
+                  @for (sub of cat.subcategories; track sub; let i = $index) {
+                    <span class="config-chip">{{ sub }}<button type="button" (click)="removeSubcategory(cat.id, i)" [attr.aria-label]="'Remove ' + sub">×</button></span>
+                  }
+                  @if (!cat.subcategories.length) { <p class="empty-note">No subcategories yet. Add one below.</p> }
+                </div>
+                <div class="inline-add">
+                  <input class="studio-input" [value]="newSubcatValue()" (input)="newSubcatValue.set($any($event.target).value)"
+                         placeholder="e.g. Ceiling fan" (keydown.enter)="addSubcategory(cat.id)" />
+                  <button type="button" class="primary-button" (click)="addSubcategory(cat.id)">Add subcategory</button>
+                </div>
               </div>
-              <div class="cs-card-acts">
-                <button class="cs-icon-btn" (click)="toggleSubs(cat.id)" title="Subcategories, Brands & Fields">
-                  📂 {{ cat.subcategories.length }} · 🏷️ {{ cat.brands.length }} · 🧩 {{ fieldsOf(cat).length }}
-                </button>
-                <button class="cs-icon-btn" (click)="startEditCategory(cat)" title="Edit">✏️</button>
-                <button class="cs-icon-btn cs-icon-btn-danger" (click)="deleteCategory(cat.id)" title="Delete">🗑️</button>
+            }
+
+            @if (expandedTab() === 'brands') {
+              <div class="editor-content">
+                <div class="content-heading">
+                  <div><h3>Brands for this category</h3><p>These become the brand choices when adding a product.</p></div>
+                  <span class="helper-badge">For {{ cat.name }}</span>
+                </div>
+                <div class="chip-list">
+                  @for (brand of cat.brands; track brand; let i = $index) {
+                    <span class="config-chip brand-chip">{{ brand }}<button type="button" (click)="removeBrand(cat.id, i)" [attr.aria-label]="'Remove ' + brand">×</button></span>
+                  }
+                  @if (!cat.brands.length) { <p class="empty-note">No brands yet. Add your first brand below.</p> }
+                </div>
+                <div class="inline-add">
+                  <input class="studio-input" [value]="newBrandValue()" (input)="newBrandValue.set($any($event.target).value)"
+                         placeholder="e.g. Havells" (keydown.enter)="addBrand(cat.id)" />
+                  <button type="button" class="primary-button" (click)="addBrand(cat.id)">Add brand</button>
+                </div>
               </div>
-            </div>
+            }
 
-            <!-- Mobile desc + sheet row -->
-            <div class="cs-card-info-row">
-              @if (cat.description) {
-                <span class="cs-info-desc">{{ cat.description }}</span>
-              }
-              <span class="cs-info-sheet">Sheet: {{ cat.sheetName }}</span>
-            </div>
-
-            <!-- Subcategories & Brands panel -->
-            @if (expandedCatId() === cat.id) {
-              <div class="cs-subs-panel">
-                <div class="cs-panel-tabs">
-                  <button class="cs-panel-tab" [class.active]="expandedTab() === 'subs'"   (click)="expandedTab.set('subs')">
-                    📂 Subcategories ({{ cat.subcategories.length }})
-                  </button>
-                  <button class="cs-panel-tab" [class.active]="expandedTab() === 'brands'" (click)="expandedTab.set('brands')">
-                    🏷️ Brands ({{ cat.brands.length }})
-                  </button>
-                  <button class="cs-panel-tab" [class.active]="expandedTab() === 'fields'" (click)="expandedTab.set('fields')">
-                    🧩 Fields ({{ fieldsOf(cat).length }})
-                  </button>
+            @if (expandedTab() === 'fields') {
+              <div class="editor-content">
+                <div class="content-heading">
+                  <div><h3>Design the product form</h3><p>Add the exact details your shop needs. Choose where each field appears and whether it prints on the bill.</p></div>
+                </div>
+                <div class="field-list">
+                  @for (field of fieldsOf(cat); track field.key) {
+                    <div class="field-card">
+                      <div class="field-card-main">
+                        <span class="field-type-icon">▤</span>
+                        <div class="field-title"><strong>{{ field.label }}</strong><code>{{ field.key }}</code></div>
+                        <span class="field-tag">{{ field.type }}</span>
+                        <span class="field-tag section-tag">{{ sectionLabel(field.group) }}</span>
+                        @if (field.required) { <span class="field-tag required-tag">Required</span> }
+                      </div>
+                      <div class="field-card-options">
+                        <span>{{ scopeText(field) }}</span>
+                        @if (optionsText(field)) { <span>{{ optionsText(field) }}</span> }
+                      </div>
+                      <div class="field-card-actions">
+                        <label class="bill-switch">
+                          <input type="checkbox" [checked]="!!field.includeInBill" (change)="toggleFieldBill(cat.id, field)" />
+                          <span>Print on bill</span>
+                        </label>
+                        <button type="button" class="icon-action" (click)="moveField(cat.id, field, -1)" [disabled]="isFirstInSection(cat, field)" aria-label="Move field up">↑</button>
+                        <button type="button" class="icon-action" (click)="moveField(cat.id, field, 1)" [disabled]="isLastInSection(cat, field)" aria-label="Move field down">↓</button>
+                        <button type="button" class="icon-action" (click)="editField(field)" aria-label="Edit field">Edit</button>
+                        <button type="button" class="icon-action remove-action" (click)="removeField(cat.id, field)" aria-label="Remove field">×</button>
+                      </div>
+                    </div>
+                  } @empty {
+                    <div class="empty-state"><span>✦</span><strong>No custom fields yet</strong><p>Create fields like wattage, size, colour or any detail you track.</p></div>
+                  }
                 </div>
 
-                @if (expandedTab() === 'subs') {
-                  <div class="cs-chips">
-                    @for (sub of cat.subcategories; track sub; let i = $index) {
-                      <span class="cs-chip cs-chip-sub">
-                        {{ sub }}
-                        <button class="cs-chip-remove" (click)="removeSubcategory(cat.id, i)" [attr.aria-label]="'Remove ' + sub">×</button>
-                      </span>
-                    }
-                    @if (cat.subcategories.length === 0) {
-                      <span class="cs-empty-hint">No subcategories yet</span>
-                    }
+                <div class="field-builder">
+                  <div class="builder-heading">
+                    <div><span class="eyebrow">{{ editingFieldKey() ? 'EDIT FIELD' : 'FIELD BUILDER' }}</span><h3>{{ editingFieldKey() ? 'Update this field' : 'Add a custom field' }}</h3></div>
                   </div>
-                  <div class="cs-add-row">
-                    <input type="text" class="cs-input" [value]="newSubcatValue()"
-                           (input)="newSubcatValue.set($any($event.target).value)"
-                           placeholder="New subcategory name"
-                           (keydown.enter)="addSubcategory(cat.id)" />
-                    <button class="cs-btn cs-btn-sm cs-btn-primary" (click)="addSubcategory(cat.id)">Add</button>
-                  </div>
-                }
-
-                @if (expandedTab() === 'brands') {
-                  <div class="cs-chips">
-                    @for (brand of cat.brands; track brand; let i = $index) {
-                      <span class="cs-chip cs-chip-brand">
-                        {{ brand }}
-                        <button class="cs-chip-remove cs-chip-remove-brand" (click)="removeBrand(cat.id, i)" [attr.aria-label]="'Remove ' + brand">×</button>
-                      </span>
+                  <div class="form-grid">
+                    <label class="form-field"><span>Field name <b>*</b></span><input class="studio-input" [value]="newFieldLabel()" (input)="newFieldLabel.set($any($event.target).value)" placeholder="e.g. Wattage" /></label>
+                    <label class="form-field"><span>Field key <small>{{ editingFieldKey() ? '(locked while editing)' : '(unique identifier)' }}</small></span><input class="studio-input" [value]="newFieldKey()" [readonly]="!!editingFieldKey()" (input)="newFieldKey.set($any($event.target).value)" placeholder="e.g. wattage" /></label>
+                    <label class="form-field"><span>Input type</span><select class="studio-input" [value]="newFieldType()" (change)="newFieldType.set($any($event.target).value)">@for (type of fieldTypeOptions; track type) { <option [value]="type">{{ type }}</option> }</select></label>
+                    <label class="form-field"><span>Form section</span><select class="studio-input" [value]="newFieldGroup()" (change)="newFieldGroup.set($any($event.target).value)">@for (group of fieldSectionOptions; track group.value) { <option [value]="group.value">{{ group.label }}</option> }</select></label>
+                    @if (['select', 'pills', 'color-pills'].includes(newFieldType())) {
+                      <label class="form-field full-field"><span>Choices <small>Separate each choice with a comma</small></span><input class="studio-input" [value]="newFieldOptions()" (input)="newFieldOptions.set($any($event.target).value)" placeholder="Red, Blue, Green" /></label>
                     }
-                    @if (cat.brands.length === 0) {
-                      <span class="cs-empty-hint">No brands added yet</span>
+                    @if (newFieldType() === 'text' || newFieldType() === 'number' || newFieldType() === 'textarea') {
+                      <label class="form-field"><span>Placeholder</span><input class="studio-input" [value]="newFieldPlaceholder()" (input)="newFieldPlaceholder.set($any($event.target).value)" placeholder="Text shown before entry" /></label>
                     }
-                  </div>
-                  <div class="cs-add-row">
-                    <input type="text" class="cs-input" [value]="newBrandValue()"
-                           (input)="newBrandValue.set($any($event.target).value)"
-                           placeholder="e.g., Havells"
-                           (keydown.enter)="addBrand(cat.id)" />
-                    <button class="cs-btn cs-btn-sm cs-btn-primary" (click)="addBrand(cat.id)">Add</button>
-                  </div>
-                }
-
-                @if (expandedTab() === 'fields') {
-                  <div class="cs-fields-list">
-                    @for (sec of fieldSections(cat); track sec.value) {
-                      <div class="cs-field-section">
-                        <div class="cs-field-section-head">{{ sec.label }}</div>
-                        @for (f of sec.fields; track f.key) {
-                          <div class="cs-field-row">
-                            <div class="cs-field-meta">
-                              <span class="cs-field-label">{{ f.label }}</span>
-                              <span class="cs-field-key">{{ f.key }}</span>
-                              <span class="cs-field-type">{{ f.type }}</span>
-                              <span class="cs-field-group">{{ sectionLabel(f.group) }}</span>
-                              <span class="cs-field-scope">{{ scopeText(f) }}</span>
-                              <label class="cs-toggle cs-field-bill-toggle"
-                                     title="Show this field's value on bills">
-                                <input type="checkbox" [checked]="!!f.includeInBill"
-                                       (change)="toggleFieldBill(cat.id, f)" />
-                                <span class="cs-toggle-track"><span class="cs-toggle-thumb"></span></span>
-                                <span class="cs-toggle-label">🧾 On bill</span>
-                              </label>
-                            </div>
-                            @if (optionsText(f)) {
-                              <span class="cs-field-opts">{{ optionsText(f) }}</span>
-                            }
-                            <button class="cs-icon-btn" (click)="moveField(cat.id, f, -1)"
-                                    [disabled]="isFirstInSection(cat, f)" title="Move up in section">⬆️</button>
-                            <button class="cs-icon-btn" (click)="moveField(cat.id, f, 1)"
-                                    [disabled]="isLastInSection(cat, f)" title="Move down in section">⬇️</button>
-                            <button class="cs-icon-btn" (click)="editField(f)" title="Edit">✏️</button>
-                            <button class="cs-icon-btn cs-icon-btn-danger" (click)="removeField(cat.id, f)" title="Remove">🗑️</button>
-                          </div>
-                        }
-                      </div>
+                    @if (newFieldType() === 'number') {
+                      <label class="form-field"><span>Minimum value</span><input class="studio-input" type="number" [value]="newFieldMin() ?? ''" (input)="newFieldMin.set($any($event.target).value === '' ? null : $any($event.target).valueAsNumber)" /></label>
                     }
-                    @if (fieldsOf(cat).length === 0) {
-                      <span class="cs-empty-hint">No custom fields yet</span>
+                    @if (newFieldType() === 'text' || newFieldType() === 'number' || newFieldType() === 'computed') {
+                      <label class="form-field"><span>Prefix</span><input class="studio-input" [value]="newFieldPrefix()" (input)="newFieldPrefix.set($any($event.target).value)" placeholder="e.g. ₹" /></label>
+                      <label class="form-field"><span>Suffix</span><input class="studio-input" [value]="newFieldSuffix()" (input)="newFieldSuffix.set($any($event.target).value)" placeholder="e.g. W" /></label>
                     }
-                  </div>
-
-                  <div class="cs-field-form">
-                    <div class="cs-form-row">
-                      <div class="cs-field cs-field-grow">
-                        <label>Field key <span class="cs-hint">{{ editingFieldKey() ? '(cannot be changed)' : '(no spaces)' }}</span></label>
-                        <input type="text" class="cs-input" [value]="newFieldKey()"
-                               [readonly]="!!editingFieldKey()"
-                               (input)="newFieldKey.set($any($event.target).value)"
-                               placeholder="e.g., wattage" />
-                      </div>
-                      <div class="cs-field cs-field-grow">
-                        <label>Label</label>
-                        <input type="text" class="cs-input" [value]="newFieldLabel()"
-                               (input)="newFieldLabel.set($any($event.target).value)"
-                               placeholder="e.g., Wattage" />
-                      </div>
-                    </div>
-                    <div class="cs-form-row">
-                      <div class="cs-field cs-field-sm">
-                        <label>Type</label>
-                        <select class="cs-input" [value]="newFieldType()"
-                                (change)="newFieldType.set($any($event.target).value)">
-                          @for (t of fieldTypeOptions; track t) {
-                            <option [value]="t">{{ t }}</option>
-                          }
-                        </select>
-                      </div>
-                      <div class="cs-field cs-field-sm">
-                        <label>Section</label>
-                        <select class="cs-input" [value]="newFieldGroup()"
-                                (change)="newFieldGroup.set($any($event.target).value)">
-                          @for (s of fieldSectionOptions; track s.value) {
-                            <option [value]="s.value">{{ s.label }}</option>
-                          }
-                        </select>
-                      </div>
-                      <div class="cs-field cs-field-grow">
-                        <label>Options <span class="cs-hint">(comma-separated, for pills/select/colour)</span></label>
-                        <input type="text" class="cs-input" [value]="newFieldOptions()"
-                               (input)="newFieldOptions.set($any($event.target).value)"
-                               placeholder="e.g., Red, Blue, Green" />
-                      </div>
-                    </div>
-                    <div class="cs-form-row">
-                      <div class="cs-field cs-field-grow">
-                        <label>Show for subcategories <span class="cs-hint">(none selected = all)</span></label>
-                        @if (cat.subcategories.length) {
-                          <div class="cs-scope-chips">
-                            @for (sub of cat.subcategories; track sub) {
-                              <button type="button" class="cs-scope-chip"
-                                      [class.active]="newFieldSubcats().includes(sub)"
-                                      (click)="toggleNewFieldSubcat(sub)">{{ sub }}</button>
-                            }
-                          </div>
-                        } @else {
-                          <span class="cs-empty-hint">No subcategories — field will apply to all</span>
-                        }
-                      </div>
-                    </div>
                     @if (newFieldType() === 'computed') {
-                      <div class="cs-form-row">
-                        <div class="cs-field cs-field-grow">
-                          <label>Formula
-                            <span class="cs-hint">(use {{ '{' }}key{{ '}' }} tokens · supports + - * / and ( ) · e.g. ({{ '{' }}boxPrice{{ '}' }} / {{ '{' }}totalLength{{ '}' }}) * 1.1 for 10% profit)</span>
-                          </label>
-                          <input type="text" class="cs-input" [value]="newFieldFormula()"
-                                 (input)="newFieldFormula.set($any($event.target).value)"
-                                 placeholder="e.g., ({boxPrice} / {totalLength}) * 1.1" />
-                          <div class="cs-scope-chips" style="margin-top:0.5rem">
-                            @for (k of formulaKeyOptions(cat); track k) {
-                              <button type="button" class="cs-scope-chip" (click)="insertFormulaKey(k)">+ {{ k }}</button>
-                            }
-                          </div>
-                        </div>
-                        <div class="cs-field cs-field-sm">
-                          <label>Decimals</label>
-                          <input type="number" class="cs-input" min="0" max="4" [value]="newFieldDecimals()"
-                                 (input)="newFieldDecimals.set($any($event.target).valueAsNumber)" />
-                        </div>
-                      </div>
+                      <label class="form-field full-field"><span>Calculation formula</span><input class="studio-input" [value]="newFieldFormula()" (input)="newFieldFormula.set($any($event.target).value)" placeholder="e.g. {price} * 1.18" /></label>
+                      <label class="form-field"><span>Decimal places</span><input class="studio-input" type="number" min="0" max="4" [value]="newFieldDecimals()" (input)="newFieldDecimals.set($any($event.target).valueAsNumber)" /></label>
+                      <div class="form-field full-field"><span>Available values</span><div class="choice-chips">@for (key of formulaKeyOptions(cat); track key) { <button type="button" (click)="insertFormulaKey(key)">{{ key }}</button> }</div></div>
                     }
-                    <div class="cs-form-row">
-                      <label class="cs-toggle">
-                        <input type="checkbox" [checked]="newFieldIncludeInBill()"
-                               (change)="newFieldIncludeInBill.set($any($event.target).checked)" />
-                        <span class="cs-toggle-track"><span class="cs-toggle-thumb"></span></span>
-                        <span class="cs-toggle-label">
-                          Include in bill
-                          <span class="cs-hint">show this value next to the item name on bills</span>
-                        </span>
-                      </label>
+                    <div class="form-field full-field">
+                      <span>Show for subcategories <small>Choose none to show this field everywhere</small></span>
+                      <div class="choice-chips">
+                        @for (sub of cat.subcategories; track sub) { <button type="button" [class.active]="newFieldSubcats().includes(sub)" (click)="toggleNewFieldSubcat(sub)">{{ sub }}</button> }
+                        @if (!cat.subcategories.length) { <small>Add subcategories first to target a field.</small> }
+                      </div>
                     </div>
-                    <div class="cs-form-actions">
-                      @if (editingFieldKey()) {
-                        <button class="cs-btn cs-btn-sm cs-btn-outline" (click)="cancelFieldEdit()">Cancel</button>
-                      }
-                      <button class="cs-btn cs-btn-sm cs-btn-primary" (click)="addField(cat.id)">
-                        {{ editingFieldKey() ? '💾 Update Field' : '+ Add Field' }}
-                      </button>
-                    </div>
+                    <label class="check-setting"><input type="checkbox" [checked]="newFieldRequired()" (change)="newFieldRequired.set($any($event.target).checked)" /><span><strong>Required field</strong><small>Staff must provide this value before saving a product.</small></span></label>
+                    <label class="check-setting bill-setting"><input type="checkbox" [checked]="newFieldIncludeInBill()" (change)="newFieldIncludeInBill.set($any($event.target).checked)" /><span><strong>Print on bill</strong><small>Show this product detail alongside the item on bills.</small></span></label>
+                  </div>
+                  <div class="builder-actions">
+                    @if (editingFieldKey()) { <button type="button" class="quiet-button" (click)="cancelFieldEdit()">Cancel edit</button> }
+                    <button type="button" class="primary-button" (click)="addField(cat.id)">{{ editingFieldKey() ? 'Save field' : '+ Add field' }}</button>
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (expandedTab() === 'setup') {
+              <div class="editor-content">
+                <div class="content-heading"><div><h3>Category form defaults</h3><p>Override shared shop settings for this category, or leave a setting blank to inherit the shop default.</p></div></div>
+                <div class="form-grid setup-grid">
+                  <label class="form-field full-field"><span>Units for this category <small>Comma-separated; blank uses shop-wide units</small></span><input class="studio-input" [value]="setupUnitOptions()" (input)="setupUnitOptions.set($any($event.target).value)" placeholder="Piece, Box, Pack" /></label>
+                  <label class="form-field"><span>Default unit <small>Must be in the unit list</small></span><input class="studio-input" [value]="setupDefaultUnit()" (input)="setupDefaultUnit.set($any($event.target).value)" placeholder="e.g. Piece" /></label>
+                  <label class="form-field full-field"><span>Warranty choices <small>Comma-separated; blank uses shop-wide options</small></span><input class="studio-input" [value]="setupWarrantyOptions()" (input)="setupWarrantyOptions.set($any($event.target).value)" placeholder="No warranty, 1 year, 2 years" /></label>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="primary-button" (click)="saveCategorySetup(cat)">Save category defaults</button>
+                </div>
+              </div>
+            }
+          </article>
+        } @else {
+          <article class="workspace-card empty-workspace">
+            <div class="empty-state"><span>✦</span><strong>Your catalogue starts here</strong><p>Create a category to begin shaping the products in your shop.</p><button type="button" class="primary-button" (click)="startAddCategory()">Create your first category</button></div>
+          </article>
+        }
+      }
+
+      @if (section() === 'units') {
+        <article class="workspace-card global-settings">
+          <div class="page-heading">
+            <div><span class="eyebrow">SHOP-WIDE DEFAULT</span><h2>Units of measure</h2><p>Choose the units available across your product forms. A category can have its own list too.</p></div>
+            <span class="large-icon">↔</span>
+          </div>
+          <div class="config-list">
+            @for (unit of config.units(); track unit; let i = $index) {
+              <div class="config-list-row"><span class="list-leading-icon">↔</span><strong>{{ unit }}</strong><button type="button" class="remove-button" (click)="removeUnit(i)" [attr.aria-label]="'Remove ' + unit">Remove</button></div>
+            } @empty { <p class="empty-note">No shared units configured.</p> }
+          </div>
+          <div class="inline-add">
+            <input class="studio-input" [value]="newUnit()" (input)="newUnit.set($any($event.target).value)" placeholder="e.g. Coil" (keydown.enter)="addUnit()" />
+            <button type="button" class="primary-button" (click)="addUnit()">Add unit</button>
+          </div>
+        </article>
+      }
+
+      @if (section() === 'shared') {
+        <article class="workspace-card global-settings">
+          <div class="page-heading">
+            <div>
+              <span class="eyebrow">APPLIES TO EVERY CATEGORY</span>
+              <h2>Shared product fields</h2>
+              <p>Create your own product details once, then use them across the whole shop. Category-specific fields stay in each category’s builder.</p>
+            </div>
+            <span class="large-icon">▤</span>
+          </div>
+
+          <div class="shared-field-list">
+            @for (field of config.sharedFields(); track field.key) {
+              <div class="shared-field-row">
+                <div class="shared-field-copy">
+                  <strong>{{ field.label }}</strong>
+                  <code>{{ field.key }}</code>
+                  <span class="field-tag">{{ field.type }}</span>
+                  @if (field.required) { <span class="field-tag required-tag">Required</span> }
+                </div>
+                @if (optionsText(field)) { <small>{{ optionsText(field) }}</small> }
+                <label class="bill-switch">
+                  <input type="checkbox" [checked]="!!field.includeInBill" (change)="toggleSharedFieldBill(field)" />
+                  <span>Print on bill</span>
+                </label>
+                <button type="button" class="icon-action" (click)="editSharedField(field)">Edit</button>
+                <button type="button" class="icon-action remove-action" (click)="removeSharedField(field)" [attr.aria-label]="'Remove ' + field.label">×</button>
+              </div>
+            } @empty {
+              <div class="empty-state compact-empty"><span>✦</span><strong>No shared fields yet</strong><p>Try a detail like colour, material or manufacturer that applies to all your products.</p></div>
+            }
+          </div>
+
+          <div class="field-builder shared-builder">
+            <div class="builder-heading">
+              <div><span class="eyebrow">{{ editingSharedField() ? 'EDIT SHARED FIELD' : 'NEW SHARED FIELD' }}</span><h3>{{ editingSharedField() ? 'Update this field' : 'Create a reusable product field' }}</h3></div>
+            </div>
+            <div class="form-grid">
+              <label class="form-field"><span>Field name <b>*</b></span><input class="studio-input" [value]="newFieldLabel()" (input)="newFieldLabel.set($any($event.target).value)" placeholder="e.g. Material" /></label>
+              <label class="form-field"><span>Field key <small>Letters, numbers and underscores</small></span><input class="studio-input" [value]="newFieldKey()" [readonly]="editingFieldKey() !== null" (input)="newFieldKey.set($any($event.target).value)" placeholder="e.g. material" /></label>
+              <label class="form-field"><span>Input type</span><select class="studio-input" [value]="newFieldType()" (change)="newFieldType.set($any($event.target).value)">@for (type of sharedFieldTypeOptions; track type) { <option [value]="type">{{ type }}</option> }</select></label>
+              <label class="form-field"><span>Form section</span><select class="studio-input" [value]="newFieldGroup()" (change)="newFieldGroup.set($any($event.target).value)">@for (group of fieldSectionOptions; track group.value) { <option [value]="group.value">{{ group.label }}</option> }</select></label>
+              @if (['select', 'pills', 'color-pills'].includes(newFieldType())) {
+                <label class="form-field full-field"><span>Choices <small>Separate each choice with a comma</small></span><input class="studio-input" [value]="newFieldOptions()" (input)="newFieldOptions.set($any($event.target).value)" placeholder="Metal, Plastic, Wood" /></label>
+              }
+              @if (newFieldType() === 'text' || newFieldType() === 'number' || newFieldType() === 'textarea') {
+                <label class="form-field"><span>Placeholder</span><input class="studio-input" [value]="newFieldPlaceholder()" (input)="newFieldPlaceholder.set($any($event.target).value)" placeholder="Text shown before entry" /></label>
+              }
+              @if (newFieldType() === 'number') {
+                <label class="form-field"><span>Minimum value</span><input class="studio-input" type="number" [value]="newFieldMin() ?? ''" (input)="newFieldMin.set($any($event.target).value === '' ? null : $any($event.target).valueAsNumber)" /></label>
+              }
+              @if (newFieldType() === 'text' || newFieldType() === 'number') {
+                <label class="form-field"><span>Prefix</span><input class="studio-input" [value]="newFieldPrefix()" (input)="newFieldPrefix.set($any($event.target).value)" placeholder="Optional" /></label>
+                <label class="form-field"><span>Suffix</span><input class="studio-input" [value]="newFieldSuffix()" (input)="newFieldSuffix.set($any($event.target).value)" placeholder="e.g. mm" /></label>
+              }
+              <label class="check-setting"><input type="checkbox" [checked]="newFieldRequired()" (change)="newFieldRequired.set($any($event.target).checked)" /><span><strong>Required field</strong><small>Require this detail when staff add a product.</small></span></label>
+              <label class="check-setting bill-setting"><input type="checkbox" [checked]="newFieldIncludeInBill()" (change)="newFieldIncludeInBill.set($any($event.target).checked)" /><span><strong>Print on bill</strong><small>Show this detail alongside the product on bills.</small></span></label>
+            </div>
+            <div class="builder-actions">
+              @if (editingSharedField()) { <button type="button" class="quiet-button" (click)="cancelFieldEdit()">Cancel edit</button> }
+              <button type="button" class="primary-button" (click)="saveSharedField()">{{ editingSharedField() ? 'Save shared field' : '+ Add shared field' }}</button>
+            </div>
+          </div>
+        </article>
+      }
+
+      @if (section() === 'menuSetup') {
+        <article class="workspace-card global-settings">
+          <div class="page-heading">
+            <div>
+              <span class="eyebrow">PERSONALIZE YOUR WORKSPACE</span>
+              <h2>Manage catalogue menus</h2>
+              <p>Rename, show or hide, and reorder the catalogue sections in your sidebar.</p>
+            </div>
+            <span class="large-icon">⚙</span>
+          </div>
+          <div class="add-menu-panel">
+            <div><strong>Add a custom menu</strong><small>Create a list menu, then add the options it should contain.</small></div>
+            <div class="inline-add">
+              <input class="studio-input" [value]="newMenuName()" (input)="newMenuName.set($any($event.target).value)"
+                     placeholder="e.g. Materials, Colours, Suppliers" (keydown.enter)="addMenuToDraft()" />
+              <button type="button" class="primary-button" (click)="addMenuToDraft()">+ Add menu</button>
+            </div>
+          </div>
+          <div class="menu-settings-list">
+            @for (menu of menuDraft(); track menu.id; let i = $index) {
+              <div class="menu-settings-row">
+                <span class="menu-drag-handle" aria-hidden="true">⠿</span>
+                <span class="menu-settings-icon">{{ menuIcon(menu.id) }}</span>
+                <label class="form-field menu-name-field">
+                  <span>Menu name</span>
+                  <input class="studio-input" [value]="menu.label"
+                         (input)="updateMenuDraft(menu.id, { label: $any($event.target).value })" />
+                </label>
+                <label class="menu-visibility">
+                  <input type="checkbox" [checked]="menu.visible"
+                         (change)="updateMenuDraft(menu.id, { visible: $any($event.target).checked })" />
+                  <span>Show</span>
+                </label>
+                @if (menu.id === 'categories') {
+                  <span class="protected-menu-note" title="Required for managing inventory categories">Required</span>
+                } @else {
+                  <button type="button" class="icon-action remove-action"
+                          (click)="removeMenuFromDraft(menu)" [attr.aria-label]="'Delete ' + menu.label">×</button>
+                }
+                <div class="menu-order-actions">
+                  <button type="button" class="icon-action" (click)="moveMenu(menu.id, -1)" [disabled]="i === 0" aria-label="Move menu up">↑</button>
+                  <button type="button" class="icon-action" (click)="moveMenu(menu.id, 1)" [disabled]="i === menuDraft().length - 1" aria-label="Move menu down">↓</button>
+                </div>
+                @if (menu.custom) {
+                  <div class="custom-menu-settings">
+                    <label><input type="checkbox" [checked]="!!menu.required" (change)="updateMenuDraft(menu.id, { required: $any($event.target).checked })" /> Required on product form</label>
+                    <label><input type="checkbox" [checked]="!!menu.includeInBill" (change)="updateMenuDraft(menu.id, { includeInBill: $any($event.target).checked })" /> Print on bill</label>
                   </div>
                 }
               </div>
             }
           </div>
-        }
-
-        @if (config.categories().length === 0) {
-          <p class="cs-empty">No categories yet. Click "+ Add Category" to get started.</p>
-        }
-      </div>
-    }
-
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <!-- UNITS                                                      -->
-    <!-- ══════════════════════════════════════════════════════════ -->
-    @if (section() === 'units') {
-      <div class="cs-section">
-        <div class="cs-section-label">📏 Units of Measurement</div>
-        <p class="cs-section-sub">These appear in the unit dropdown when adding a product.</p>
-        <div class="cs-card cs-list-card">
-          <div class="cs-chips">
-            @for (unit of config.units(); track unit; let i = $index) {
-              <span class="cs-chip cs-chip-unit">
-                {{ unit }}
-                <button class="cs-chip-remove" (click)="removeUnit(i)" [attr.aria-label]="'Remove ' + unit">×</button>
-              </span>
-            }
-            @if (config.units().length === 0) {
-              <span class="cs-empty-hint">No units added yet</span>
-            }
+          <p class="menu-settings-note">Hidden menus are not deleted. You can show them again whenever you need them.</p>
+          <p class="menu-settings-note">Deleting a built-in menu permanently clears its saved settings. The Categories menu is required and cannot be deleted.</p>
+          <div class="form-actions">
+            <button type="button" class="quiet-button" (click)="cancelMenuSettings()">Cancel</button>
+            <button type="button" class="primary-button" (click)="saveMenuSettings()">Save menu settings</button>
           </div>
-          <div class="cs-add-row cs-add-row-top">
-            <input type="text" class="cs-input" [value]="newUnit()"
-                   (input)="newUnit.set($any($event.target).value)"
-                   placeholder="e.g., Coil"
-                   (keydown.enter)="addUnit()" />
-            <button class="cs-btn cs-btn-primary" (click)="addUnit()">Add Unit</button>
-          </div>
-        </div>
-      </div>
-    }
+        </article>
+      }
 
-    <!-- ══════════════════════════════════════════════════════════ -->
-    <!-- WARRANTY                                                   -->
-    <!-- ══════════════════════════════════════════════════════════ -->
-    @if (section() === 'warranty') {
-      <div class="cs-section">
-        <div class="cs-section-label">🛡️ Warranty Options</div>
-        <p class="cs-section-sub">These appear in the warranty dropdown when adding a product.</p>
-        <div class="cs-card cs-list-card">
-          @for (w of config.warrantyOptions(); track w.value; let i = $index) {
-            <div class="cs-warranty-row">
-              <span class="cs-warranty-label">{{ w.label }}</span>
-              <span class="cs-warranty-code">{{ w.value }}</span>
-              <button class="cs-icon-btn cs-icon-btn-danger" (click)="removeWarrantyOption(i)" title="Remove">🗑️</button>
+      @if (activeCustomMenu(); as menu) {
+        <article class="workspace-card global-settings">
+          <div class="page-heading">
+            <div>
+              <span class="eyebrow">CUSTOM CATALOGUE MENU</span>
+              <h2>{{ menu.label }}</h2>
+              <p>Add and manage choices for this product-form field. Rename or remove the menu from Manage catalogue menus.</p>
             </div>
-          }
-          @if (config.warrantyOptions().length === 0) {
-            <p class="cs-empty">No warranty options yet.</p>
-          }
-          <div class="cs-warranty-divider"></div>
-          <div class="cs-add-warranty">
-            <input type="text" class="cs-input" [value]="newWarrantyLabel()"
-                   (input)="newWarrantyLabel.set($any($event.target).value)"
-                   placeholder="Label — e.g., 3 Years" />
-            <input type="text" class="cs-input cs-input-code" [value]="newWarrantyValue()"
-                   (input)="newWarrantyValue.set($any($event.target).value)"
-                   placeholder="Code — e.g., 3y" />
-            <button class="cs-btn cs-btn-primary" (click)="addWarrantyOption()">Add</button>
+            <span class="large-icon">☷</span>
           </div>
-        </div>
-      </div>
-    }
+          <div class="config-list">
+            @for (option of menu.options ?? []; track option) {
+              <div class="config-list-row">
+                <span class="list-leading-icon">☷</span>
+                <strong>{{ option }}</strong>
+                <button type="button" class="remove-button" (click)="removeCustomMenuOption(menu, option)" [attr.aria-label]="'Remove ' + option">Remove</button>
+              </div>
+            } @empty {
+              <p class="empty-note">This menu has no options yet. Add the first one below.</p>
+            }
+          </div>
+          <div class="inline-add">
+            <input class="studio-input" [value]="newMenuOption()" (input)="newMenuOption.set($any($event.target).value)"
+                   [placeholder]="'Add an option to ' + menu.label" (keydown.enter)="addCustomMenuOption(menu)" />
+            <button type="button" class="primary-button" (click)="addCustomMenuOption(menu)">Add option</button>
+          </div>
+        </article>
+      }
 
-  </div><!-- /cs-body -->
-</div>
+      @if (section() === 'warranty') {
+        <article class="workspace-card global-settings">
+          <div class="page-heading">
+            <div><span class="eyebrow">SHOP-WIDE DEFAULT</span><h2>Warranty options</h2><p>Manage warranty choices available when adding products. Categories can override these defaults.</p></div>
+            <span class="large-icon">◇</span>
+          </div>
+          <div class="config-list">
+            @for (warranty of config.warrantyOptions(); track warranty.value; let i = $index) {
+              <div class="config-list-row"><span class="list-leading-icon">◇</span><strong>{{ warranty.label }}</strong><code>{{ warranty.value || 'no-warranty' }}</code><button type="button" class="remove-button" (click)="removeWarrantyOption(i)" [attr.aria-label]="'Remove ' + warranty.label">Remove</button></div>
+            } @empty { <p class="empty-note">No shared warranty options configured.</p> }
+          </div>
+          <div class="inline-add warranty-add">
+            <input class="studio-input" [value]="newWarrantyLabel()" (input)="newWarrantyLabel.set($any($event.target).value)" placeholder="Label, e.g. 3 Years" />
+            <input class="studio-input code-input" [value]="newWarrantyValue()" (input)="newWarrantyValue.set($any($event.target).value)" placeholder="Code, e.g. 3y" />
+            <button type="button" class="primary-button" (click)="addWarrantyOption()">Add warranty</button>
+          </div>
+        </article>
+      }
+    </section>
+  </section>
+</main>

@@ -6,9 +6,9 @@ import { Product } from '../../core/models/product.model';
 import { FirebaseAdminService } from '../../core/services/firebase-admin.service';
 import { SalesService } from '../../core/services/sales.service';
 import { BillService } from '../../core/services/bill.service';
-import { CatalogueConfigService } from '../../core/services/catalogue-config.service';
+import { CatalogueConfigService, catalogueMenuFieldKey } from '../../core/services/catalogue-config.service';
 import { compressImage } from '../../core/utils/image.util';
-import { colorNameToHex } from '../../core/config/product-fields.config';
+import { ProductField, colorNameToHex } from '../../core/config/product-fields.config';
 
 @Component({
   selector: 'app-product-card',
@@ -577,9 +577,23 @@ export class ProductCardComponent {
     const p = this.product() as any;
     const catId = p['category'] ?? '';
     const cat = this.catalogueConfig.categories().find(c => c.id === catId);
-    const fields = cat?.fieldConfig?.fields ?? [];
+    const fields: ProductField[] = [
+      ...this.catalogueConfig.sharedFields(),
+      ...this.catalogueConfig.catalogueMenus()
+        .filter(menu => menu.custom)
+        .map(menu => ({
+          key: catalogueMenuFieldKey(menu.id),
+          label: menu.label,
+          type: 'select' as const,
+          prefix: '',
+          suffix: '',
+          includeInBill: menu.includeInBill,
+        })),
+      ...(cat?.fieldConfig?.fields ?? []),
+    ];
+    const uniqueFields = [...new Map(fields.map(field => [field.key, field])).values()];
     const result: { label: string; value: string }[] = [];
-    for (const f of fields) {
+    for (const f of uniqueFields) {
       if (!f.includeInBill) continue;
       const raw = p[f.key];
       if (raw == null || raw === '') continue;

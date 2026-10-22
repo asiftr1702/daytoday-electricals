@@ -1,10 +1,10 @@
 import { Component, inject, OnInit, signal, computed, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FirebaseAdminService } from '../../../core/services/firebase-admin.service';
-import { CatalogueConfigService, DynamicCategory } from '../../../core/services/catalogue-config.service';
+import { CatalogueConfigService, DynamicCategory, catalogueMenuFieldKey } from '../../../core/services/catalogue-config.service';
 import { CategoryFieldConfig, ProductField, colorNameToHex, evaluateFormula } from '../../../core/config/product-fields.config';
 import { AnyProduct } from '../../../core/models/any-product.model';
 import { CardLayoutField, CardLayoutSection } from '../../../core/models/product.model';
@@ -31,6 +31,25 @@ export class CategoryAdminComponent implements OnInit {
   /** All catalogue categories — drives the desktop horizontal nav bar. */
   readonly allCategories = this.catalogueConfig.categories;
   readonly fieldConfig = computed<CategoryFieldConfig | null>(() => this.category()?.fieldConfig ?? null);
+  readonly allFields = computed(() => {
+    const customMenuFields: ProductField[] = this.catalogueConfig.catalogueMenus()
+      .filter(menu => menu.custom)
+      .map(menu => ({
+        key: catalogueMenuFieldKey(menu.id),
+        label: menu.label,
+        type: 'select',
+        group: 'specs',
+        options: menu.options ?? [],
+        required: menu.required,
+        includeInBill: menu.includeInBill,
+      }));
+    const fields: ProductField[] = [
+      ...this.catalogueConfig.sharedFields(),
+      ...customMenuFields,
+      ...(this.fieldConfig()?.fields ?? []),
+    ];
+    return [...new Map(fields.map(field => [field.key, field])).values()];
+  });
   // Pricing mode is temporarily forced to 'standard' for every category — the
   // unit-rope / length pricing experiences are disabled until reworked. The
   // mode-specific code below is retained so it can be re-enabled later.
@@ -38,7 +57,12 @@ export class CategoryAdminComponent implements OnInit {
 
   readonly subcategories = computed(() => this.category()?.subcategories ?? []);
   readonly brands        = computed(() => this.category()?.brands ?? []);
-  readonly warrantyOptions = computed(() => this.fieldConfig()?.warrantyOptions ?? ['No warranty', '6 months', '1 year', '2 years', '3 years']);
+  readonly warrantyOptions = computed(() => {
+    const categoryOptions = this.fieldConfig()?.warrantyOptions;
+    if (categoryOptions?.length) return categoryOptions;
+    const shopOptions = this.catalogueConfig.warrantyOptions().map(option => option.label);
+    return shopOptions.length ? shopOptions : ['No warranty', '6 months', '1 year', '2 years', '3 years'];
+  });
   readonly bundleLengths = computed(() => this.fieldConfig()?.bundleLengths ?? [45, 90, 100, 180, 200, 500]);
   readonly stockUnits    = computed(() => this.fieldConfig()?.stockUnits ?? [{ value: 'bundle', label: 'Bundle / Coil' }, { value: 'm', label: 'Metres' }, { value: 'piece', label: 'Piece' }]);
   readonly costUnits     = computed(() => {
@@ -55,15 +79,22 @@ export class CategoryAdminComponent implements OnInit {
    */
   readonly unitOptions   = computed(() => {
     const override = this.fieldConfig()?.unitOptions;
-    if (override?.length) return override;
     const global = this.catalogueConfig.units();
-    return global.length ? global : null;
+    const options = override?.length ? override : global.length ? global : null;
+    const defaultUnit = this.fieldConfig()?.defaultUnit;
+    if (!options || !defaultUnit || !options.includes(defaultUnit)) return options;
+    return [defaultUnit, ...options.filter(unit => unit !== defaultUnit)];
   });
+  readonly requiredPillFields = computed(() =>
+    this.allFields().filter(field =>
+      field.required && this.isPillField(field) && this.isFieldVisible(field)
+    )
+  );
 
   // ── Subcategory-aware field visibility ───────────────────────────────────
   readonly currentSubcat = signal<string>('');
   readonly visibleSpecFields = computed(() =>
-    (this.fieldConfig()?.fields ?? []).filter(f => this.isFieldVisible(f))
+    this.allFields().filter(f => this.isFieldVisible(f))
   );
   readonly basicSpecFields = computed(() => this.visibleSpecFields().filter(f => (f.group ?? 'specs') === 'specs'));
   readonly pricingSpecFields = computed(() => this.visibleSpecFields().filter(f => f.group === 'pricing'));
@@ -120,7 +151,7 @@ export class CategoryAdminComponent implements OnInit {
 
   /** Recalculates every computed field from the current form + pill values. */
   private recomputeComputed(): void {
-    const fields = (this.fieldConfig()?.fields ?? []).filter(f => f.type === 'computed');
+    const fields = this.allFields().filter(f => f.type === 'computed');
     if (!fields.length) { this.computedValues.set({}); return; }
     const values: Record<string, unknown> = { ...this.productForm?.getRawValue?.(), ...this.pills() };
     const result: Record<string, number | null> = {};
@@ -226,7 +257,21 @@ export class CategoryAdminComponent implements OnInit {
     return colorNameToHex(c.label);
   }
   private controlSpecFields(): ProductField[] {
-    return (this.fieldConfig()?.fields ?? []).filter(f => !this.isPillField(f) && !this.isComputedField(f));
+    return this.allFields().filter(f => !this.isPillField(f) && !this.isComputedField(f));
+  }
+
+  private applyFieldValidators(): void {
+    for (const field of this.controlSpecFields()) {
+      const control = this.productForm?.get(field.key);
+      if (!control) continue;
+      const validators: ValidatorFn[] = [];
+      if (this.isFieldVisible(field) && field.required) validators.push(Validators.required);
+      if (this.isFieldVisible(field) && field.type === 'number' && field.min != null) {
+        validators.push(Validators.min(field.min));
+      }
+      control.setValidators(validators);
+      control.updateValueAndValidity({ emitEvent: false });
+    }
   }
 
   // ── Build the reactive form for the active pricing mode ──────────────────
@@ -278,6 +323,7 @@ export class CategoryAdminComponent implements OnInit {
     }
 
     this.productForm = this.fb.group(controls);
+    this.applyFieldValidators();
     this.wireBehaviours();
     this.recomputeComputed();
   }
@@ -293,7 +339,8 @@ export class CategoryAdminComponent implements OnInit {
     // Track subcategory → conditional fields & resets
     this.productForm.get('subcategory')?.valueChanges.subscribe((val: string) => {
       this.currentSubcat.set(val ?? '');
-      for (const f of this.fieldConfig()?.fields ?? []) {
+      this.applyFieldValidators();
+      for (const f of this.allFields()) {
         if (f.optionsBySubcategory) this.pills.update(p => ({ ...p, [f.key]: '' }));
         if (f.showForSubcategories && !f.showForSubcategories.includes(val)) {
           this.pills.update(p => ({ ...p, [f.key]: '' }));
@@ -587,14 +634,14 @@ export class CategoryAdminComponent implements OnInit {
 
     // Pills
     const pillState: Record<string, string> = {};
-    for (const f of this.fieldConfig()?.fields ?? []) {
+    for (const f of this.allFields()) {
       if (this.isPillField(f)) pillState[f.key] = (product[f.key] as string) ?? '';
     }
     this.pills.set(pillState);
 
     // Card layout placement
     const placement: Record<string, CardLayoutSection | 'off'> = {};
-    for (const f of this.fieldConfig()?.fields ?? []) placement[f.key] = 'off';
+    for (const f of this.allFields()) placement[f.key] = 'off';
     const affix: Record<string, { prefix?: string; suffix?: string }> = {};
     for (const item of (product.cardLayout ?? [])) {
       placement[item.key] = item.section;
@@ -663,6 +710,10 @@ export class CategoryAdminComponent implements OnInit {
   // ── Submit ───────────────────────────────────────────────────────────────
   async onSubmit(): Promise<void> {
     if (!this.productForm.valid) { this.errorMessage.set('Please fill all required fields.'); return; }
+    if (this.requiredPillFields().some(field => !this.pill(field.key))) {
+      this.errorMessage.set('Please choose a value for every required field.');
+      return;
+    }
     const catId = this.category()?.id ?? '';
     this.isLoading.set(true);
     this.errorMessage.set('');
@@ -725,7 +776,7 @@ export class CategoryAdminComponent implements OnInit {
     };
 
     // Pills
-    for (const f of this.fieldConfig()?.fields ?? []) {
+    for (const f of this.allFields()) {
       if (this.isPillField(f)) {
         const val = this.isFieldVisible(f) ? this.pill(f.key) : '';
         product[f.key] = val || undefined;
@@ -738,7 +789,7 @@ export class CategoryAdminComponent implements OnInit {
     }
     // Computed fields — store their latest calculated value
     this.recomputeComputed();
-    for (const f of (this.fieldConfig()?.fields ?? [])) {
+    for (const f of this.allFields()) {
       if (f.type !== 'computed') continue;
       const val = this.isFieldVisible(f) ? this.computedValue(f.key) : null;
       product[f.key] = val ?? undefined;

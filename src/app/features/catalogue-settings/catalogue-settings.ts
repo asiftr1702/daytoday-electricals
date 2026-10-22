@@ -1,6 +1,12 @@
 import { Component, inject, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { CatalogueConfigService, DynamicCategory } from '../../core/services/catalogue-config.service';
+import {
+  CatalogueConfigService,
+  CatalogueMenuId,
+  CatalogueMenuItem,
+  DynamicCategory,
+  catalogueMenuFieldKey,
+} from '../../core/services/catalogue-config.service';
 import {
   PricingMode,
   ProductField,
@@ -21,13 +27,19 @@ export class CatalogueSettingsComponent implements OnInit {
   readonly config  = inject(CatalogueConfigService);
   private readonly router = inject(Router);
 
-  readonly section     = signal<'categories' | 'units' | 'warranty'>('categories');
+  readonly section     = signal<string | 'menuSetup'>('categories');
   readonly saving      = signal(false);
   readonly saveSuccess = signal(false);
   readonly saveError   = signal('');
+  readonly menuDraft = signal<CatalogueMenuItem[]>([]);
+  readonly newMenuName = signal('');
+  readonly newMenuOption = signal('');
+  readonly orderedMenus = () => [...this.config.catalogueMenus()].sort((a, b) => a.order - b.order);
+  readonly visibleMenus = () => this.orderedMenus().filter(menu => menu.visible);
 
   // Category form
   readonly showCatForm    = signal(false);
+  readonly categorySearch = signal('');
   readonly editingCatId   = signal<string | null>(null);
   readonly catFormName    = signal('');
   readonly catFormDesc    = signal('');
@@ -37,9 +49,12 @@ export class CatalogueSettingsComponent implements OnInit {
 
   // Subcategory + brand panel
   readonly expandedCatId  = signal<string | null>(null);
-  readonly expandedTab    = signal<'subs' | 'brands' | 'fields'>('subs');
+  readonly expandedTab    = signal<'subs' | 'brands' | 'fields' | 'setup'>('subs');
   readonly newSubcatValue = signal('');
   readonly newBrandValue  = signal('');
+  readonly setupUnitOptions = signal('');
+  readonly setupDefaultUnit = signal('');
+  readonly setupWarrantyOptions = signal('');
 
   // Field editor
   readonly newFieldKey     = signal('');
@@ -53,9 +68,14 @@ export class CatalogueSettingsComponent implements OnInit {
   readonly newFieldFormula = signal('');
   readonly newFieldDecimals = signal(2);
   readonly newFieldIncludeInBill = signal(false);
+  readonly newFieldRequired = signal(false);
+  readonly newFieldPlaceholder = signal('');
+  readonly newFieldMin = signal<number | null>(null);
+  readonly editingSharedField = signal(false);
   /** Key of the field currently being edited (null = adding a new field). */
   readonly editingFieldKey = signal<string | null>(null);
   readonly fieldTypeOptions: ProductFieldType[] = ['text', 'number', 'textarea', 'select', 'pills', 'color-pills', 'computed'];
+  readonly sharedFieldTypeOptions: ProductFieldType[] = ['text', 'number', 'textarea', 'select', 'pills', 'color-pills'];
   readonly fieldSectionOptions: { value: 'specs' | 'pricing' | 'stock' | 'admin'; label: string }[] = [
     { value: 'specs',   label: 'Basic info' },
     { value: 'pricing', label: 'Pricing' },
@@ -72,10 +92,216 @@ export class CatalogueSettingsComponent implements OnInit {
   readonly newWarrantyValue = signal('');
 
   ngOnInit(): void {
-    this.config.loadConfig();
+    void this.config.loadConfig().then(() => {
+      this.menuDraft.set(this.orderedMenus().map(menu => ({ ...menu })));
+    });
   }
 
   goBack(): void { this.router.navigate(['/admin']); }
+
+  activeCategory(): DynamicCategory | null {
+    const categories = this.config.categories();
+    return categories.find(cat => cat.id === this.expandedCatId()) ?? categories[0] ?? null;
+  }
+
+  filteredCategories(): DynamicCategory[] {
+    const query = this.categorySearch().trim().toLocaleLowerCase();
+    if (!query) return this.config.categories();
+    return this.config.categories().filter(category =>
+      `${category.name} ${category.description}`.toLocaleLowerCase().includes(query)
+    );
+  }
+
+  selectCategory(catId: string): void {
+    this.expandedCatId.set(catId);
+    this.expandedTab.set('subs');
+    this.showCatForm.set(false);
+    this.editingCatId.set(null);
+  }
+
+  menuIcon(id: string): string {
+    if (!['categories', 'shared', 'units', 'warranty'].includes(id)) return '☷';
+    return {
+      categories: '▦',
+      shared: '＋',
+      units: '↔',
+      warranty: '◇',
+    }[id as 'categories' | 'shared' | 'units' | 'warranty'];
+  }
+
+  openMenu(id: string): void {
+    this.section.set(id);
+    if (id === 'shared') this.startAddSharedField();
+  }
+
+  isCustomMenu(id: string): boolean {
+    return this.config.catalogueMenus().some(menu => menu.id === id && menu.custom === true);
+  }
+
+  activeCustomMenu(): CatalogueMenuItem | null {
+    return this.config.catalogueMenus().find(menu => menu.id === this.section() && menu.custom === true) ?? null;
+  }
+
+  addMenuToDraft(): void {
+    const label = this.newMenuName().trim();
+    if (!label) return;
+    if ([...this.config.catalogueMenus(), ...this.menuDraft()]
+      .some(menu => menu.label.trim().toLowerCase() === label.toLowerCase())) {
+      this.saveError.set('A catalogue menu with this name already exists.');
+      return;
+    }
+    const baseId = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'custom-menu';
+    const ids = new Set([...this.config.catalogueMenus(), ...this.menuDraft()].map(menu => menu.id));
+    let id = baseId;
+    let suffix = 2;
+    const usedFieldKeys = new Set([
+      ...this.config.sharedFields().map(field => field.key),
+      ...this.config.categories().flatMap(category => (category.fieldConfig?.fields ?? []).map(field => field.key)),
+    ]);
+    while (ids.has(id) || usedFieldKeys.has(catalogueMenuFieldKey(id))) id = `${baseId}-${suffix++}`;
+    this.menuDraft.update(menus => [
+      ...menus,
+      { id, label, visible: true, order: menus.length, custom: true, options: [] },
+    ]);
+    this.newMenuName.set('');
+  }
+
+  removeMenuFromDraft(menu: CatalogueMenuItem): void {
+    if (menu.id === 'categories') return;
+    const confirmed = confirm(
+      menu.custom
+        ? `Delete "${menu.label}" and all of its saved options?`
+        : `Delete the "${menu.label}" menu and its saved settings? This cannot be undone.`
+    );
+    if (!confirmed) return;
+    this.menuDraft.update(menus => menus
+      .filter(existing => existing.id !== menu.id)
+      .sort((a, b) => a.order - b.order)
+      .map((existing, order) => ({ ...existing, order })));
+  }
+
+  async addCustomMenuOption(menu: CatalogueMenuItem): Promise<void> {
+    const option = this.newMenuOption().trim();
+    if (!option) return;
+    if ((menu.options ?? []).some(existing => existing.toLowerCase() === option.toLowerCase())) {
+      this.saveError.set('That option already exists in this menu.');
+      return;
+    }
+    this.config.catalogueMenus.update(menus => menus.map(existing =>
+      existing.id === menu.id ? { ...existing, options: [...(existing.options ?? []), option] } : existing
+    ));
+    this.newMenuOption.set('');
+    await this.persist();
+  }
+
+  async removeCustomMenuOption(menu: CatalogueMenuItem, option: string): Promise<void> {
+    this.config.catalogueMenus.update(menus => menus.map(existing =>
+      existing.id === menu.id
+        ? { ...existing, options: (existing.options ?? []).filter(value => value !== option) }
+        : existing
+    ));
+    await this.persist();
+  }
+
+  openMenuSettings(): void {
+    this.menuDraft.set(this.orderedMenus().map(menu => ({ ...menu })));
+    this.section.set('menuSetup');
+  }
+
+  updateMenuDraft(id: CatalogueMenuId, changes: Partial<CatalogueMenuItem>): void {
+    this.menuDraft.update(menus => menus.map(menu => menu.id === id ? { ...menu, ...changes } : menu));
+  }
+
+  moveMenu(id: CatalogueMenuId, direction: -1 | 1): void {
+    this.menuDraft.update(menus => {
+      const ordered = [...menus].sort((a, b) => a.order - b.order);
+      const index = ordered.findIndex(menu => menu.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= ordered.length) return menus;
+      [ordered[index], ordered[target]] = [ordered[target], ordered[index]];
+      return ordered.map((menu, order) => ({ ...menu, order }));
+    });
+  }
+
+  cancelMenuSettings(): void {
+    this.menuDraft.set(this.orderedMenus().map(menu => ({ ...menu })));
+    this.section.set('categories');
+  }
+
+  async saveMenuSettings(): Promise<void> {
+    const labels = this.menuDraft().map(menu => menu.label.trim().toLowerCase()).filter(Boolean);
+    if (new Set(labels).size !== labels.length) {
+      this.saveError.set('Each catalogue menu must have a unique name.');
+      return;
+    }
+    const normalized = [...this.menuDraft()]
+      .sort((a, b) => a.order - b.order)
+      .map((menu, order) => ({ ...menu, order, label: menu.label.trim() || menu.id }));
+    const removedMenus = this.config.catalogueMenus().filter(menu =>
+      !normalized.some(candidate => candidate.id === menu.id)
+    );
+    this.config.catalogueMenus.set(normalized);
+    for (const menu of removedMenus) {
+      if (menu.id === 'shared') this.config.sharedFields.set([]);
+      if (menu.id === 'units') this.config.units.set([]);
+      if (menu.id === 'warranty') this.config.warrantyOptions.set([]);
+    }
+    await this.persist();
+    this.menuDraft.set(normalized.map(menu => ({ ...menu })));
+  }
+
+  startAddSharedField(): void {
+    this.resetFieldForm();
+  }
+
+  editSharedField(field: ProductField): void {
+    this.editField(field);
+    this.editingSharedField.set(true);
+  }
+
+  async saveSharedField(): Promise<void> {
+    const field = this.fieldFromForm([]);
+    if (!field) return;
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(field.key)) {
+      this.saveError.set('Use a field key that starts with a letter and contains only letters, numbers or underscores.');
+      return;
+    }
+    const editingKey = this.editingFieldKey();
+    const fields = this.config.sharedFields();
+    if (editingKey) {
+      this.config.sharedFields.set(fields.map(existing => existing.key === editingKey ? field : existing));
+    } else {
+      if (fields.some(existing => existing.key === field.key)) {
+        this.saveError.set('A shared field with this key already exists.');
+        return;
+      }
+      if (this.config.categories().some(category =>
+        category.fieldConfig?.fields.some(existing => existing.key === field.key)
+      )) {
+        this.saveError.set('This key is already used by a category field. Choose a unique field key.');
+        return;
+      }
+      this.config.sharedFields.set([...fields, field]);
+    }
+    this.resetFieldForm();
+    await this.persist();
+  }
+
+  async removeSharedField(field: ProductField): Promise<void> {
+    this.config.sharedFields.update(fields => fields.filter(existing => existing.key !== field.key));
+    await this.persist();
+  }
+
+  async toggleSharedFieldBill(field: ProductField): Promise<void> {
+    this.config.sharedFields.update(fields => fields.map(existing => {
+      if (existing.key !== field.key) return existing;
+      const next = { ...existing };
+      if (next.includeInBill) delete next.includeInBill;
+      else next.includeInBill = true;
+      return next;
+    }));
+    await this.persist();
+  }
 
   private async persist(): Promise<void> {
     this.saving.set(true);
@@ -111,7 +337,7 @@ export class CatalogueSettingsComponent implements OnInit {
     this.catFormColor.set(cat.color);
     this.catFormSheetName.set(cat.sheetName);
     this.showCatForm.set(true);
-    this.expandedCatId.set(null);
+    this.expandedCatId.set(cat.id);
   }
 
   cancelCatForm(): void {
@@ -123,7 +349,13 @@ export class CatalogueSettingsComponent implements OnInit {
     const name = this.catFormName().trim();
     if (!name) return;
     const editId = this.editingCatId();
+    const id = editId ?? name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (!id || (!editId && this.config.categories().some(cat => cat.id === id))) {
+      this.saveError.set('A category with this name already exists, or the name is invalid.');
+      return;
+    }
     if (editId) {
+      this.config.deletedCategoryIds.update(ids => ids.filter(deletedId => deletedId !== editId));
       this.config.categories.update(cats =>
         cats.map(c => c.id === editId ? {
           ...c,
@@ -135,7 +367,7 @@ export class CatalogueSettingsComponent implements OnInit {
         } : c)
       );
     } else {
-      const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      this.config.deletedCategoryIds.update(ids => ids.filter(deletedId => deletedId !== id));
       this.config.categories.update(cats => [...cats, {
         id,
         name,
@@ -147,12 +379,17 @@ export class CatalogueSettingsComponent implements OnInit {
         brands: [],
       }]);
     }
+    this.expandedCatId.set(id);
+    this.expandedTab.set('setup');
+    const selectedCategory = this.config.categories().find(category => category.id === id);
+    if (selectedCategory) this.editCategorySetup(selectedCategory);
     this.showCatForm.set(false);
     this.editingCatId.set(null);
     await this.persist();
   }
 
   async deleteCategory(id: string): Promise<void> {
+    this.config.deletedCategoryIds.update(ids => ids.includes(id) ? ids : [...ids, id]);
     this.config.categories.update(cats => cats.filter(c => c.id !== id));
     if (this.expandedCatId() === id) this.expandedCatId.set(null);
     await this.persist();
@@ -167,6 +404,39 @@ export class CatalogueSettingsComponent implements OnInit {
     }
     this.newSubcatValue.set('');
     this.newBrandValue.set('');
+  }
+
+  editCategorySetup(cat: DynamicCategory): void {
+    const fieldConfig = cat.fieldConfig ?? defaultFieldConfig(cat.id);
+    this.setupUnitOptions.set((fieldConfig.unitOptions ?? []).join(', '));
+    this.setupDefaultUnit.set(fieldConfig.defaultUnit ?? '');
+    this.setupWarrantyOptions.set((fieldConfig.warrantyOptions ?? []).join(', '));
+  }
+
+  async saveCategorySetup(cat: DynamicCategory): Promise<void> {
+    const splitValues = (value: string) =>
+      [...new Set(value.split(',').map(item => item.trim()).filter(Boolean))];
+    const unitOptions = splitValues(this.setupUnitOptions());
+    const defaultUnit = this.setupDefaultUnit().trim();
+    const warrantyOptions = splitValues(this.setupWarrantyOptions());
+
+    if (defaultUnit && !(unitOptions.length ? unitOptions : this.config.units()).includes(defaultUnit)) {
+      this.saveError.set('The default unit must be included in this category’s unit options.');
+      return;
+    }
+
+    this.config.categories.update(categories => categories.map(category => {
+      if (category.id !== cat.id) return category;
+      const fieldConfig = { ...(category.fieldConfig ?? defaultFieldConfig(category.id)) };
+      if (unitOptions.length) fieldConfig.unitOptions = unitOptions;
+      else delete fieldConfig.unitOptions;
+      if (defaultUnit) fieldConfig.defaultUnit = defaultUnit;
+      else delete fieldConfig.defaultUnit;
+      if (warrantyOptions.length) fieldConfig.warrantyOptions = warrantyOptions;
+      else delete fieldConfig.warrantyOptions;
+      return { ...category, fieldConfig };
+    }));
+    await this.persist();
   }
 
   async addSubcategory(catId: string): Promise<void> {
@@ -265,15 +535,47 @@ export class CatalogueSettingsComponent implements OnInit {
   }
 
   async addField(catId: string): Promise<void> {
+    const subcats = this.newFieldSubcats().filter(Boolean);
+    const field = this.fieldFromForm(subcats);
+    if (!field) return;
+    const key = field.key;
+    const editingKey = this.editingFieldKey();
+    const category = this.config.categories().find(cat => cat.id === catId);
+    if (!category) {
+      this.saveError.set('The selected category could not be found.');
+      return;
+    }
+    if (!editingKey && (category.fieldConfig?.fields ?? []).some(existing => existing.key === key)) {
+      this.saveError.set('A field with this key already exists in this category.');
+      return;
+    }
+    if (!editingKey && this.config.sharedFields().some(existing => existing.key === key)) {
+      this.saveError.set('This key is already used by a shared field. Choose a unique field key.');
+      return;
+    }
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(key)) {
+      this.saveError.set('Use a field key that starts with a letter and contains only letters, numbers or underscores.');
+      return;
+    }
+
+    if (editingKey) {
+      this.mutateFieldConfig(catId, fields =>
+        fields.map(existing => existing.key === editingKey ? field : existing)
+      );
+    } else {
+      this.mutateFieldConfig(catId, fields => [...fields, field]);
+    }
+    this.resetFieldForm();
+    await this.persist();
+  }
+
+  private fieldFromForm(subcats: string[]): ProductField | null {
     const key = this.newFieldKey().trim();
     const label = this.newFieldLabel().trim();
-    if (!key || !label) return;
+    if (!key || !label) return null;
     const type = this.newFieldType();
-    const group = this.newFieldGroup();
-    const rawOptions = this.newFieldOptions().split(',').map(o => o.trim()).filter(Boolean);
-    const subcats = this.newFieldSubcats().filter(Boolean);
-
-    const field: ProductField = { key, label, type, group };
+    const rawOptions = [...new Set(this.newFieldOptions().split(',').map(option => option.trim()).filter(Boolean))];
+    const field: ProductField = { key, label, type, group: this.newFieldGroup() };
     if (type === 'pills') {
       field.options = rawOptions;
     } else if (type === 'select') {
@@ -284,7 +586,7 @@ export class CatalogueSettingsComponent implements OnInit {
     // Computed field formula
     if (type === 'computed') {
       const formula = this.newFieldFormula().trim();
-      if (!formula) return;
+      if (!formula) return null;
       field.formula = formula;
       field.decimals = Number(this.newFieldDecimals()) || 0;
     }
@@ -299,24 +601,17 @@ export class CatalogueSettingsComponent implements OnInit {
     if (subcats.length) field.showForSubcategories = subcats;
     // Show this field's value on the printed/recorded bill
     if (this.newFieldIncludeInBill()) field.includeInBill = true;
-
-    const editingKey = this.editingFieldKey();
-    if (editingKey) {
-      // Update in place, preserving position
-      this.mutateFieldConfig(catId, fields =>
-        fields.map(f => (f.key === editingKey ? field : f))
-      );
-    } else {
-      this.mutateFieldConfig(catId, fields =>
-        fields.some(f => f.key === key) ? fields : [...fields, field]
-      );
-    }
-    this.resetFieldForm();
-    await this.persist();
+    if (this.newFieldRequired()) field.required = true;
+    const placeholder = this.newFieldPlaceholder().trim();
+    if (placeholder) field.placeholder = placeholder;
+    const min = this.newFieldMin();
+    if (type === 'number' && min !== null && Number.isFinite(min)) field.min = min;
+    return field;
   }
 
   /** Load an existing field into the editor for in-place editing. */
   editField(field: ProductField): void {
+    this.editingSharedField.set(false);
     this.editingFieldKey.set(field.key);
     this.newFieldKey.set(field.key);
     this.newFieldLabel.set(field.label);
@@ -333,6 +628,9 @@ export class CatalogueSettingsComponent implements OnInit {
     this.newFieldFormula.set(field.formula ?? '');
     this.newFieldDecimals.set(field.decimals ?? 2);
     this.newFieldIncludeInBill.set(!!field.includeInBill);
+    this.newFieldRequired.set(!!field.required);
+    this.newFieldPlaceholder.set(field.placeholder ?? '');
+    this.newFieldMin.set(field.min ?? null);
   }
 
   /** Cancel an in-progress field edit and clear the form. */
@@ -342,6 +640,7 @@ export class CatalogueSettingsComponent implements OnInit {
 
   private resetFieldForm(): void {
     this.editingFieldKey.set(null);
+    this.editingSharedField.set(false);
     this.newFieldKey.set('');
     this.newFieldLabel.set('');
     this.newFieldType.set('text');
@@ -353,6 +652,9 @@ export class CatalogueSettingsComponent implements OnInit {
     this.newFieldFormula.set('');
     this.newFieldDecimals.set(2);
     this.newFieldIncludeInBill.set(false);
+    this.newFieldRequired.set(false);
+    this.newFieldPlaceholder.set('');
+    this.newFieldMin.set(null);
   }
 
   /** Append a {key} token to the formula being edited. */

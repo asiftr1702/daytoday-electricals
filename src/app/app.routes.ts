@@ -88,7 +88,7 @@ export const routes: Routes = [
         path: 'catalogue-settings',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/catalogue-settings/catalogue-settings').then(m => m.CatalogueSettingsComponent),
-        title: 'Catalogue Settings — DayToDay Electricals',
+        title: 'Catalogue Studio — DayToDay Electricals',
       },
       {
         path: '**',
@@ -97,4 +97,3 @@ export const routes: Routes = [
     ],
   },
 ];
-
