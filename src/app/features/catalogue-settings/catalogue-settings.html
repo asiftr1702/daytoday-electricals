@@ -1,11 +1,11 @@
 <main class="studio">
   <header class="studio-header">
     <button class="back-button" type="button" (click)="goBack()" aria-label="Back to admin">←</button>
-    <div class="brand-mark" aria-hidden="true">✳</div>
+    <div class="brand-mark" aria-hidden="true">⚡</div>
     <div class="header-copy">
-      <span class="eyebrow">SHOP CONTROL CENTER</span>
-      <h1>Catalogue studio</h1>
-      <p>Shape the products, options and details that make your shop yours.</p>
+      <span class="eyebrow">SHOP MANAGEMENT</span>
+      <h1>Catalogue</h1>
+      <p>Manage categories, product details and shop-wide options.</p>
     </div>
     <div class="save-status" aria-live="polite">
       @if (saving()) { <span class="status-dot is-saving"></span> Saving changes }
@@ -30,10 +30,58 @@
 
       <nav class="workspace-nav" aria-label="Catalogue settings">
         @for (menu of visibleMenus(); track menu.id) {
-          <button type="button" class="workspace-link" [class.selected]="section() === menu.id"
-                  (click)="openMenu(menu.id)">
-            <span class="nav-icon">{{ menuIcon(menu.id) }}</span><span>{{ menu.label }}</span>
-          </button>
+          @if (menu.id === 'categories') {
+            <div class="category-menu-group">
+              <button type="button" class="workspace-link category-parent" [class.selected]="section() === menu.id"
+                      [attr.aria-expanded]="section() === menu.id && categoriesExpanded()" aria-controls="category-submenu"
+                      (click)="toggleCategoriesMenu()">
+                <span class="nav-icon">{{ menuIcon(menu.id) }}</span><span>{{ menu.label }}</span>
+                <span class="parent-chevron" [class.open]="section() === menu.id && categoriesExpanded()" aria-hidden="true">⌄</span>
+              </button>
+              @if (section() === 'categories' && categoriesExpanded()) {
+                <div class="category-submenu" id="category-submenu">
+                  <div class="sidebar-list-heading">
+                    <span>PRODUCT GROUPS</span>
+                    <button type="button" class="text-action" (click)="startAddCategory()">+ Add</button>
+                  </div>
+                  <label class="category-search">
+                    <span aria-hidden="true">⌕</span>
+                    <input type="search" [value]="categorySearch()" (input)="categorySearch.set($any($event.target).value)"
+                           placeholder="Find a category" aria-label="Find a product category" />
+                  </label>
+                  <div class="category-nav-list">
+                    @for (cat of filteredCategories(); track cat.id) {
+                      <button type="button" class="category-nav-item"
+                              [class.selected]="activeCategory()?.id === cat.id && !showCatForm()"
+                              [attr.aria-pressed]="activeCategory()?.id === cat.id && !showCatForm()"
+                              (click)="selectCategory(cat.id)">
+                        <span class="category-icon" [style.background]="cat.color">{{ cat.icon }}</span>
+                        <span class="category-nav-copy">
+                          <strong>{{ cat.name }}</strong>
+                          <small>{{ cat.subcategories.length }} subcategories · {{ fieldsOf(cat).length }} fields</small>
+                        </span>
+                        <span class="nav-chevron" aria-hidden="true">›</span>
+                      </button>
+                    }
+                    @if (config.categories().length === 0) {
+                      <p class="empty-note">Add your first category to start building your catalogue.</p>
+                    } @else if (filteredCategories().length === 0) {
+                      <p class="empty-note">No categories match your search.</p>
+                    }
+                  </div>
+                  <div class="sidebar-tip">
+                    <span aria-hidden="true">✦</span>
+                    <p>Each group can have its own fields, units and warranty choices.</p>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <button type="button" class="workspace-link" [class.selected]="section() === menu.id"
+                    (click)="openMenu(menu.id)">
+              <span class="nav-icon">{{ menuIcon(menu.id) }}</span><span>{{ menu.label }}</span>
+            </button>
+          }
         }
       </nav>
 
@@ -42,107 +90,105 @@
         <span aria-hidden="true">⚙</span> Manage catalogue menus
       </button>
 
-      @if (section() === 'categories') {
-        <div class="sidebar-list-heading">
-          <span>PRODUCT GROUPS</span>
-          <button type="button" class="text-action" (click)="startAddCategory()">+ Add</button>
-        </div>
-        <label class="category-search">
-          <span aria-hidden="true">⌕</span>
-          <input type="search" [value]="categorySearch()" (input)="categorySearch.set($any($event.target).value)"
-                 placeholder="Find a category" aria-label="Find a product category" />
-        </label>
-        <div class="category-nav-list">
-          @for (cat of filteredCategories(); track cat.id) {
-            <button type="button" class="category-nav-item"
-                    [class.selected]="activeCategory()?.id === cat.id && !showCatForm()"
-                    (click)="selectCategory(cat.id)">
-              <span class="category-icon" [style.background]="cat.color">{{ cat.icon }}</span>
-              <span class="category-nav-copy">
-                <strong>{{ cat.name }}</strong>
-                <small>{{ cat.subcategories.length }} subcategories · {{ fieldsOf(cat).length }} fields</small>
-              </span>
-              <span class="nav-chevron" aria-hidden="true">›</span>
-            </button>
-          }
-          @if (config.categories().length === 0) {
-            <p class="empty-note">Add your first category to start building your catalogue.</p>
-          } @else if (filteredCategories().length === 0) {
-            <p class="empty-note">No categories match your search.</p>
-          }
-        </div>
-        <div class="sidebar-tip">
-          <span aria-hidden="true">✦</span>
-          <p>Each category can have its own fields, units and warranty choices.</p>
-        </div>
-      }
     </aside>
 
     <section class="studio-workspace">
       @if (section() === 'categories') {
         @if (showCatForm()) {
-          <article class="workspace-card">
-            <div class="page-heading">
-              <div>
+          <article class="workspace-card category-create-panel">
+            <div class="page-heading category-create-header">
+              <div class="category-create-copy">
                 <span class="eyebrow">CATEGORY DETAILS</span>
                 <h2>{{ editingCatId() ? 'Edit category' : 'Create a category' }}</h2>
                 <p>Give this group a name and identity customers will recognize.</p>
               </div>
               <button type="button" class="quiet-button" (click)="cancelCatForm()">Cancel</button>
             </div>
-            <div class="form-grid category-form">
-              <label class="form-field">
-                <span>Category name <b>*</b></span>
-                <input class="studio-input" [value]="catFormName()"
-                       (input)="catFormName.set($any($event.target).value)" placeholder="e.g. Ceiling fans" />
-              </label>
-              <label class="form-field">
-                <span>Icon</span>
-                <input class="studio-input" [value]="catFormIcon()"
-                       (input)="catFormIcon.set($any($event.target).value)" placeholder="📦" />
-              </label>
-              <label class="form-field color-field">
+            <form class="category-form" (submit)="$event.preventDefault(); saveCatForm()">
+              <div class="category-form-row">
+                <label class="form-field">
+                  <span>Category name <b>*</b></span>
+                  <input class="studio-input" [value]="catFormName()" [attr.aria-invalid]="categoryNameError()"
+                         (input)="catFormName.set($any($event.target).value); categoryNameError.set(false)"
+                         placeholder="e.g. Ceiling fans" autocomplete="off" maxlength="60" />
+                  @if (categoryNameError()) { <small class="category-error">Please enter a category name.</small> }
+                </label>
+                <div class="form-field icon-field">
+                  <label for="category-icon">Icon</label>
+                  <div class="icon-picker-wrap">
+                    <input id="category-icon" class="studio-input category-icon-input" [value]="catFormIcon()"
+                           (input)="catFormIcon.set($any($event.target).value)" placeholder="📦" maxlength="8" autocomplete="off" />
+                    <button type="button" class="icon-picker-toggle" (click)="toggleIconPicker()"
+                            [attr.aria-expanded]="iconPickerOpen()" aria-label="Choose a category icon">⌄</button>
+                    @if (iconPickerOpen()) {
+                      <div class="category-icon-popover" role="group" aria-label="Category icons">
+                        @for (icon of categoryIconOptions; track icon) {
+                          <button type="button" (click)="catFormIcon.set(icon); iconPickerOpen.set(false)"
+                                  [attr.aria-label]="'Use icon ' + icon">{{ icon }}</button>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-field category-color-field">
                 <span>Category colour</span>
-                <input type="color" class="color-input" [value]="catFormColor()"
-                       (input)="catFormColor.set($any($event.target).value)" />
-              </label>
-              <label class="form-field full-field">
+                <div class="category-color-options" role="radiogroup" aria-label="Category colour">
+                  @for (color of categoryColorOptions; track color) {
+                    <button type="button" class="category-color-swatch" [style.backgroundColor]="color"
+                            [class.selected]="catFormColor().toLowerCase() === color.toLowerCase()"
+                            [attr.aria-checked]="catFormColor().toLowerCase() === color.toLowerCase()"
+                            role="radio" [attr.aria-label]="'Color ' + color"
+                            (click)="catFormColor.set(color)"></button>
+                  }
+                  <label class="category-custom-color" aria-label="Choose custom color">
+                    <input type="color" [value]="catFormColor()" (input)="catFormColor.set($any($event.target).value)" />
+                  </label>
+                </div>
+              </div>
+
+              <label class="form-field">
                 <span>Description</span>
                 <input class="studio-input" [value]="catFormDesc()"
-                       (input)="catFormDesc.set($any($event.target).value)" placeholder="A short description of this product group" />
+                       (input)="catFormDesc.set($any($event.target).value)"
+                       placeholder="A short description of this product group" autocomplete="off" maxlength="120" />
               </label>
-              <label class="form-field full-field">
+              <label class="form-field">
                 <span>Inventory sheet name</span>
                 <input class="studio-input" [value]="catFormSheetName()"
-                       (input)="catFormSheetName.set($any($event.target).value)" placeholder="Defaults to the category name" />
+                       (input)="catFormSheetName.set($any($event.target).value)"
+                       [placeholder]="catFormName().trim() || 'Defaults to the category name'" autocomplete="off" maxlength="60" />
                 <small>Used to organize this category in your inventory.</small>
               </label>
-            </div>
-            <div class="form-actions">
-              <button type="button" class="primary-button" (click)="saveCatForm()">
+
+              <div class="category-preview" aria-label="Category preview">
+                <span class="category-preview-icon" [style.backgroundColor]="catFormColor()">{{ catFormIcon() || '📦' }}</span>
+                <span class="category-preview-copy">
+                  <strong>{{ catFormName().trim() || 'Category name' }}</strong>
+                  <small>{{ catFormDesc().trim() || 'Your description appears here' }}</small>
+                </span>
+                <span class="category-preview-label">Preview</span>
+              </div>
+
+              <button type="submit" class="primary-button category-submit-button">
                 {{ editingCatId() ? 'Save category' : 'Create category' }}
               </button>
-            </div>
+            </form>
           </article>
         } @else if (activeCategory(); as cat) {
           <div class="page-heading category-heading">
             <div class="heading-icon" [style.background]="cat.color">{{ cat.icon }}</div>
             <div class="heading-copy">
-              <span class="eyebrow">CATEGORY BUILDER</span>
+              <span class="eyebrow">PRODUCT CATEGORY</span>
               <h2>{{ cat.name }}</h2>
               <p>{{ cat.description || 'Configure the way products in this group are added and displayed.' }}</p>
+              <span class="category-sheet"><span>Inventory sheet</span><strong>{{ cat.sheetName }}</strong></span>
             </div>
             <div class="heading-actions">
               <button type="button" class="quiet-button" (click)="startEditCategory(cat)">Edit details</button>
               <button type="button" class="danger-button" (click)="deleteCategory(cat.id)" [attr.aria-label]="'Delete ' + cat.name">Delete</button>
             </div>
-          </div>
-
-          <div class="summary-grid">
-            <div class="summary-card"><span class="summary-icon purple">⌘</span><span><strong>{{ cat.subcategories.length }}</strong><small>Subcategories</small></span></div>
-            <div class="summary-card"><span class="summary-icon amber">◇</span><span><strong>{{ cat.brands.length }}</strong><small>Brands</small></span></div>
-            <div class="summary-card"><span class="summary-icon blue">▤</span><span><strong>{{ fieldsOf(cat).length }}</strong><small>Custom fields</small></span></div>
-            <div class="summary-card"><span class="summary-icon green">▣</span><span><strong>{{ cat.sheetName }}</strong><small>Inventory sheet</small></span></div>
           </div>
 
           <article class="workspace-card category-editor">

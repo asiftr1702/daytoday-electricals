@@ -36,6 +36,7 @@ export class CatalogueSettingsComponent implements OnInit {
   readonly newMenuOption = signal('');
   readonly orderedMenus = () => [...this.config.catalogueMenus()].sort((a, b) => a.order - b.order);
   readonly visibleMenus = () => this.orderedMenus().filter(menu => menu.visible);
+  readonly categoriesExpanded = signal(true);
 
   // Category form
   readonly showCatForm    = signal(false);
@@ -46,6 +47,10 @@ export class CatalogueSettingsComponent implements OnInit {
   readonly catFormIcon    = signal('📦');
   readonly catFormColor   = signal('#E3F2FD');
   readonly catFormSheetName = signal('');
+  readonly categoryNameError = signal(false);
+  readonly iconPickerOpen = signal(false);
+  readonly categoryIconOptions = ['📦', '🌀', '💡', '🔌', '🛠️', '🚿', '🪑', '🛏️', '🧴', '🧹', '🔧', '🏷️'];
+  readonly categoryColorOptions = ['#E3F2FD', '#E8F5E9', '#FFF8E1', '#FCE4EC', '#F3E5F5', '#E0F7FA', '#FFF3E0', '#ECEFF1'];
 
   // Subcategory + brand panel
   readonly expandedCatId  = signal<string | null>(null);
@@ -132,6 +137,15 @@ export class CatalogueSettingsComponent implements OnInit {
   openMenu(id: string): void {
     this.section.set(id);
     if (id === 'shared') this.startAddSharedField();
+  }
+
+  toggleCategoriesMenu(): void {
+    if (this.section() !== 'categories') {
+      this.openMenu('categories');
+      this.categoriesExpanded.set(true);
+      return;
+    }
+    this.categoriesExpanded.update(expanded => !expanded);
   }
 
   isCustomMenu(id: string): boolean {
@@ -320,6 +334,8 @@ export class CatalogueSettingsComponent implements OnInit {
 
   startAddCategory(): void {
     this.editingCatId.set(null);
+    this.categoryNameError.set(false);
+    this.iconPickerOpen.set(false);
     this.catFormName.set('');
     this.catFormDesc.set('');
     this.catFormIcon.set('📦');
@@ -331,6 +347,8 @@ export class CatalogueSettingsComponent implements OnInit {
 
   startEditCategory(cat: DynamicCategory): void {
     this.editingCatId.set(cat.id);
+    this.categoryNameError.set(false);
+    this.iconPickerOpen.set(false);
     this.catFormName.set(cat.name);
     this.catFormDesc.set(cat.description);
     this.catFormIcon.set(cat.icon);
@@ -343,11 +361,21 @@ export class CatalogueSettingsComponent implements OnInit {
   cancelCatForm(): void {
     this.showCatForm.set(false);
     this.editingCatId.set(null);
+    this.categoryNameError.set(false);
+    this.iconPickerOpen.set(false);
+  }
+
+  toggleIconPicker(): void {
+    this.iconPickerOpen.update(open => !open);
   }
 
   async saveCatForm(): Promise<void> {
     const name = this.catFormName().trim();
-    if (!name) return;
+    if (!name) {
+      this.categoryNameError.set(true);
+      return;
+    }
+    this.categoryNameError.set(false);
     const editId = this.editingCatId();
     const id = editId ?? name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     if (!id || (!editId && this.config.categories().some(cat => cat.id === id))) {
