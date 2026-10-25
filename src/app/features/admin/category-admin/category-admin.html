@@ -47,7 +47,18 @@
         <div class="section-label">⚙️ Basic info</div>
         <div class="form-card">
 
+          <div class="field">
+            <label for="ca-name">Product name <span class="req" aria-hidden="true">*</span></label>
+            <input id="ca-name" type="text" formControlName="name" placeholder="e.g. model / variant" autocomplete="off" />
+          </div>
+
           <div class="row-two">
+            <div class="field">
+              <label for="ca-subcat">Subcategory <span class="req" aria-hidden="true">*</span></label>
+              <select id="ca-subcat" formControlName="subcategory">
+                @for (s of subcategories(); track s) { <option [value]="s">{{ s }}</option> }
+              </select>
+            </div>
             <div class="field">
               <label for="ca-brand">Brand <span class="req" aria-hidden="true">*</span></label>
               <input
@@ -62,25 +73,13 @@
                 @for (b of brands(); track b) { <option [value]="b">{{ b }}</option> }
               </datalist>
             </div>
-            <div class="field">
-              <label for="ca-subcat">Subcategory <span class="req" aria-hidden="true">*</span></label>
-              <select id="ca-subcat" formControlName="subcategory">
-                @for (s of subcategories(); track s) { <option [value]="s">{{ s }}</option> }
-              </select>
-            </div>
           </div>
 
-          <div class="row-two">
-            <div class="field">
-              <label for="ca-name">Product name <span class="req" aria-hidden="true">*</span></label>
-              <input id="ca-name" type="text" formControlName="name" placeholder="e.g. model / variant" autocomplete="off" />
-            </div>
-            <div class="field">
-              <label>SKU <span class="label-note">(auto-generated)</span></label>
-              <div class="sku-box">
-                <input type="text" formControlName="sku" readonly class="sku-input" placeholder="Fill fields above…" />
-                @if (generatedSku()) { <span class="sku-badge">Auto</span> }
-              </div>
+          <div class="field">
+            <label>SKU <span class="label-note">(auto-generated)</span></label>
+            <div class="sku-box">
+              <input type="text" formControlName="sku" readonly class="sku-input" placeholder="Fill fields above…" />
+              @if (generatedSku()) { <span class="sku-badge">Auto</span> }
             </div>
           </div>
 

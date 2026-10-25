@@ -220,17 +220,17 @@
 
           <article class="workspace-card category-editor">
             <nav class="editor-tabs" aria-label="Category configuration">
+              <button type="button" [class.active]="expandedTab() === 'fields'" (click)="expandedTab.set('fields')">
+                Item form <span>{{ fieldsOf(cat).length }}</span>
+              </button>
               <button type="button" [class.active]="expandedTab() === 'subs'" (click)="expandedTab.set('subs')">
                 Subcategories <span>{{ cat.subcategories.length }}</span>
               </button>
               <button type="button" [class.active]="expandedTab() === 'brands'" (click)="expandedTab.set('brands')">
                 Brands <span>{{ cat.brands.length }}</span>
               </button>
-              <button type="button" [class.active]="expandedTab() === 'fields'" (click)="expandedTab.set('fields')">
-                Product fields <span>{{ fieldsOf(cat).length }}</span>
-              </button>
               <button type="button" [class.active]="expandedTab() === 'setup'" (click)="expandedTab.set('setup'); editCategorySetup(cat)">
-                Form setup
+                Form defaults
               </button>
             </nav>
 
@@ -276,81 +276,122 @@
 
             @if (expandedTab() === 'fields') {
               <div class="editor-content">
-                <div class="content-heading">
-                  <div><h3>Design the product form</h3><p>Add the exact details your shop needs. Choose where each field appears and whether it prints on the bill.</p></div>
-                </div>
-                <div class="field-list">
+                <div class="item-form-layout">
+                  <div class="item-form-designer">
+                    <div class="content-heading item-form-heading">
+                      <div><h3>Design the item form</h3><p>Choose what your team records when adding a {{ cat.name }} item. Your custom fields appear in the add item form.</p></div>
+                    </div>
+                    <div class="field-list">
                   @for (field of fieldsOf(cat); track field.key) {
-                    <div class="field-card">
-                      <div class="field-card-main">
-                        <span class="field-type-icon">▤</span>
-                        <div class="field-title"><strong>{{ field.label }}</strong><code>{{ field.key }}</code></div>
-                        <span class="field-tag">{{ field.type }}</span>
-                        <span class="field-tag section-tag">{{ sectionLabel(field.group) }}</span>
-                        @if (field.required) { <span class="field-tag required-tag">Required</span> }
+                    <div class="field-card field-inline-editor">
+                      <div class="field-editor-top">
+                        <label class="field-editor-name"><span class="sr-only">Field name</span><input class="studio-input" [value]="field.label" (change)="updateCategoryField(cat.id, field, { label: $any($event.target).value })" placeholder="Field name" /></label>
+                        <label class="field-editor-type"><span class="sr-only">Input type</span><select class="studio-input" [value]="field.type" (change)="updateCategoryField(cat.id, field, { type: $any($event.target).value })">@for (type of fieldTypeOptions; track type) { <option [value]="type">{{ fieldTypeLabel(type) }}</option> }</select></label>
+                        <div class="field-card-actions">
+                          <button type="button" class="icon-action" (click)="moveField(cat.id, field, -1)" [disabled]="isFirstInSection(cat, field)" aria-label="Move field up">↑</button>
+                          <button type="button" class="icon-action" (click)="moveField(cat.id, field, 1)" [disabled]="isLastInSection(cat, field)" aria-label="Move field down">↓</button>
+                          <button type="button" class="icon-action remove-action" (click)="removeField(cat.id, field)" [attr.aria-label]="'Remove ' + field.label">×</button>
+                        </div>
                       </div>
-                      <div class="field-card-options">
-                        <span>{{ scopeText(field) }}</span>
-                        @if (optionsText(field)) { <span>{{ optionsText(field) }}</span> }
+                      <div class="field-editor-settings">
+                        <label class="field-editor-check"><input type="checkbox" [checked]="!!field.required" (change)="updateCategoryField(cat.id, field, { required: $any($event.target).checked })" /><span>Required</span></label>
+                        @if (field.type === 'text' || field.type === 'number' || field.type === 'textarea') {
+                          <label class="field-editor-placeholder"><span class="sr-only">Field placeholder</span><input class="studio-input" [value]="field.placeholder ?? ''" (change)="updateCategoryField(cat.id, field, { placeholder: $any($event.target).value })" placeholder="Hint under the field (optional)" /></label>
+                        }
+                        @if (field.type === 'computed') {
+                          <label class="field-editor-placeholder"><span class="sr-only">Formula</span><input class="studio-input" [value]="field.formula ?? ''" (change)="updateCategoryField(cat.id, field, { formula: $any($event.target).value })" placeholder="Enter formula" /></label>
+                        }
+                        <label class="field-editor-check field-editor-bill"><input type="checkbox" [checked]="!!field.includeInBill" (change)="updateCategoryField(cat.id, field, { includeInBill: $any($event.target).checked })" /><span>Print on bill</span></label>
                       </div>
-                      <div class="field-card-actions">
-                        <label class="bill-switch">
-                          <input type="checkbox" [checked]="!!field.includeInBill" (change)="toggleFieldBill(cat.id, field)" />
-                          <span>Print on bill</span>
-                        </label>
-                        <button type="button" class="icon-action" (click)="moveField(cat.id, field, -1)" [disabled]="isFirstInSection(cat, field)" aria-label="Move field up">↑</button>
-                        <button type="button" class="icon-action" (click)="moveField(cat.id, field, 1)" [disabled]="isLastInSection(cat, field)" aria-label="Move field down">↓</button>
-                        <button type="button" class="icon-action" (click)="editField(field)" aria-label="Edit field">Edit</button>
-                        <button type="button" class="icon-action remove-action" (click)="removeField(cat.id, field)" aria-label="Remove field">×</button>
+                      @if (['select', 'pills', 'color-pills'].includes(field.type)) {
+                        <div class="field-editor-options">
+                          <strong>Predefined values</strong>
+                          <div class="field-option-chips">@for (option of fieldOptionsOf(field); track option; let i = $index) { <span class="field-option-chip">{{ option }}<button type="button" (click)="removeFieldOption(cat.id, field, i)" [attr.aria-label]="'Remove ' + option">×</button></span> }@if (!fieldOptionsOf(field).length) { <small>No values added yet</small> }</div>
+                          <div class="field-option-add"><input #optionInput class="studio-input" placeholder="Type a value, press Enter (commas add several)" (keydown.enter)="$event.preventDefault(); addFieldOptions(cat.id, field, optionInput)" /><button type="button" class="quiet-button" (click)="addFieldOptions(cat.id, field, optionInput)">Add value</button></div>
+                        </div>
+                      }
+                      <div class="field-editor-meta">
+                        <label><span>Form section</span><select class="studio-input" [value]="field.group ?? 'specs'" (change)="updateCategoryField(cat.id, field, { group: $any($event.target).value })">@for (group of fieldSectionOptions; track group.value) { <option [value]="group.value">{{ group.label }}</option> }</select></label>
+                        <div class="field-editor-scope"><span>Show for subcategories</span><div class="choice-chips">@for (sub of cat.subcategories; track sub) { <button type="button" [class.active]="field.showForSubcategories?.includes(sub)" (click)="toggleCategoryFieldSubcategory(cat.id, field, sub)">{{ sub }}</button> }<small>None selected means all.</small></div></div>
+                        <code class="field-key-chip">{{ field.key }}</code>
                       </div>
                     </div>
                   } @empty {
-                    <div class="empty-state"><span>✦</span><strong>No custom fields yet</strong><p>Create fields like wattage, size, colour or any detail you track.</p></div>
+                    <div class="empty-state item-form-empty"><span>✦</span><strong>No custom fields yet</strong><p>Start with a model number, size or any detail you want to record.</p></div>
                   }
+                    </div>
+
+                    <section class="field-presets" aria-labelledby="field-presets-title">
+                  <h4 id="field-presets-title">Add a field</h4>
+                  <div class="field-preset-grid">
+                    @for (preset of fieldPresets; track preset.label) {
+                      <button type="button" class="field-preset" (click)="useFieldPreset(cat, preset)">
+                        <strong>+ {{ preset.label }}</strong><span>{{ preset.hint }}</span>
+                      </button>
+                    }
+                  </div>
+                    </section>
+                  </div>
+
+                  <aside class="item-form-preview" aria-label="Add item form preview">
+                    <header class="item-preview-header"><div><h3>Add item</h3><p>{{ cat.name }}</p></div><span class="preview-live-dot">Preview</span></header>
+                    <div class="item-preview-body">
+                      <label class="item-preview-control"><span>Product name <b>*</b></span><input class="studio-input" placeholder="Enter product name" /></label>
+                      <label class="item-preview-control"><span>Subcategory</span><select class="studio-input"><option>Select subcategory</option>@for (sub of cat.subcategories; track sub) { <option>{{ sub }}</option> }</select></label>
+                      <label class="item-preview-control"><span>Brand</span><select class="studio-input"><option>Select brand</option>@for (brand of cat.brands; track brand) { <option>{{ brand }}</option> }</select></label>
+                      <div class="item-preview-row">
+                        <label class="item-preview-control"><span>Cost price <b>*</b></span><div class="preview-input-wrap"><span>₹</span><input class="studio-input" type="number" placeholder="0.00" /></div></label>
+                        <label class="item-preview-control"><span>Selling price <b>*</b></span><div class="preview-input-wrap"><span>₹</span><input class="studio-input" type="number" placeholder="0.00" /></div></label>
+                      </div>
+                      <label class="item-preview-control"><span>Quantity</span><input class="studio-input" type="number" placeholder="Enter quantity" /></label>
+                      @for (field of fieldsOf(cat); track field.key) {
+                        <label class="item-preview-control"><span>{{ field.label }} @if (field.required) { <b>*</b> }</span>
+                          @if (field.type === 'textarea') { <textarea class="studio-input" [placeholder]="field.placeholder || 'Enter ' + field.label.toLowerCase()"></textarea> }
+                          @else if (field.type === 'select') { <select class="studio-input"><option>Select...</option>@for (option of field.options ?? []; track option) { <option>{{ option }}</option> }</select> }
+                          @else if (field.type === 'pills' || field.type === 'color-pills') { <div class="preview-choice-list">@for (option of field.options ?? []; track option) { <span>{{ option }}</span> }@if (!(field.options?.length)) { <span>Options will appear here</span> }</div> }
+                          @else { <input class="studio-input" [type]="field.type === 'number' ? 'number' : 'text'" [placeholder]="field.placeholder || 'Enter ' + field.label.toLowerCase()" /> }
+                        </label>
+                      }
+                      <div class="item-preview-footer"><span>Required fields are marked with <b>*</b></span><button type="button" class="preview-submit" disabled>Add item</button></div>
+                    </div>
+                  </aside>
                 </div>
 
-                <div class="field-builder">
-                  <div class="builder-heading">
-                    <div><span class="eyebrow">{{ editingFieldKey() ? 'EDIT FIELD' : 'FIELD BUILDER' }}</span><h3>{{ editingFieldKey() ? 'Update this field' : 'Add a custom field' }}</h3></div>
-                  </div>
-                  <div class="form-grid">
-                    <label class="form-field"><span>Field name <b>*</b></span><input class="studio-input" [value]="newFieldLabel()" (input)="newFieldLabel.set($any($event.target).value)" placeholder="e.g. Wattage" /></label>
-                    <label class="form-field"><span>Field key <small>{{ editingFieldKey() ? '(locked while editing)' : '(unique identifier)' }}</small></span><input class="studio-input" [value]="newFieldKey()" [readonly]="!!editingFieldKey()" (input)="newFieldKey.set($any($event.target).value)" placeholder="e.g. wattage" /></label>
-                    <label class="form-field"><span>Input type</span><select class="studio-input" [value]="newFieldType()" (change)="newFieldType.set($any($event.target).value)">@for (type of fieldTypeOptions; track type) { <option [value]="type">{{ type }}</option> }</select></label>
-                    <label class="form-field"><span>Form section</span><select class="studio-input" [value]="newFieldGroup()" (change)="newFieldGroup.set($any($event.target).value)">@for (group of fieldSectionOptions; track group.value) { <option [value]="group.value">{{ group.label }}</option> }</select></label>
-                    @if (['select', 'pills', 'color-pills'].includes(newFieldType())) {
-                      <label class="form-field full-field"><span>Choices <small>Separate each choice with a comma</small></span><input class="studio-input" [value]="newFieldOptions()" (input)="newFieldOptions.set($any($event.target).value)" placeholder="Red, Blue, Green" /></label>
-                    }
-                    @if (newFieldType() === 'text' || newFieldType() === 'number' || newFieldType() === 'textarea') {
-                      <label class="form-field"><span>Placeholder</span><input class="studio-input" [value]="newFieldPlaceholder()" (input)="newFieldPlaceholder.set($any($event.target).value)" placeholder="Text shown before entry" /></label>
-                    }
-                    @if (newFieldType() === 'number') {
-                      <label class="form-field"><span>Minimum value</span><input class="studio-input" type="number" [value]="newFieldMin() ?? ''" (input)="newFieldMin.set($any($event.target).value === '' ? null : $any($event.target).valueAsNumber)" /></label>
-                    }
-                    @if (newFieldType() === 'text' || newFieldType() === 'number' || newFieldType() === 'computed') {
-                      <label class="form-field"><span>Prefix</span><input class="studio-input" [value]="newFieldPrefix()" (input)="newFieldPrefix.set($any($event.target).value)" placeholder="e.g. ₹" /></label>
-                      <label class="form-field"><span>Suffix</span><input class="studio-input" [value]="newFieldSuffix()" (input)="newFieldSuffix.set($any($event.target).value)" placeholder="e.g. W" /></label>
-                    }
-                    @if (newFieldType() === 'computed') {
-                      <label class="form-field full-field"><span>Calculation formula</span><input class="studio-input" [value]="newFieldFormula()" (input)="newFieldFormula.set($any($event.target).value)" placeholder="e.g. {price} * 1.18" /></label>
-                      <label class="form-field"><span>Decimal places</span><input class="studio-input" type="number" min="0" max="4" [value]="newFieldDecimals()" (input)="newFieldDecimals.set($any($event.target).valueAsNumber)" /></label>
-                      <div class="form-field full-field"><span>Available values</span><div class="choice-chips">@for (key of formulaKeyOptions(cat); track key) { <button type="button" (click)="insertFormulaKey(key)">{{ key }}</button> }</div></div>
-                    }
-                    <div class="form-field full-field">
-                      <span>Show for subcategories <small>Choose none to show this field everywhere</small></span>
-                      <div class="choice-chips">
-                        @for (sub of cat.subcategories; track sub) { <button type="button" [class.active]="newFieldSubcats().includes(sub)" (click)="toggleNewFieldSubcat(sub)">{{ sub }}</button> }
-                        @if (!cat.subcategories.length) { <small>Add subcategories first to target a field.</small> }
+                @if (fieldDialogOpen()) {
+                  <div class="field-dialog-backdrop" (click)="cancelFieldEdit()">
+                    <section class="field-dialog" role="dialog" aria-modal="true" aria-labelledby="field-dialog-title" (click)="$event.stopPropagation()">
+                      <div class="field-dialog-heading">
+                        <div><span class="eyebrow">{{ editingFieldKey() ? 'EDIT ITEM FIELD' : 'NEW ITEM FIELD' }}</span><h3 id="field-dialog-title">{{ editingFieldKey() ? 'Edit field' : 'Set up this field' }}</h3></div>
+                        <button type="button" class="field-dialog-close" (click)="cancelFieldEdit()" aria-label="Close field editor">×</button>
                       </div>
-                    </div>
-                    <label class="check-setting"><input type="checkbox" [checked]="newFieldRequired()" (change)="newFieldRequired.set($any($event.target).checked)" /><span><strong>Required field</strong><small>Staff must provide this value before saving a product.</small></span></label>
-                    <label class="check-setting bill-setting"><input type="checkbox" [checked]="newFieldIncludeInBill()" (change)="newFieldIncludeInBill.set($any($event.target).checked)" /><span><strong>Print on bill</strong><small>Show this product detail alongside the item on bills.</small></span></label>
+                      <div class="field-dialog-grid">
+                        <label class="form-field"><span>Field name <b>*</b></span><input class="studio-input" [value]="newFieldLabel()" (input)="newFieldLabel.set($any($event.target).value)" placeholder="e.g. Wattage" /></label>
+                        <label class="form-field"><span>Field key</span><input class="studio-input" [value]="newFieldKey()" [readonly]="!!editingFieldKey()" (input)="newFieldKey.set($any($event.target).value)" /></label>
+                        <label class="form-field"><span>Input type</span><select class="studio-input" [value]="newFieldType()" (change)="newFieldType.set($any($event.target).value)">@for (type of fieldTypeOptions; track type) { <option [value]="type">{{ type }}</option> }</select></label>
+                        <label class="form-field"><span>Form section</span><select class="studio-input" [value]="newFieldGroup()" (change)="newFieldGroup.set($any($event.target).value)">@for (group of fieldSectionOptions; track group.value) { <option [value]="group.value">{{ group.label }}</option> }</select></label>
+                        @if (['select', 'pills', 'color-pills'].includes(newFieldType())) {
+                          <label class="form-field full-field"><span>Choices <small>Separate choices with commas</small></span><input class="studio-input" [value]="newFieldOptions()" (input)="newFieldOptions.set($any($event.target).value)" placeholder="e.g. Small, Medium, Large" /></label>
+                        }
+                        @if (newFieldType() === 'text' || newFieldType() === 'number' || newFieldType() === 'textarea') {
+                          <label class="form-field full-field"><span>Placeholder</span><input class="studio-input" [value]="newFieldPlaceholder()" (input)="newFieldPlaceholder.set($any($event.target).value)" placeholder="Text shown before entry" /></label>
+                        }
+                        <div class="form-field full-field">
+                          <span>Show for subcategories <small>Choose none to show this field everywhere</small></span>
+                          <div class="choice-chips">
+                            @for (sub of cat.subcategories; track sub) { <button type="button" [class.active]="newFieldSubcats().includes(sub)" (click)="toggleNewFieldSubcat(sub)">{{ sub }}</button> }
+                            @if (!cat.subcategories.length) { <small>Add subcategories first to target a field.</small> }
+                          </div>
+                        </div>
+                        <label class="check-setting"><input type="checkbox" [checked]="newFieldRequired()" (change)="newFieldRequired.set($any($event.target).checked)" /><span><strong>Required field</strong><small>Require this value when an item is saved.</small></span></label>
+                        <label class="check-setting bill-setting"><input type="checkbox" [checked]="newFieldIncludeInBill()" (change)="newFieldIncludeInBill.set($any($event.target).checked)" /><span><strong>Print on bill</strong><small>Show this detail on bills.</small></span></label>
+                      </div>
+                      <div class="builder-actions">
+                        <button type="button" class="quiet-button" (click)="cancelFieldEdit()">Cancel</button>
+                        <button type="button" class="primary-button" (click)="addField(cat.id)">{{ editingFieldKey() ? 'Save field' : 'Add field' }}</button>
+                      </div>
+                    </section>
                   </div>
-                  <div class="builder-actions">
-                    @if (editingFieldKey()) { <button type="button" class="quiet-button" (click)="cancelFieldEdit()">Cancel edit</button> }
-                    <button type="button" class="primary-button" (click)="addField(cat.id)">{{ editingFieldKey() ? 'Save field' : '+ Add field' }}</button>
-                  </div>
-                </div>
+                }
               </div>
             }
 

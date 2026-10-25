@@ -15,6 +15,15 @@ import {
   defaultFieldConfig,
 } from '../../core/config/product-fields.config';
 
+interface FieldPreset {
+  label: string;
+  hint: string;
+  type: ProductFieldType;
+  fieldName: string;
+  fieldKey: string;
+  options?: string;
+}
+
 @Component({
   selector: 'app-catalogue-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,7 +63,7 @@ export class CatalogueSettingsComponent implements OnInit {
 
   // Subcategory + brand panel
   readonly expandedCatId  = signal<string | null>(null);
-  readonly expandedTab    = signal<'subs' | 'brands' | 'fields' | 'setup'>('subs');
+  readonly expandedTab    = signal<'subs' | 'brands' | 'fields' | 'setup'>('fields');
   readonly newSubcatValue = signal('');
   readonly newBrandValue  = signal('');
   readonly setupUnitOptions = signal('');
@@ -79,8 +88,17 @@ export class CatalogueSettingsComponent implements OnInit {
   readonly editingSharedField = signal(false);
   /** Key of the field currently being edited (null = adding a new field). */
   readonly editingFieldKey = signal<string | null>(null);
+  readonly fieldDialogOpen = signal(false);
   readonly fieldTypeOptions: ProductFieldType[] = ['text', 'number', 'textarea', 'select', 'pills', 'color-pills', 'computed'];
   readonly sharedFieldTypeOptions: ProductFieldType[] = ['text', 'number', 'textarea', 'select', 'pills', 'color-pills'];
+  readonly fieldPresets: FieldPreset[] = [
+    { label: 'Short text', hint: 'Name, model, code', type: 'text', fieldName: 'Model', fieldKey: 'model' },
+    { label: 'Long text', hint: 'Notes, description', type: 'textarea', fieldName: 'Description', fieldKey: 'description' },
+    { label: 'Number', hint: 'Size, weight, rating', type: 'number', fieldName: 'Size', fieldKey: 'size' },
+    { label: 'Dropdown', hint: 'Choose one value', type: 'select', fieldName: 'Type', fieldKey: 'type' },
+    { label: 'Multi-select', hint: 'Choose several values', type: 'pills', fieldName: 'Features', fieldKey: 'features' },
+    { label: 'Yes / No', hint: 'A simple choice', type: 'select', fieldName: 'Available', fieldKey: 'available', options: 'Yes, No' },
+  ];
   readonly fieldSectionOptions: { value: 'specs' | 'pricing' | 'stock' | 'admin'; label: string }[] = [
     { value: 'specs',   label: 'Basic info' },
     { value: 'pricing', label: 'Pricing' },
@@ -119,9 +137,36 @@ export class CatalogueSettingsComponent implements OnInit {
 
   selectCategory(catId: string): void {
     this.expandedCatId.set(catId);
-    this.expandedTab.set('subs');
+    this.expandedTab.set('fields');
     this.showCatForm.set(false);
     this.editingCatId.set(null);
+  }
+
+  useFieldPreset(cat: DynamicCategory, preset: FieldPreset): void {
+    const usedKeys = new Set([
+      ...this.fieldsOf(cat).map(field => field.key),
+      ...this.config.sharedFields().map(field => field.key),
+    ]);
+    let key = preset.fieldKey;
+    let suffix = 2;
+    while (usedKeys.has(key)) key = `${preset.fieldKey}${suffix++}`;
+
+    this.editingFieldKey.set(null);
+    this.editingSharedField.set(false);
+    this.newFieldType.set(preset.type);
+    this.newFieldLabel.set(preset.fieldName);
+    this.newFieldKey.set(key);
+    this.newFieldOptions.set(preset.options ?? '');
+    this.newFieldGroup.set('specs');
+    this.newFieldSubcats.set([]);
+    this.newFieldPrefix.set('');
+    this.newFieldSuffix.set('');
+    this.newFieldFormula.set('');
+    this.newFieldPlaceholder.set('');
+    this.newFieldMin.set(null);
+    this.newFieldRequired.set(false);
+    this.newFieldIncludeInBill.set(false);
+    this.fieldDialogOpen.set(true);
   }
 
   menuIcon(id: string): string {
@@ -307,6 +352,7 @@ export class CatalogueSettingsComponent implements OnInit {
       this.config.sharedFields.set([...fields, field]);
     }
     this.resetFieldForm();
+    this.fieldDialogOpen.set(false);
     await this.persist();
   }
 
@@ -417,7 +463,7 @@ export class CatalogueSettingsComponent implements OnInit {
       }]);
     }
     this.expandedCatId.set(id);
-    this.expandedTab.set('setup');
+    this.expandedTab.set('fields');
     const selectedCategory = this.config.categories().find(category => category.id === id);
     if (selectedCategory) this.editCategorySetup(selectedCategory);
     this.showCatForm.set(false);
@@ -437,7 +483,7 @@ export class CatalogueSettingsComponent implements OnInit {
       this.expandedCatId.set(null);
     } else {
       this.expandedCatId.set(catId);
-      this.expandedTab.set('subs');
+      this.expandedTab.set('fields');
     }
     this.newSubcatValue.set('');
     this.newBrandValue.set('');
@@ -517,6 +563,64 @@ export class CatalogueSettingsComponent implements OnInit {
   /** Returns the field list for a category, ensuring a fieldConfig exists. */
   fieldsOf(cat: DynamicCategory): ProductField[] {
     return cat.fieldConfig?.fields ?? [];
+  }
+
+  fieldTypeLabel(type: ProductFieldType): string {
+    return type === 'pills' ? 'Multi-select' : type === 'color-pills' ? 'Colour choices' : type.charAt(0).toUpperCase() + type.slice(1);
+  }
+
+  fieldOptionsOf(field: ProductField): string[] {
+    return field.type === 'color-pills'
+      ? (field.colorOptions ?? []).map(option => option.label)
+      : field.options ?? [];
+  }
+
+  async updateCategoryField(catId: string, field: ProductField, changes: Partial<ProductField>): Promise<void> {
+    this.mutateFieldConfig(catId, fields => fields.map(existing => {
+      if (existing.key !== field.key) return existing;
+      const next = { ...existing, ...changes };
+      if (changes.type && changes.type !== existing.type) {
+        const choices = existing.type === 'color-pills'
+          ? (existing.colorOptions ?? []).map(option => option.label)
+          : existing.options ?? [];
+        if (changes.type === 'color-pills') {
+          next.colorOptions = choices.map(label => ({ label, hex: colorNameToHex(label) }));
+          delete next.options;
+        } else {
+          next.options = choices;
+          delete next.colorOptions;
+        }
+      }
+      return next;
+    }));
+    await this.persist();
+  }
+
+  async addFieldOptions(catId: string, field: ProductField, input: HTMLInputElement): Promise<void> {
+    const additions = input.value.split(',').map(value => value.trim()).filter(Boolean);
+    if (!additions.length) return;
+    const choices = [...new Set([...this.fieldOptionsOf(field), ...additions])];
+    const changes: Partial<ProductField> = field.type === 'color-pills'
+      ? { colorOptions: choices.map(label => ({ label, hex: colorNameToHex(label) })) }
+      : { options: choices };
+    input.value = '';
+    await this.updateCategoryField(catId, field, changes);
+  }
+
+  async removeFieldOption(catId: string, field: ProductField, index: number): Promise<void> {
+    const choices = this.fieldOptionsOf(field).filter((_, optionIndex) => optionIndex !== index);
+    const changes: Partial<ProductField> = field.type === 'color-pills'
+      ? { colorOptions: choices.map(label => ({ label, hex: colorNameToHex(label) })) }
+      : { options: choices };
+    await this.updateCategoryField(catId, field, changes);
+  }
+
+  async toggleCategoryFieldSubcategory(catId: string, field: ProductField, subcategory: string): Promise<void> {
+    const current = field.showForSubcategories ?? [];
+    const selected = current.includes(subcategory)
+      ? current.filter(value => value !== subcategory)
+      : [...current, subcategory];
+    await this.updateCategoryField(catId, field, { showForSubcategories: selected.length ? selected : undefined });
   }
 
   pricingModeOf(cat: DynamicCategory): PricingMode {
@@ -603,6 +707,7 @@ export class CatalogueSettingsComponent implements OnInit {
       this.mutateFieldConfig(catId, fields => [...fields, field]);
     }
     this.resetFieldForm();
+    this.fieldDialogOpen.set(false);
     await this.persist();
   }
 
@@ -668,11 +773,13 @@ export class CatalogueSettingsComponent implements OnInit {
     this.newFieldRequired.set(!!field.required);
     this.newFieldPlaceholder.set(field.placeholder ?? '');
     this.newFieldMin.set(field.min ?? null);
+    this.fieldDialogOpen.set(true);
   }
 
   /** Cancel an in-progress field edit and clear the form. */
   cancelFieldEdit(): void {
     this.resetFieldForm();
+    this.fieldDialogOpen.set(false);
   }
 
   private resetFieldForm(): void {
