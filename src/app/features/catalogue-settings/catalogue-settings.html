@@ -5,7 +5,7 @@
     <div class="header-copy">
       <span class="eyebrow">SHOP MANAGEMENT</span>
       <h1>Catalogue</h1>
-      <p>Manage categories, product details and shop-wide options.</p>
+            <p>Manage product types, item fields and shop-wide options.</p>
     </div>
     <div class="save-status" aria-live="polite">
       @if (saving()) { <span class="status-dot is-saving"></span> Saving changes }
@@ -52,13 +52,13 @@
               @if (section() === 'categories' && categoriesExpanded()) {
                 <div class="category-submenu" id="category-submenu">
                   <div class="sidebar-list-heading">
-                    <span>Product groups</span>
-                    <button type="button" class="text-action" (click)="startAddCategory()">+ Add group</button>
+                    <span>Product types</span>
+                    <button type="button" class="text-action" (click)="startAddCategory()">+ Add product type</button>
                   </div>
                   <label class="category-search">
                     <span aria-hidden="true">⌕</span>
                     <input type="search" [value]="categorySearch()" (input)="categorySearch.set($any($event.target).value)"
-                           placeholder="Find a category" aria-label="Find a product category" />
+                           placeholder="Find a product type" aria-label="Find a product type" />
                   </label>
                   <div class="category-nav-list">
                     @for (cat of filteredCategories(); track cat.id) {
@@ -85,20 +85,20 @@
                         </span>
                         <span class="category-nav-copy">
                           <strong>{{ cat.name }}</strong>
-                          <small>{{ cat.subcategories.length }} subcategories · {{ fieldsOf(cat).length }} fields</small>
+                          <small>{{ cat.subcategories.length }} subcategories · {{ fieldsOf(cat).length }} custom field{{ fieldsOf(cat).length === 1 ? '' : 's' }}</small>
                         </span>
                         <span class="nav-chevron" aria-hidden="true">›</span>
                       </button>
                     }
                     @if (config.categories().length === 0) {
-                      <p class="empty-note">Add your first category to start building your catalogue.</p>
+                      <p class="empty-note">Add your first product type to start building your catalogue.</p>
                     } @else if (filteredCategories().length === 0) {
-                      <p class="empty-note">No categories match your search.</p>
+                      <p class="empty-note">No product types match your search.</p>
                     }
                   </div>
                   <div class="sidebar-tip">
                     <span aria-hidden="true">✦</span>
-                    <p>Each group can have its own fields, units and warranty choices.</p>
+                    <p>Each product type can have its own item fields, subcategories and brands.</p>
                   </div>
                 </div>
               }
@@ -125,20 +125,20 @@
           <article class="workspace-card category-create-panel">
             <div class="page-heading category-create-header">
               <div class="category-create-copy">
-                <span class="eyebrow">CATEGORY DETAILS</span>
-                <h2>{{ editingCatId() ? 'Edit category' : 'Create a category' }}</h2>
-                <p>Give this group a name and identity customers will recognize.</p>
+                <span class="eyebrow">PRODUCT TYPE DETAILS</span>
+                <h2>{{ editingCatId() ? 'Edit product type' : 'Create a product type' }}</h2>
+                <p>Give this product type a name and identity your team will recognize.</p>
               </div>
               <button type="button" class="quiet-button" (click)="cancelCatForm()">Cancel</button>
             </div>
             <form class="category-form" (submit)="$event.preventDefault(); saveCatForm()">
               <div class="category-form-row">
                 <label class="form-field">
-                  <span>Category name <b>*</b></span>
+                  <span>Product type name <b>*</b></span>
                   <input class="studio-input" [value]="catFormName()" [attr.aria-invalid]="categoryNameError()"
                          (input)="catFormName.set($any($event.target).value); categoryNameError.set(false)"
                          placeholder="e.g. Ceiling fans" autocomplete="off" maxlength="60" />
-                  @if (categoryNameError()) { <small class="category-error">Please enter a category name.</small> }
+                @if (categoryNameError()) { <small class="category-error">Please enter a product type name.</small> }
                 </label>
                 <div class="form-field icon-field">
                   <label for="category-icon">Icon</label>
@@ -160,7 +160,7 @@
               </div>
 
               <div class="form-field category-color-field">
-                <span>Category colour</span>
+                  <span>Product type colour</span>
                 <div class="category-color-options" role="radiogroup" aria-label="Category colour">
                   @for (color of categoryColorOptions; track color) {
                     <button type="button" class="category-color-swatch" [style.backgroundColor]="color"
@@ -179,27 +179,27 @@
                 <span>Description</span>
                 <input class="studio-input" [value]="catFormDesc()"
                        (input)="catFormDesc.set($any($event.target).value)"
-                       placeholder="A short description of this product group" autocomplete="off" maxlength="120" />
+                       placeholder="A short description of this product type" autocomplete="off" maxlength="120" />
               </label>
               <label class="form-field">
                 <span>Inventory sheet name</span>
                 <input class="studio-input" [value]="catFormSheetName()"
                        (input)="catFormSheetName.set($any($event.target).value)"
-                       [placeholder]="catFormName().trim() || 'Defaults to the category name'" autocomplete="off" maxlength="60" />
-                <small>Used to organize this category in your inventory.</small>
+                       [placeholder]="catFormName().trim() || 'Defaults to the product type name'" autocomplete="off" maxlength="60" />
+                <small>Used to organize this product type in your inventory.</small>
               </label>
 
-              <div class="category-preview" aria-label="Category preview">
+              <div class="category-preview" aria-label="Product type preview">
                 <span class="category-preview-icon" [style.backgroundColor]="catFormColor()">{{ catFormIcon() || '📦' }}</span>
                 <span class="category-preview-copy">
-                  <strong>{{ catFormName().trim() || 'Category name' }}</strong>
+                  <strong>{{ catFormName().trim() || 'Product type name' }}</strong>
                   <small>{{ catFormDesc().trim() || 'Your description appears here' }}</small>
                 </span>
                 <span class="category-preview-label">Preview</span>
               </div>
 
               <button type="submit" class="primary-button category-submit-button">
-                {{ editingCatId() ? 'Save category' : 'Create category' }}
+                {{ editingCatId() ? 'Save product type' : 'Create product type' }}
               </button>
             </form>
           </article>
@@ -207,9 +207,9 @@
           <div class="page-heading category-heading">
             <div class="heading-icon" [style.background]="cat.color">{{ cat.icon }}</div>
             <div class="heading-copy">
-              <span class="eyebrow">PRODUCT CATEGORY</span>
+              <span class="eyebrow">PRODUCT TYPE</span>
               <h2>{{ cat.name }}</h2>
-              <p>{{ cat.description || 'Configure the way products in this group are added and displayed.' }}</p>
+              <p>{{ cat.description || 'Configure the way products in this type are added and displayed.' }}</p>
               <span class="category-sheet"><span>Inventory sheet</span><strong>{{ cat.sheetName }}</strong></span>
             </div>
             <div class="heading-actions">
@@ -219,7 +219,7 @@
           </div>
 
           <article class="workspace-card category-editor">
-            <nav class="editor-tabs" aria-label="Category configuration">
+            <nav class="editor-tabs" aria-label="Product type configuration">
               <button type="button" [class.active]="expandedTab() === 'fields'" (click)="expandedTab.set('fields')">
                 Item form <span>{{ fieldsOf(cat).length }}</span>
               </button>
@@ -228,9 +228,6 @@
               </button>
               <button type="button" [class.active]="expandedTab() === 'brands'" (click)="expandedTab.set('brands')">
                 Brands <span>{{ cat.brands.length }}</span>
-              </button>
-              <button type="button" [class.active]="expandedTab() === 'setup'" (click)="expandedTab.set('setup'); editCategorySetup(cat)">
-                Form defaults
               </button>
             </nav>
 
@@ -257,7 +254,7 @@
             @if (expandedTab() === 'brands') {
               <div class="editor-content">
                 <div class="content-heading">
-                  <div><h3>Brands for this category</h3><p>These become the brand choices when adding a product.</p></div>
+                  <div><h3>Brands for this product type</h3><p>These become the brand choices when adding a product.</p></div>
                   <span class="helper-badge">For {{ cat.name }}</span>
                 </div>
                 <div class="chip-list">
@@ -335,23 +332,72 @@
 
                   <aside class="item-form-preview" aria-label="Add item form preview">
                     <header class="item-preview-header"><div><h3>Add item</h3><p>{{ cat.name }}</p></div><span class="preview-live-dot">Preview</span></header>
+                    <ng-template #previewField let-field>
+                      <label class="item-preview-control">
+                        <span>{{ field.label }} @if (field.required) { <b>*</b> }</span>
+                        @if (field.type === 'computed') {
+                          <div class="preview-computed">Calculated automatically</div>
+                        } @else if (field.type === 'select') {
+                          <select class="studio-input"><option value="">Select...</option>@for (option of previewFieldOptions(field, cat); track option) { <option>{{ option }}</option> }</select>
+                        } @else if (field.type === 'pills' || field.type === 'color-pills') {
+                          <div class="preview-choice-list">@for (option of previewFieldOptions(field, cat); track option) { <span>{{ option }}</span> }@if (!previewFieldOptions(field, cat).length) { <span>No choices for this subcategory</span> }</div>
+                        } @else if (field.type === 'textarea') {
+                          <textarea class="studio-input" rows="2" [placeholder]="field.placeholder || 'Enter ' + field.label.toLowerCase()"></textarea>
+                        } @else {
+                          <div class="preview-input-wrap">
+                            @if (field.prefix) { <span>{{ field.prefix }}</span> }
+                            <input class="studio-input" [class.has-prefix]="!!field.prefix" [class.has-suffix]="!!field.suffix" [type]="field.type === 'number' ? 'number' : 'text'" [attr.min]="field.min ?? null" [placeholder]="field.placeholder || 'Enter ' + field.label.toLowerCase()" />
+                            @if (field.suffix) { <span class="preview-suffix">{{ field.suffix }}</span> }
+                          </div>
+                        }
+                      </label>
+                    </ng-template>
                     <div class="item-preview-body">
+                      <h4 class="item-preview-section-title">Basic info</h4>
                       <label class="item-preview-control"><span>Product name <b>*</b></span><input class="studio-input" placeholder="Enter product name" /></label>
-                      <label class="item-preview-control"><span>Subcategory</span><select class="studio-input"><option>Select subcategory</option>@for (sub of cat.subcategories; track sub) { <option>{{ sub }}</option> }</select></label>
-                      <label class="item-preview-control"><span>Brand</span><select class="studio-input"><option>Select brand</option>@for (brand of cat.brands; track brand) { <option>{{ brand }}</option> }</select></label>
+                      <label class="item-preview-control"><span>Subcategory <b>*</b></span><select class="studio-input" [value]="previewSubcategoryOf(cat)" (change)="previewSubcategory.set($any($event.target).value)">@for (sub of cat.subcategories; track sub) { <option [value]="sub">{{ sub }}</option> }@if (!cat.subcategories.length) { <option value="">No subcategories</option> }</select></label>
+                      <label class="item-preview-control"><span>Brand <b>*</b></span><input class="studio-input" [attr.list]="'preview-brands-' + cat.id" placeholder="Type or select a brand" /><datalist [id]="'preview-brands-' + cat.id">@for (brand of cat.brands; track brand) { <option [value]="brand">{{ brand }}</option> }</datalist></label>
+                      <label class="item-preview-control"><span>SKU <small>(auto-generated)</small></span><input class="studio-input" readonly placeholder="Generated automatically" /></label>
+                      @for (field of previewFieldSectionsOf(cat)[0].fields; track field.key) { <ng-container [ngTemplateOutlet]="previewField" [ngTemplateOutletContext]="{ $implicit: field }"></ng-container> }
+
+                      <h4 class="item-preview-section-title">Pricing</h4>
                       <div class="item-preview-row">
-                        <label class="item-preview-control"><span>Cost price <b>*</b></span><div class="preview-input-wrap"><span>₹</span><input class="studio-input" type="number" placeholder="0.00" /></div></label>
-                        <label class="item-preview-control"><span>Selling price <b>*</b></span><div class="preview-input-wrap"><span>₹</span><input class="studio-input" type="number" placeholder="0.00" /></div></label>
+                        <label class="item-preview-control"><span>{{ previewIsWireType(cat) ? 'Whole box / roll cost' : 'Cost price' }} <b>*</b></span><div class="preview-input-wrap"><span>₹</span><input class="studio-input" type="number" placeholder="0.00" /></div></label>
+                        <label class="item-preview-control"><span>{{ previewIsWireType(cat) ? 'Whole box / roll price' : 'Selling price' }} <b>*</b></span><div class="preview-input-wrap"><span>₹</span><input class="studio-input" type="number" placeholder="0.00" /></div></label>
                       </div>
-                      <label class="item-preview-control"><span>Quantity</span><input class="studio-input" type="number" placeholder="Enter quantity" /></label>
-                      @for (field of fieldsOf(cat); track field.key) {
-                        <label class="item-preview-control"><span>{{ field.label }} @if (field.required) { <b>*</b> }</span>
-                          @if (field.type === 'textarea') { <textarea class="studio-input" [placeholder]="field.placeholder || 'Enter ' + field.label.toLowerCase()"></textarea> }
-                          @else if (field.type === 'select') { <select class="studio-input"><option>Select...</option>@for (option of field.options ?? []; track option) { <option>{{ option }}</option> }</select> }
-                          @else if (field.type === 'pills' || field.type === 'color-pills') { <div class="preview-choice-list">@for (option of field.options ?? []; track option) { <span>{{ option }}</span> }@if (!(field.options?.length)) { <span>Options will appear here</span> }</div> }
-                          @else { <input class="studio-input" [type]="field.type === 'number' ? 'number' : 'text'" [placeholder]="field.placeholder || 'Enter ' + field.label.toLowerCase()" /> }
-                        </label>
+                      <div class="item-preview-row">
+                        <label class="item-preview-control"><span>Margin (%)</span><input class="studio-input" type="number" placeholder="e.g. 20" /></label>
+                        <label class="item-preview-control"><span>Discounted price <small>(optional)</small></span><div class="preview-input-wrap"><span>₹</span><input class="studio-input" type="number" placeholder="0.00" /></div></label>
+                      </div>
+                      @if (previewIsWireType(cat)) {
+                        <label class="item-preview-control"><span>Roll / box length (m) <b>*</b></span><input class="studio-input" type="number" placeholder="e.g. 90" /></label>
+                        <div class="preview-computed">Selling price per metre is calculated from the roll price and length.</div>
                       }
+                      @for (field of previewFieldSectionsOf(cat)[1].fields; track field.key) { <ng-container [ngTemplateOutlet]="previewField" [ngTemplateOutletContext]="{ $implicit: field }"></ng-container> }
+
+                      <h4 class="item-preview-section-title">Stock</h4>
+                      <div class="item-preview-row">
+                        <label class="item-preview-control"><span>Stock quantity <b>*</b></span><input class="studio-input" type="number" placeholder="0" /></label>
+                        <label class="item-preview-control"><span>Minimum quantity <small>(low-stock alert)</small></span><input class="studio-input" type="number" placeholder="0" /></label>
+                      </div>
+                      @if (previewUnitOptionsOf(cat); as units) {
+                        <label class="item-preview-control"><span>Unit</span><select class="studio-input">@for (unit of units; track unit) { <option>{{ unit }}</option> }</select></label>
+                      }
+                      @for (field of previewFieldSectionsOf(cat)[2].fields; track field.key) { <ng-container [ngTemplateOutlet]="previewField" [ngTemplateOutletContext]="{ $implicit: field }"></ng-container> }
+                      <div class="preview-toggle-row"><span>Out of stock</span><span class="preview-toggle"></span></div>
+
+                      <h4 class="item-preview-section-title">Additional info</h4>
+                      @for (field of previewFieldSectionsOf(cat)[3].fields; track field.key) { <ng-container [ngTemplateOutlet]="previewField" [ngTemplateOutletContext]="{ $implicit: field }"></ng-container> }
+                      <label class="item-preview-control"><span>Warranty</span><select class="studio-input">@for (warranty of previewWarrantyOptionsOf(cat); track warranty) { <option>{{ warranty }}</option> }</select></label>
+                      <div class="preview-toggle-row"><span>Show warranty tag on product card</span><span class="preview-toggle is-on"></span></div>
+                      <div class="item-preview-row">
+                        <label class="item-preview-control"><span>Purchase date</span><input class="studio-input" type="date" /></label>
+                        <label class="item-preview-control"><span>Location / rack</span><input class="studio-input" placeholder="e.g. Rack-A, Shelf-1" /></label>
+                      </div>
+                      <label class="item-preview-control"><span>Remarks</span><textarea class="studio-input" rows="2" placeholder="Any notes..."></textarea></label>
+
+                      <h4 class="item-preview-section-title">Product image</h4>
+                      <div class="preview-upload"><span aria-hidden="true">▧</span><strong>Add a product image</strong><small>Camera or gallery · JPEG, PNG or WebP</small></div>
                       <div class="item-preview-footer"><span>Required fields are marked with <b>*</b></span><button type="button" class="preview-submit" disabled>Add item</button></div>
                     </div>
                   </aside>
@@ -395,23 +441,10 @@
               </div>
             }
 
-            @if (expandedTab() === 'setup') {
-              <div class="editor-content">
-                <div class="content-heading"><div><h3>Category form defaults</h3><p>Override shared shop settings for this category, or leave a setting blank to inherit the shop default.</p></div></div>
-                <div class="form-grid setup-grid">
-                  <label class="form-field full-field"><span>Units for this category <small>Comma-separated; blank uses shop-wide units</small></span><input class="studio-input" [value]="setupUnitOptions()" (input)="setupUnitOptions.set($any($event.target).value)" placeholder="Piece, Box, Pack" /></label>
-                  <label class="form-field"><span>Default unit <small>Must be in the unit list</small></span><input class="studio-input" [value]="setupDefaultUnit()" (input)="setupDefaultUnit.set($any($event.target).value)" placeholder="e.g. Piece" /></label>
-                  <label class="form-field full-field"><span>Warranty choices <small>Comma-separated; blank uses shop-wide options</small></span><input class="studio-input" [value]="setupWarrantyOptions()" (input)="setupWarrantyOptions.set($any($event.target).value)" placeholder="No warranty, 1 year, 2 years" /></label>
-                </div>
-                <div class="form-actions">
-                  <button type="button" class="primary-button" (click)="saveCategorySetup(cat)">Save category defaults</button>
-                </div>
-              </div>
-            }
           </article>
         } @else {
           <article class="workspace-card empty-workspace">
-            <div class="empty-state"><span>✦</span><strong>Your catalogue starts here</strong><p>Create a category to begin shaping the products in your shop.</p><button type="button" class="primary-button" (click)="startAddCategory()">Create your first category</button></div>
+            <div class="empty-state"><span>✦</span><strong>Your catalogue starts here</strong><p>Create a product type to begin shaping the products in your shop.</p><button type="button" class="primary-button" (click)="startAddCategory()">Create your first product type</button></div>
           </article>
         }
       }
@@ -440,7 +473,7 @@
             <div>
               <span class="eyebrow">APPLIES TO EVERY CATEGORY</span>
               <h2>Shared product fields</h2>
-              <p>Create your own product details once, then use them across the whole shop. Category-specific fields stay in each category’s builder.</p>
+              <p>Create your own product details once, then use them across the whole shop. Product-type-specific fields stay in each product type’s builder.</p>
             </div>
             <span class="large-icon">▤</span>
           </div>

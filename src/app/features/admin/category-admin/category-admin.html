@@ -131,6 +131,8 @@
                     <option value="">—</option>
                     @for (o of fieldOptions(f); track o) { <option [value]="o">{{ o }}</option> }
                   </select>
+                } @else if (f.type === 'textarea') {
+                  <textarea [formControlName]="f.key" rows="2" [placeholder]="f.placeholder || ''"></textarea>
                 } @else {
                   @if (f.prefix || f.suffix) {
                     <div class="affix-wrap">
@@ -393,6 +395,8 @@
                         <span class="computed-placeholder">Fill the referenced fields…</span>
                       }
                     </div>
+                  } @else if (f.type === 'textarea') {
+                    <textarea [formControlName]="f.key" rows="2" [placeholder]="f.placeholder || ''"></textarea>
                   } @else {
                     @if (f.prefix || f.suffix) {
                       <div class="affix-wrap">

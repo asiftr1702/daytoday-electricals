@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { Component, inject, signal, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import {
@@ -28,7 +29,7 @@ interface FieldPreset {
   selector: 'app-catalogue-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './catalogue-settings.html',
   styleUrl: './catalogue-settings.css',
 })
@@ -63,12 +64,10 @@ export class CatalogueSettingsComponent implements OnInit {
 
   // Subcategory + brand panel
   readonly expandedCatId  = signal<string | null>(null);
-  readonly expandedTab    = signal<'subs' | 'brands' | 'fields' | 'setup'>('fields');
+  readonly expandedTab    = signal<'subs' | 'brands' | 'fields'>('fields');
+  readonly previewSubcategory = signal('');
   readonly newSubcatValue = signal('');
   readonly newBrandValue  = signal('');
-  readonly setupUnitOptions = signal('');
-  readonly setupDefaultUnit = signal('');
-  readonly setupWarrantyOptions = signal('');
 
   // Field editor
   readonly newFieldKey     = signal('');
@@ -138,6 +137,7 @@ export class CatalogueSettingsComponent implements OnInit {
   selectCategory(catId: string): void {
     this.expandedCatId.set(catId);
     this.expandedTab.set('fields');
+    this.previewSubcategory.set(this.config.categories().find(cat => cat.id === catId)?.subcategories[0] ?? '');
     this.showCatForm.set(false);
     this.editingCatId.set(null);
   }
@@ -464,8 +464,6 @@ export class CatalogueSettingsComponent implements OnInit {
     }
     this.expandedCatId.set(id);
     this.expandedTab.set('fields');
-    const selectedCategory = this.config.categories().find(category => category.id === id);
-    if (selectedCategory) this.editCategorySetup(selectedCategory);
     this.showCatForm.set(false);
     this.editingCatId.set(null);
     await this.persist();
@@ -487,39 +485,6 @@ export class CatalogueSettingsComponent implements OnInit {
     }
     this.newSubcatValue.set('');
     this.newBrandValue.set('');
-  }
-
-  editCategorySetup(cat: DynamicCategory): void {
-    const fieldConfig = cat.fieldConfig ?? defaultFieldConfig(cat.id);
-    this.setupUnitOptions.set((fieldConfig.unitOptions ?? []).join(', '));
-    this.setupDefaultUnit.set(fieldConfig.defaultUnit ?? '');
-    this.setupWarrantyOptions.set((fieldConfig.warrantyOptions ?? []).join(', '));
-  }
-
-  async saveCategorySetup(cat: DynamicCategory): Promise<void> {
-    const splitValues = (value: string) =>
-      [...new Set(value.split(',').map(item => item.trim()).filter(Boolean))];
-    const unitOptions = splitValues(this.setupUnitOptions());
-    const defaultUnit = this.setupDefaultUnit().trim();
-    const warrantyOptions = splitValues(this.setupWarrantyOptions());
-
-    if (defaultUnit && !(unitOptions.length ? unitOptions : this.config.units()).includes(defaultUnit)) {
-      this.saveError.set('The default unit must be included in this category’s unit options.');
-      return;
-    }
-
-    this.config.categories.update(categories => categories.map(category => {
-      if (category.id !== cat.id) return category;
-      const fieldConfig = { ...(category.fieldConfig ?? defaultFieldConfig(category.id)) };
-      if (unitOptions.length) fieldConfig.unitOptions = unitOptions;
-      else delete fieldConfig.unitOptions;
-      if (defaultUnit) fieldConfig.defaultUnit = defaultUnit;
-      else delete fieldConfig.defaultUnit;
-      if (warrantyOptions.length) fieldConfig.warrantyOptions = warrantyOptions;
-      else delete fieldConfig.warrantyOptions;
-      return { ...category, fieldConfig };
-    }));
-    await this.persist();
   }
 
   async addSubcategory(catId: string): Promise<void> {
@@ -563,6 +528,66 @@ export class CatalogueSettingsComponent implements OnInit {
   /** Returns the field list for a category, ensuring a fieldConfig exists. */
   fieldsOf(cat: DynamicCategory): ProductField[] {
     return cat.fieldConfig?.fields ?? [];
+  }
+
+  /** Mirrors the fields assembled by the product-entry page for this type. */
+  previewFieldsOf(cat: DynamicCategory): ProductField[] {
+    const menuFields: ProductField[] = this.config.catalogueMenus()
+      .filter(menu => menu.custom)
+      .map(menu => ({
+        key: catalogueMenuFieldKey(menu.id),
+        label: menu.label,
+        type: 'select',
+        group: 'specs',
+        options: menu.options ?? [],
+        required: menu.required,
+        includeInBill: menu.includeInBill,
+      }));
+    const fields = [...this.config.sharedFields(), ...menuFields, ...this.fieldsOf(cat)];
+    return [...new Map(fields.map(field => [field.key, field])).values()];
+  }
+
+  previewFieldSectionsOf(cat: DynamicCategory): { value: string; label: string; fields: ProductField[] }[] {
+    const selectedSubcategory = this.previewSubcategoryOf(cat);
+    const fields = this.previewFieldsOf(cat).filter(field =>
+      !field.showForSubcategories?.length || field.showForSubcategories.includes(selectedSubcategory)
+    );
+    return this.fieldSectionOptions.map(section => ({
+      value: section.value,
+      label: section.value === 'specs' ? 'Basic info' : section.value === 'admin' ? 'Additional info' : section.label,
+      fields: fields.filter(field => (field.group ?? 'specs') === section.value),
+    }));
+  }
+
+  previewSubcategoryOf(cat: DynamicCategory): string {
+    const selected = this.previewSubcategory();
+    return cat.subcategories.includes(selected) ? selected : cat.subcategories[0] ?? '';
+  }
+
+  previewIsWireType(cat: DynamicCategory): boolean {
+    return /wire|cable/i.test(cat.id) || /wire|cable/i.test(cat.name ?? '');
+  }
+
+  previewFieldOptions(field: ProductField, cat: DynamicCategory): string[] {
+    if (field.type === 'color-pills') return (field.colorOptions ?? []).map(option => option.label);
+    if (field.optionsBySubcategory) return field.optionsBySubcategory[this.previewSubcategoryOf(cat)] ?? [];
+    return field.options ?? [];
+  }
+
+  previewUnitOptionsOf(cat: DynamicCategory): string[] | null {
+    const override = cat.fieldConfig?.unitOptions;
+    const options = override?.length ? override : this.config.units();
+    const defaultUnit = cat.fieldConfig?.defaultUnit;
+    return options.length && defaultUnit && options.includes(defaultUnit)
+      ? [defaultUnit, ...options.filter(unit => unit !== defaultUnit)]
+      : options.length ? options : null;
+  }
+
+  previewWarrantyOptionsOf(cat: DynamicCategory): string[] {
+    const categoryOptions = cat.fieldConfig?.warrantyOptions;
+    if (categoryOptions?.length) return categoryOptions;
+    const shopOptions = this.config.warrantyOptions().map(option => option.label);
+    return shopOptions.length ? shopOptions : ['No warranty', '6 months', '1 year', '2 years', '3 years'];
   }
 
   fieldTypeLabel(type: ProductFieldType): string {
