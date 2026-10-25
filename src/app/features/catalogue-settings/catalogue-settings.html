@@ -35,14 +35,25 @@
               <button type="button" class="workspace-link category-parent" [class.selected]="section() === menu.id"
                       [attr.aria-expanded]="section() === menu.id && categoriesExpanded()" aria-controls="category-submenu"
                       (click)="toggleCategoriesMenu()">
-                <span class="nav-icon">{{ menuIcon(menu.id) }}</span><span>{{ menu.label }}</span>
-                <span class="parent-chevron" [class.open]="section() === menu.id && categoriesExpanded()" aria-hidden="true">⌄</span>
+                <span class="nav-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                  </svg>
+                </span><span>{{ menu.label }}</span>
+                <span class="parent-chevron" [class.open]="section() === menu.id && categoriesExpanded()" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </span>
               </button>
               @if (section() === 'categories' && categoriesExpanded()) {
                 <div class="category-submenu" id="category-submenu">
                   <div class="sidebar-list-heading">
-                    <span>PRODUCT GROUPS</span>
-                    <button type="button" class="text-action" (click)="startAddCategory()">+ Add</button>
+                    <span>Product groups</span>
+                    <button type="button" class="text-action" (click)="startAddCategory()">+ Add group</button>
                   </div>
                   <label class="category-search">
                     <span aria-hidden="true">⌕</span>
@@ -55,7 +66,23 @@
                               [class.selected]="activeCategory()?.id === cat.id && !showCatForm()"
                               [attr.aria-pressed]="activeCategory()?.id === cat.id && !showCatForm()"
                               (click)="selectCategory(cat.id)">
-                        <span class="category-icon" [style.background]="cat.color">{{ cat.icon }}</span>
+                        <span class="category-icon" [style.--category-color]="categoryIconColor(cat.id)">
+                          @switch (cat.id) {
+                            @case ('fitting') {
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg>
+                            }
+                            @case ('mixers') {
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="m15.5 8.5-2 5-5 2 2-5z" /></svg>
+                            }
+                            @case ('drill-bits') {
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 4 6 6M9 9l6 6M3 21l6-6M13 5l-8 8 6 6 8-8" /></svg>
+                            }
+                            @case ('fans') {
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2" /><path d="M12 10c0-4 1-7 4-7s3 4-1 6M14 12c4 0 7 1 7 4s-4 3-6-1M12 14c0 4-1 7-4 7s-3-4 1-6M10 12c-4 0-7-1-7-4s4-3 6 1" /></svg>
+                            }
+                            @default { {{ cat.icon }} }
+                          }
+                        </span>
                         <span class="category-nav-copy">
                           <strong>{{ cat.name }}</strong>
                           <small>{{ cat.subcategories.length }} subcategories · {{ fieldsOf(cat).length }} fields</small>

@@ -134,6 +134,15 @@ export class CatalogueSettingsComponent implements OnInit {
     }[id as 'categories' | 'shared' | 'units' | 'warranty'];
   }
 
+  categoryIconColor(id: string): string {
+    return {
+      fitting: '#ff9f43',
+      mixers: '#5b9bff',
+      'drill-bits': '#c9a27e',
+      fans: '#b58cff',
+    }[id] ?? this.config.categories().find(category => category.id === id)?.color ?? '#3ddc97';
+  }
+
   openMenu(id: string): void {
     this.section.set(id);
     if (id === 'shared') this.startAddSharedField();
